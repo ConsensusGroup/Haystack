@@ -4,9 +4,8 @@ from iota import *
 
 #This block of code is simply the seed which can be generated online (google IOTA Wallet generator)
 #The "seed" is the private key and is the most important piece in this code. It allows full access to a wallet. This seed is generated for demonstration and has no form of value.
-Seed_key = "EQFEYUFXUJJJIJYDIWMK9FBRQIIRDDXXSOHTT9YJNKSOBBKXCSFHAREGQSXMAVCLDIXK9PMQLLOXBHUMU"
-receive='RHZVHLUCUHFEXIESNAMAVBUC9YBQVCVADWHJYIVFNNR9NFIKPXRKLZGVXMDPGGYAFVQ9EDGVHFPEGQRKDNZZLUQRYD'
-
+Seed_key = "WCGOWTHOWPC9KYYDLOEDDZMUHPWVASCWPTX9PZEPWWNKNNEETCPZISMZTM99GNRCZQ9GGOBIBKNYNSPAS"
+receive='NPBXSOXDPLXSCSZIVQCJBHPLJONYBZEASZHDXWPYDLBXXTH9HORYWTDZEXZODIHGF9QBIB9OZTKFMFUVDGBAHFYXPD'
 
 #This essentially connects python to the locahost which was initiated with the Java package (iri-X.X.X.X.jar)
 api = Iota(RoutingWrapper('https://iota.thathost.net:443').add_route('attachToTangle', 'http://localhost:14265'), seed = Seed_key)	
@@ -39,7 +38,6 @@ send = api.send_trytes(trytes = coded, depth = 4)
 
 print(send)
 
-
 ##################################################################################################
 #This is now the receiving end. The purpose is to verify the chain of command. ###################
 ##################################################################################################
@@ -54,7 +52,10 @@ bundle = mess.get('bundles')
 Address = mess.get('addresses')
 
 print(bundle[0])
-
+print(Address)
+bun = bundle[0]
+message_rec = bun.get_messages(errors='drop')
+print(message_rec)
 
 
 
