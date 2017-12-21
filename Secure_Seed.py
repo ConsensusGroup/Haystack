@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#The following lines generate a cryptographically secure pseudorandom seed corresponding to a wallet on the IOTA network
+#This generates a cryptographically secure pseudorandom seed corresponding to a wallet on the IOTA network
 
 import subprocess
 
