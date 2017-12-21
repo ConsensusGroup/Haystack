@@ -6,7 +6,6 @@ import sys
 Seed_key = str(sys.argv[1])
 receive = str(sys.argv[2])
 
-'''
 #This block of code is simply the seed which can be generated online (google IOTA Wallet generator)
 #The "seed" is the private key and is the most important piece in this code. It allows full access to a wallet. This seed is generated for demonstration and has no form of value.
 Seed_key = "WCGOWTHOWPC9KYYDLOEDDZMUHPWVASCWPTX9PZEPWWNKNNEETCPZISMZTM99GNRCZQ9GGOBIBKNYNSPAS"
@@ -42,4 +41,3 @@ coded = bundle.as_tryte_strings()
 send = api.send_trytes(trytes = coded, depth = 4)
 
 print(send)
-'''
