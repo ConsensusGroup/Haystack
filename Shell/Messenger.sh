@@ -94,7 +94,7 @@ then
 	mkdir $pyOTA
 	cd $pyOTA
 	git clone https://github.com/iotaledger/iota.lib.py.git
-	echon "Installing pyOTA python libaries please wait..."
+	echo "Installing pyOTA python libaries please wait..."
 	cd iota.lib.py
 	ipython setup.py test
 fi
@@ -104,7 +104,7 @@ fi
 
 
 
-#============================IOTA Messanger================================#
+#============================IOTA Messenger================================#
 Quit="False"
 Seed_Key="WCGOWTHOWPC9KYYDLOEDDZMUHPWVASCWPTX9PZEPWWNKNNEETCPZISMZTM99GNRCZQ9GGOBIBKNYNSPAS"
 Local_Address="NPBXSOXDPLXSCSZIVQCJBHPLJONYBZEASZHDXWPYDLBXXTH9HORYWTDZEXZODIHGF9QBIB9OZTKFMFUVDGBAHFYXPD"
