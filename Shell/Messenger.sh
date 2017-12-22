@@ -62,6 +62,7 @@ cd $IOTA_Node
 iri=($(find $IOTA_Node -name *".jar")) > /dev/null 2>&1
 if [[ "$iri" == "" ]];
 then 
+	sudo apt-get install wget
 	wget https://github.com/iotaledger/iri/releases/download/v1.4.0/iri-1.4.0.jar #Downloads the iri package for the node
 fi
 cd $current_dir
@@ -79,7 +80,6 @@ process=$(ps ax | grep $iri) #enquires the system for the process id of the iri 
 echo "$process" >> $process_saved #saves the process in a text file (temp)
 while read -r line
 do
-	sleep 2
 	if [[ "$line" == *"java -jar $iri -p 14265" ]];
 	then
 		process=${line%% *} #Cuts the string to extract PID
@@ -93,6 +93,7 @@ if [[ "$py" == "" ]];
 then 
 	mkdir $pyOTA
 	cd $pyOTA
+	sudo apt-get install git 
 	git clone https://github.com/iotaledger/iota.lib.py.git
 	echo "Installing pyOTA python libaries please wait..."
 	cd iota.lib.py
@@ -108,25 +109,101 @@ fi
 Quit="False"
 Seed_Key="WCGOWTHOWPC9KYYDLOEDDZMUHPWVASCWPTX9PZEPWWNKNNEETCPZISMZTM99GNRCZQ9GGOBIBKNYNSPAS"
 Local_Address="NPBXSOXDPLXSCSZIVQCJBHPLJONYBZEASZHDXWPYDLBXXTH9HORYWTDZEXZODIHGF9QBIB9OZTKFMFUVDGBAHFYXPD"
-while $Quit == "False";
+
+#Importing modules required for the messanger component
+Writing="$current_dir/Module/Writing_Module.sh"
+Delete="$current_dir/Module/Delete_Module.py"
+
+#The directory of the user data
+user_dir="$current_dir/UserData"
+mkdir $user_dir > /dev/null 2>&1
+user_data="$user_dir/Contacts_IOTA.txt"
+
+#First make sure that the user data is present in the directory
+data=($(find $user_dir -name *"Contacts_IOTA.txt")) > /dev/null 2>&1
+if [[ "$data" == "" ]];
+then 
+	echo "Me#$Local_Address" >> $user_data
+fi
+
+#Now load the contact list so it will be available later on 
+Contacts_List=()
+while read -r Contact
 do
+	string=$(ipython $Delete "$Contact")
+	Contacts_List+=("$string")		
+done < "$user_data"
+
+Main_menu=("Contacts" "Chat")
+#This is the main menu for the user
+while [[ "$Quit" == "False" ]];
+do
+	select option in "${Main_menu[@]}";
+	do
+		#In this section we are able to add new contacts etc.
+		Con=("Add Contact" "Delete Contact" "Mail Contact")
+		if [[ "$option" == "Contacts" ]];
+		then 
+			select internal in "${Con[@]}";
+			do
+				if [[ "$internal" == "Add Contact" ]];
+				then 
+					#User inputs the information
+					read -p "Name: " name
+					read -p "Address: " address
+					Proposed_Contact="$name#$address"
+					
+					duplicate="no"
+					#Checking if the contact is already contained in the file
+					while read -r Contact
+					do
+						if [[ "$Contact" == "$Proposed_Contact" ]];
+						then
+							duplicate="yes"
+						fi 
+					done < "$user_data"
+					
+					#Raise issue if contact is there 
+					if [[ "$duplicate" == "yes" ]];
+					then
+						echo "This contact is already in your contact list!"
+						break
+					else 
+						#Write new contact to file
+						echo "$Proposed_Contact" > $user_data 
+					fi
+					continue
+				#The removal of a contact 
+				elif [[ "$internal" == "Delete Contact" ]];
+				then 
+					#User Selects the contact which has been previously loaded
+					select name in "${Contacts_List[@]}";
+					do
+						Proposed_Removal="$name"
+						
+						#Iterate through the list until contact appears 
+						for i in "${Contacts_List[@]}";
+						do
+							if [[ "$Proposed_Removal" == "$i" ]];
+							then 
+								continue 
+							else 
+								#Create an updated list
+								Contacts_List_Update+=("$i")
+							fi
+						done
+					done
+				fi
+			done
+			
+		fi 
+		#if [[ "$option" == "Chat" ]];
+		#then
+		#	.... #Need to still implement this section 
+		#fi
+	done
 	
 done 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
