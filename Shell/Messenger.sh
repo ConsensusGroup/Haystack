@@ -33,7 +33,7 @@ then
 	do 
 		if [[ "$choice" == "No" ]];
 		then
-			echo "Abording the installation..."
+			echo "Aborting the installation..."
 			break 
 		else
 			#installs Java 8
