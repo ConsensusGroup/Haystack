@@ -3,6 +3,7 @@ from iota.crypto.addresses import AddressGenerator
 from iota.adapter.wrappers import RoutingWrapper
 from iota import *
 import sys
+import multiprocessing
 import random
 
 def Sender_Module(Seed_key, receive, message, server):
@@ -49,25 +50,16 @@ def Receiver_Module(Seed_key, Server):
 	balances = mess.get('balance')
 	bundle = mess.get('bundles')
 	Address = mess.get('addresses')
-
-	message_rec=""
+	
 	for i in bundle:
 		message_rec = i.get_messages(errors='drop')
+		message=str(message_rec)
 
-	message=str(message_rec)
-
-	#Not a big fan of this implementation but this will have to do for now 
-	#This cleans the string of the receiving side. 
-	clean = message.lstrip("[u'") 
-	splitting = str(clean).split("#'#'v'#Message: ")
-	splitting_Address = str(clean).split(" #'#'v'#Address: ")
-	splitting_Message = splitting[1].split(" #'#'v'#Address: ")
-	Address = splitting_Message[0]
-	Message = splitting_Address[1].rstrip('"]')
-	print(Address)
+		#This cleans the string of the receiving side. 
+		Message = message.lstrip("[u'").rstrip(" ']")
 	print(Message)
-
-def Public_Addresses(Public_Seed, server):
+		
+def Public_Addresses(Public_Seed, server, SaveToDirectory):
 	api_rec = Iota(RoutingWrapper(server).add_route('attachToTangle', 'http://localhost:14265'), seed = Public_Seed)
 
 	#We pull the assigned address history of the account (using the seed)
@@ -78,12 +70,32 @@ def Public_Addresses(Public_Seed, server):
 	for i in Addresses_In_Ledger:
 		Public_Addresses = str(i.get_messages()).strip("[u'").strip("']")
 		Addresses.append(Public_Addresses)
-	print(Addresses)
+	file = open(str(SaveToDirectory+"/Current_Public_Address_Pool.txt"),"w")
+	Unique_Addresses = []
+	for i in Addresses:
+		if i not in Unique_Addresses:
+			Unique_Addresses.append(i)
+	for i in Unique_Addresses:
+		file.write(str(i))
+		file.write(str("\n"))
+	file.close()
+
+def Random_Bounce(Public_Addresses):
+	file = open(Public_Addresses,"r")
+	Addresses = []
+	for i in file:
+		Addresses.append(i)
+	
+	#Generate a random number from the range 0 to length of number of addresses in the public address pool
+	choice = random.randrange(0,len(Addresses),1)
+	
+	Clean = Addresses[1].split("\n")
+	print(Clean[choice])
 	
 	
-	
-############## This processes the incoming shell commands and routes them to the correct functions###################
-	
+########################################################################################
+################ Routing of functions from a shell script ##############################
+########################################################################################
 Module = str(sys.argv[1])
 	
 if Module == "Sender_Module":
@@ -111,11 +123,17 @@ if Module == "Receiver_Module":
 if Module == "Public_Addresses":
 	Seed_Key = str(sys.argv[2])
 	Server = str(sys.argv[3])
-	Addresses = Public_Addresses(Seed_Key,Server)
+	SaveToDirectory = str(sys.argv[4])
+	Addresses = Public_Addresses(Seed_Key,Server,SaveToDirectory)
 
+if Module == "Random_Bounce":
+	Public_Addresses = str(sys.argv[2])
+	Address = Random_Bounce(Public_Addresses)
 
-
-
-
+######## Need to find a proper implementation of this still
+if Module == "Node_Finder":
+	Random_Test_Seed = str(sys.argv[2])
+	Server = str(sys.argv[3])
+	Address = Address_Generator(Random_Test_Seed, Server)
 
 
