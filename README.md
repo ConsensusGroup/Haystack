@@ -62,8 +62,64 @@ git remote add origin git@gitlab.com:woywoy123/Consensus.git
 git push -u origin --all
 git push -u origin --tags
 
+##### How to use the functions in the shell script #######
+Initialization_Module.sh
+-Software_install
+    1. Directory where to save the Node contents
+    2. Directory where to save the IOTA api or python library
+    3. Root Directory i.e. Consensus
+    
+-Java_install
+    1. Current working directory 
 
+-Software_install
+    1. Root Directory i.e. Consensus
+    2. Directory where to save the Node contents
+    3. Directory where to save the IOTA api or python library
+    
+Communication_Module.sh
+-Node_Run
+    No input args
 
+-Address_Generator
+    1. Directory of "Communication.py"
+    2. Seed
+    3. Light node server
+
+-Send_Module_Function
+    1. Directory of "Communication.py"
+    2. Receiver 
+    3. Seed
+    4. String (message)
+    5. Light node server
+    
+-Receiver_Module_Function
+    1. Directory of "Communication.py"
+    2. Seed
+    3. Light node server
+    
+-Seed_Module_Generator 
+    No input args
+    
+-Seed_Address
+    1. Directory of file to find
+    2. Name of file 
+    3. the purpose of the file (i.e. Seed or Address)
+    
+-Public_Addresses
+    1. Seed
+    2. Light node server
+    3. Directory of "Communication.py"
+    4. Destination directory of where to save the text file
+    
+-Bounce
+    1. Directory of "Communication.py"
+    2. UserData folder directory
+    3. Light node server
+    4. Public Seed 
+
+-Full_Node
+    No input args
 
 
 
