@@ -7,12 +7,22 @@
 	
 Server_List=("http://eugene.iota.community:14265" "http://eugene.iotasupport.com:14999" "http://eugeneoldisoft.iotasupport.com:14265" "http://node01.iotatoken.nl:14265" "http://node02.iotatoken.nl:14265" "http://node03.iotatoken.nl:15265" "http://node04.iotatoken.nl:14265" "http://node05.iotatoken.nl:16265" "http://node06.iotatoken.nl:14265" "http://node.deviceproof.org:14265" "http://mainnet.necropaz.com:14500" "http://5.9.149.169:14265" "http://wallets.iotamexico.com:80" "http://5.9.137.199:14265" "http://5.9.118.112:14265" "http://88.198.230.98:14265" "http://176.9.3.149:14265" "https://n1.iota.nu:443" "http://node.lukaseder.de:14265" "https://node.tangle.works:443" "https://iota.thathost.net:443" "http://node.hans0r.de:14265" "http://cryptoiota.win:14265")
 
+########################################################################################
+#################### Things to still do for the functions ##############################
+########################################################################################
+#-Need to add an encryption method for the messages presumably we use IOTA api 
+#-A timeout function for the different servers to find the fastest one available to user
+#-Add the dynamic ledger solution (we migrate away from the static one)
+#-Need to find a full node script which finds neighbours (see https://github.com/deltaskelta/iota-iri)
+#-Imoprove the bouncing function (add full anon (goes through all addresses) or partial anon)
 
 
-
+########################################################################################
+############################### Start of all functions #################################
+########################################################################################
 
 #This function will run the Node 
-function Node_run() {
+function Node_Run() {
 	iri=$1
 	Method=$2
 	if [[ "$Method" == "Run" ]];
@@ -121,15 +131,92 @@ function Random_Bounce() {
 	echo "$Random_Address_From_Public_Ledger"
 }
 
+#This bounce method is a primitive solution we still need to add some other stuff to this. 
+function Bounce() {
 	
+	#Input variables 
+	Communication_Py=$1
+	UserData=$2
+	Server=$3
+	Public_Seed=$4
 	
+	#User Data being called see the folder "UserData"
+	Private_Seed="$UserData/Seed.txt"
+	Address_Pool="$UserData/Current_Public_Address_Pool.txt"
 	
+	#Read the private seed for detecting messages
+	while read line 
+	do 
+		Private_Seed=$line
+	done < "$Private_Seed"
 	
+	run="true"
+	while [ "$run" == "true" ];
+	do
+		#Retrieve current messages in for the private seed
+		Message=$(Receiver_Module_Function $Communication_Py $Private_Seed $Server)
+		echo "$Message"	
+		
+		#If there is no message i.e. empty string then just skip the bounce
+		if [[ "$Message" == "" ]];
+		then 
+			continue
+			
+		#otherwise bounce a message 
+		else
+			#We now find the current pool of addresses from the public ledger
+			Addresses=$(Public_Addresses $Public_Seed $Server $Communication_Py $UserData)
+
+			#This now choses a random address from the public pool (Or we can include all)
+			Address=$(Random_Bounce $Communication_Py $Address_Pool)
+		
+			#Just for demonstration we want to bounce the message now 
+			Sending=$(Send_Module_Function $Communication_Py $Address $Private_Seed $Message $Server)
 	
+			#Here we need to include a decryption method for the messages (Needs to be still implemented)
+			#Decrypted_Message=....
+		fi
+	done 
+}
+
+#This needs to be properly checked and tested therefore not quite final. 
+function Full_Node(){
 	
+	#First we need to install docker this worked on my machine 16.04 LTS UBUNTU
+	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+	sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+	sudo apt-get update
+	apt-cache policy docker-ce
+	sudo apt-get install -y docker-ce
 	
-	
-	
-	
-	
-	
+	#This part now runs the full node script (This was taken from the reddit page: https://www.reddit.com/r/Iota/comments/7pwfpp/launch_a_full_iota_node_with_one_command/)
+	# change to the home directory
+	cd ~
+
+	# download the current tangle database
+	wget http://db.iota.partners/IOTA.partners-mainnetdb.tar.gz
+
+	# make a data directory for the database and unpack it
+	mkdir -p iri/mainnetdb
+	tar -xvf IOTA.partners-mainnetdb.tar.gz -C iri/mainnetdb
+
+	# run IRI with the data mounted into it
+	docker run -d \
+ 	   --net host \
+ 	   -p 14265:14265 \
+ 	   --name iri \
+ 	   -v $(pwd)/iri/mainnetdb:/iri/mainnetdb \
+  	  iotaledger/iri
+
+	# run nelson to manage neighbors
+	docker run -d \
+	   --net host \
+	   -p 18600:18600 \
+ 	   --name nelson \
+ 	   romansemko/nelson.cli \
+ 	   -r localhost \
+ 	   -i 14265 \
+ 	   -u 14777 \
+	   -t 15777 \
+ 	   --neighbors "mainnet.deviota.com/16600 mainnet2.deviota.com/16600 mainnet3.deviota.com/16600 iotairi.tt-tec.net/16600"
+}
