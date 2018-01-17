@@ -44,4 +44,3 @@ Public_Addresses=$(Public_Addresses $Public_Seed $Server $Communication_Py $User
 #Killing the app
 #PID=$(Node_run "$iri" "PID")
 #kill $PID
-
