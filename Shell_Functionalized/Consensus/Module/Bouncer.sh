@@ -18,36 +18,7 @@ source "$Communication_Module"
 
 Private_Seed="$UserData/Seed.txt"
 
-#Read the private seed for detecting messages
-while read line 
-do 
-	Private_Seed=$line
-done < "$Private_Seed"
+Node_Run $iri "Run" > /dev/null 2>&1
 
-Address_Pool="$UserData/Current_Public_Address_Pool.txt"
-
-
-
-run="true"
-Message="PC"
-while [ "$run" == "true" ];
-do
-	Message="PC$Message"
-	
-	#We now find the current pool of addresses from the public ledger
-	Addresses=$(Public_Addresses $Public_Seed $Server $Communication_Py $UserData)
-
-	#This now choses a random address from the public pool
-	Address=$(Random_Bounce $Communication_Py $Address_Pool)
-	
-	#Just for demonstration we want to bounce the message now 
-	Sending=$(Send_Module_Function $Communication_Py $Address $Private_Seed $Message $Server)
-	
-	#Here we need to include a decryption method for the messages (Needs to be still implemented)
-	#Decrypted_Message=....
-	
-	#Retrieve current messages in for the private seed
-	Message=$(Receiver_Module_Function $Communication_Py $Private_Seed $Server)
-	echo "$Message"
-	
-done 
+Message_Being_Bounced=$(Bounce $Communication_Py $UserData $Server $Public_Seed)
+echo "$Message_Being_Bounced"
