@@ -10,15 +10,24 @@ UserData="$current_dir/UserData"
 Communication_Module="$Module/Communication_Module.sh"
 Communication_Py="$Module/Communication.py"
 iri="$current_dir/Node/iri-1.4.0.jar"
-Server="http://node.hans0r.de:14265"
+Server="http://cryptoiota.win:14265"
 Public_Seed="RVGII9JLGCAVSJSJIFMOFKXQYVHRTKRDIEVOHDBGSS9WUV9B9ELTRJ9TFDPVSREDRBMZTQQSVJVGRQRTB" 
 
 #Source the shell script with all the functions 
 source "$Communication_Module"
 
 Private_Seed="$UserData/Seed.txt"
+Current_Public_Address_Pool="$UserData/Current_Public_Address_Pool.txt"
 
-Node_Run $iri "Run" > /dev/null 2>&1
+#Node_Run $iri "Run" > /dev/null 2>&1
 
-Message_Being_Bounced=$(Bounce $Communication_Py $UserData $Server $Public_Seed)
-echo "$Message_Being_Bounced"
+#while [[ "" == "" ]];
+#do
+#	Message_Being_Bounced=$(Bounce $Communication_Py $UserData $Server $Public_Seed)
+#	echo "$Message_Being_Bounced"
+#done
+
+
+Seed=$(Dynamic_Ledger $Communication_Py $Public_Seed "2" $UserData $Server)
+echo "$Seed"
+
