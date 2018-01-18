@@ -40,6 +40,48 @@ function Node_Run() {
 	fi
 }
 
+#This needs to be properly checked and tested therefore not quite final. 
+function Full_Node(){
+	
+	#First we need to install docker this worked on my machine 16.04 LTS UBUNTU
+	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+	sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+	sudo apt-get update
+	apt-cache policy docker-ce
+	sudo apt-get install -y docker-ce
+	
+	#This part now runs the full node script (This was taken from the reddit page: https://www.reddit.com/r/Iota/comments/7pwfpp/launch_a_full_iota_node_with_one_command/)
+	# change to the home directory
+	cd ~
+
+	# download the current tangle database
+	wget http://db.iota.partners/IOTA.partners-mainnetdb.tar.gz
+
+	# make a data directory for the database and unpack it
+	mkdir -p iri/mainnetdb
+	tar -xvf IOTA.partners-mainnetdb.tar.gz -C iri/mainnetdb
+
+	# run IRI with the data mounted into it
+	docker run -d \
+ 	   --net host \
+ 	   -p 14265:14265 \
+ 	   --name iri \
+ 	   -v $(pwd)/iri/mainnetdb:/iri/mainnetdb \
+  	  iotaledger/iri
+
+	# run nelson to manage neighbors
+	docker run -d \
+	   --net host \
+	   -p 18600:18600 \
+ 	   --name nelson \
+ 	   romansemko/nelson.cli \
+ 	   -r localhost \
+ 	   -i 14265 \
+ 	   -u 14777 \
+	   -t 15777 \
+ 	   --neighbors "mainnet.deviota.com/16600 mainnet2.deviota.com/16600 mainnet3.deviota.com/16600 iotairi.tt-tec.net/16600"
+}
+
 #This function generates a random address when called
 function Address_Generator() {
 	Communication=$1
@@ -175,48 +217,58 @@ function Bounce() {
 	
 			#Here we need to include a decryption method for the messages (Needs to be still implemented)
 			#Decrypted_Message=....
+			run="false"
 		fi
 	done 
 }
-
-#This needs to be properly checked and tested therefore not quite final. 
-function Full_Node(){
 	
-	#First we need to install docker this worked on my machine 16.04 LTS UBUNTU
-	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-	sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-	sudo apt-get update
-	apt-cache policy docker-ce
-	sudo apt-get install -y docker-ce
+function Dynamic_Ledger() {
+	Communication_Py=$1
+	Public_Seed=$2
+	Max_Address_Pool=$3
+	UserData=$4
+	Server=$5
 	
-	#This part now runs the full node script (This was taken from the reddit page: https://www.reddit.com/r/Iota/comments/7pwfpp/launch_a_full_iota_node_with_one_command/)
-	# change to the home directory
-	cd ~
+	#Some hardcoded stuff like the txt file 
+	Current_Public_Address_Pool="$UserData/Current_Public_Address_Pool.txt"
+	Module="Dynamic_Ledger"
+	
+	#Counts number of addresses
+	Dynamic=$(python $Communication_Py $Module $Public_Seed $Max_Address_Pool $Current_Public_Address_Pool)
+	
+	#This decides if there will be a new seed generated
+	if [[ "$Dynamic" == "True" ]];
+	then
+		#Generate a new address using the PUBLIC SEED!
+		Send_To_Public_Ledger=$(Seed_Address $UserData "TempAddress.txt" "Address" $Communication_Py $Public_Seed $Server)
+		
+		#Remove the temp text file
+		rm "$UserData/TempAddress.txt"
 
-	# download the current tangle database
-	wget http://db.iota.partners/IOTA.partners-mainnetdb.tar.gz
+		#Generate a new Public Seed
+		New_Seed=$(Seed_Module_Generator)
+		Instruction="#New_Seed#$New_Seed"
+		
+		#Send the new Public Seed to the current Public Seed 
+		Broadcast_New_Seed=$(Send_Module_Function $Communication_Py $Send_To_Public_Ledger $Public_Seed $Instruction $Server) 
+	fi
+}
 
-	# make a data directory for the database and unpack it
-	mkdir -p iri/mainnetdb
-	tar -xvf IOTA.partners-mainnetdb.tar.gz -C iri/mainnetdb
-
-	# run IRI with the data mounted into it
-	docker run -d \
- 	   --net host \
- 	   -p 14265:14265 \
- 	   --name iri \
- 	   -v $(pwd)/iri/mainnetdb:/iri/mainnetdb \
-  	  iotaledger/iri
-
-	# run nelson to manage neighbors
-	docker run -d \
-	   --net host \
-	   -p 18600:18600 \
- 	   --name nelson \
- 	   romansemko/nelson.cli \
- 	   -r localhost \
- 	   -i 14265 \
- 	   -u 14777 \
-	   -t 15777 \
- 	   --neighbors "mainnet.deviota.com/16600 mainnet2.deviota.com/16600 mainnet3.deviota.com/16600 iotairi.tt-tec.net/16600"
+function Ledger_Migration() {
+	
+	#Scan current Public Seed for the LATEST seed in the pool and save to a file.
+	...
+	
+	#Generate a new public address
+	...
+	
+	#Generate a new public ledger address 
+	...
+	
+	#Send new public address to new Public Seed
+	...
+	
+	#Save new Current_Public_Address_Pool.txt and replace the previous one
+	...
+	
 }
