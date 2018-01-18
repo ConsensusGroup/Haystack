@@ -84,15 +84,36 @@ def Random_Bounce(Public_Addresses):
 	file = open(Public_Addresses,"r")
 	Addresses = []
 	for i in file:
-		Addresses.append(i)
+		if "#New_Seed#" in i:
+			continue
+		else:
+			Addresses.append(i)
 	
 	#Generate a random number from the range 0 to length of number of addresses in the public address pool
 	choice = random.randrange(0,len(Addresses),1)
 	
 	Clean = Addresses[1].split("\n")
-	print(Clean[0])
+	print(Clean[choice])
+
+def Dynamic_Ledger(Public_Seed, Max_Address_Pool, Current_Public_Address_Pool):
+
+	#Here we open the Current_Public_Address_Pool.txt file and count the number of addresses
+	file = open(Current_Public_Address_Pool,"r")
+	Addresses = []
+	for i in file:
+		if "#New_Seed#" in i:
+			There_Is_a_Seed_In_Pool_Already = "yes"
+		else:
+			Addresses.append(i)
 	
+	#Count the number of addresses within the Public Seed
+	Number_Of_Current_Addresses = len(Addresses)
 	
+	#If the number of addresses is equal to 
+	if Max_Address_Pool <= Number_Of_Current_Addresses and There_Is_a_Seed_In_Pool_Already == "no":
+		print("True")
+	else:
+		print("False")
 ########################################################################################
 ################ Routing of functions from a shell script ##############################
 ########################################################################################
@@ -130,11 +151,25 @@ if Module == "Random_Bounce":
 	Public_Addresses = str(sys.argv[2])
 	Address = Random_Bounce(Public_Addresses)
 
+if Module == "Dynamic_Ledger":
+	Public_Seed = str(sys.argv[2])
+	Max_Address_Pool = int(sys.argv[3])
+	Current_Public_Address_Pool = str(sys.argv[4])
+	Dynamic_Ledger(Public_Seed, Max_Address_Pool, Current_Public_Address_Pool)
+
+
+
+
+
+
+
+
+
+
 ######## Need to find a proper implementation of this still
 if Module == "Node_Finder":
 	Random_Test_Seed = str(sys.argv[2])
 	Server = str(sys.argv[3])
 	Address = Address_Generator(Random_Test_Seed, Server)
-
 
 
