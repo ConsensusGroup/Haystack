@@ -132,7 +132,7 @@ def Scan_Entries(Directory_Of_File, Purpose):
 				Seeds_Found.append(Seed)
 		length = len(Seeds_Found)
 		if length > 0:
-			print(Seeds_Found[length])
+			print(Seeds_Found[int(length)-1])
 	#This might need to be improved to ensure that the seed is actually working properly. 
 		
 		#Here we might implement some testing mechanism to validate the seed. 
