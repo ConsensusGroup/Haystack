@@ -34,9 +34,9 @@ def Sender_Module(Seed_key, receive, message, server):
 	print(send)
 	
 def Address_Generator(Seed_key, Server):
-	api = Iota(RoutingWrapper(Server).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed_key)
+	api = Iota(RoutingWrapper(str(Server)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed_key)
 	
-	Generate = api.get_new_addresses(security_level=1) #This command throws an error when I add start=..
+	Generate = api.get_new_addresses()
 	Address = str(Generate.get('addresses')).strip("[Address(").strip(")]").strip("'")
 	print(Address)
 	
