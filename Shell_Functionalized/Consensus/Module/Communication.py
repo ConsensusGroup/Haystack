@@ -105,6 +105,7 @@ def Dynamic_Ledger(Public_Seed, Max_Address_Pool, Current_Public_Address_Pool):
 			There_Is_a_Seed_In_Pool_Already = "yes"
 		else:
 			Addresses.append(i)
+			There_Is_a_Seed_In_Pool_Already = "no"
 	
 	#Count the number of addresses within the Public Seed
 	Number_Of_Current_Addresses = len(Addresses)
