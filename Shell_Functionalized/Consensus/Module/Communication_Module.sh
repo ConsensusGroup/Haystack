@@ -245,6 +245,7 @@ function Dynamic_Ledger() {
 	
 	#Counts number of addresses
 	Dynamic=$(python $Communication_Py $Module $Public_Seed $Max_Address_Pool $Current_Public_Address_Pool)
+	echo "$Dynamic"
 	
 	#This decides if there will be a new seed generated
 	if [[ "$Dynamic" == "True" ]];
@@ -285,29 +286,28 @@ function Ledger_Migration() {
 	
 	#Generate an address from the private seed
 	Address=$(Address_Generator $Communication_Py $Private_Seed $Server)
-	echo "$Address"
 	
 	#Read the seed from the saved file "Current_Public_Address_Pool.txt" 
 	New_Public_Seed=$(Scan_Entries $Communication_Py $SaveToDirectory "Seed")
-	echo "$New_Public_Seed"
+	
 	
 	if [[ "$New_Public_Seed" != "" ]];
 	then 
 	
 		#Generate a new public ledger address 
 		Receive=$(Address_Generator $Communication_Py $New_Public_Seed $Server)
-		echo "$Receive"
-	
+		
 		#Send new public address to new Public Seed
 		send=$(Send_Module_Function $Communication_Py $Receive $Private_Seed $Address $Server)
 
 		#Save new Current_Public_Address_Pool.txt and replace the previous one
 		mv $SaveToDirectory $Old_List
 		New_List=$(Public_Addresses $New_Public_Seed $Server $Communication_Py $UserData)
+		
+		echo "$New_Public_Seed"
 	fi
 }
-	
-	
+
 	
 	
 	
