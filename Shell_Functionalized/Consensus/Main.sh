@@ -12,7 +12,7 @@ Communication_Module="$Module/Communication_Module.sh"
 Communication_Py="$Module/Communication.py"
 iri="$current_dir/Node/iri-1.4.0.jar"
 Server="http://node.hans0r.de:14265"
-Public_Seed="XXNCOIHEUTNGZPMQOOLUNHJFXVC9KI9LLYPVSDTQWAIQAGJGVRESTWJHKWMOYNWXNTAGVWSROWZIYLFBI"
+Public_Seed="WNP9GHNTNJGMEFZHTYTEEILEDHNZFSNJGVVSDDLAVXVHRQDLSKKPRTNEZVFFXQCVKFCFHKYTXZTXVRLNF"
 
 #Source the shell script with all the functions 
 source "$Communication_Module"
@@ -36,24 +36,34 @@ for ((x=1; x<=20; x++));
 do
 	#Some public address from the public seed so that client can send current address to public ledger.
 	Address_Of_Public_Seed=$(Address_Generator $Communication_Py $Public_Seed $Server)
-	echo "Here 2 $Address_Of_Public_Seed"
+	echo "Here 2"
 
 	#We now broadcast it to the public ledger 
 	Send=$(Send_Module_Function $Communication_Py $Address_Of_Public_Seed $Private_Seed $Client_Address $Server)
-	echo "Here 3: $Communication_Py $Address_Of_Public_Seed $Private_Seed $Client_Address $Server"
+	echo "Here 3"
 	
 	#We now want to save all the public addresses on the ledger to a local file
 	Public_Addresses=$(Public_Addresses $Public_Seed $Server $Communication_Py $UserData)
-	echo "Here 4"
+	echo "Here 4 $Public_Addresses"
 
 	#Now we want to determine if we need to perform a ledger migration.
-	Dynamic_Ledger $Communication_Py $Public_Seed "2" $UserData $Server
-	echo "Here 5"
-
+	Gen=$(Dynamic_Ledger $Communication_Py $Public_Seed "2" $UserData $Server)
+	echo "Here 5 $Gen"
+	
+	#Temporarily save the previous seed
+	Previous=$Public_Seed
+	
 	#Perform the migration.
+	echo "$Communication_Py $UserData $Server $Public_Seed"
 	Public_Seed=$(Ledger_Migration $Communication_Py $UserData $Server $Public_Seed)
-	echo "$Public_Seed"
-	echo "Here 6"
+	echo "Future Seed: $Public_Seed"
+	
+	if [[ "$Public_Seed" == "" ]];
+	then
+		Public_Seed=$Previous
+	fi
+	
+	echo "Current Seed: $Public_Seed"
 done 
 
 #Killing the app
