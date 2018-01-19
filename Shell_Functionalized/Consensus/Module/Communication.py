@@ -128,16 +128,13 @@ def Scan_Entries(Directory_Of_File, Purpose):
 		Seeds_Found = []
 		for i in Entries:
 			if "#New_Seed#" in i:
-				Seed = i.strip("#New_Seed#").strip("\n")
+				Seed = i.strip("#New_Seed#")#.strip("\n")
 				Seeds_Found.append(Seed)
-				
+				print(Seed)
 		#This might need to be improved to ensure that the seed is actually working properly. 
-		Target_Seed = Seeds_Found[0]
 		
 		#Here we might implement some testing mechanism to validate the seed. 
 		#....
-		
-		print(Target_Seed)
 	
 	if Purpose == "Address":
 		index = len(Entries)
