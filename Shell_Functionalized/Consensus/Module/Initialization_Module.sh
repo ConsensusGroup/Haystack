@@ -22,7 +22,15 @@ function Software_install() {
 	
 	#Download the iri package for the node and pyOTA
 	cd $IOTA_Node
-	wget https://github.com/iotaledger/iri/releases/download/v1.4.0/iri-1.4.0.jar 
+	iri=($(find $IOTA_Node -name *".jar")) > /dev/null 2>&1
+	if [[ "$iri" == "" ]];
+	then 
+		cd $IOTA_Node
+		wget https://github.com/iotaledger/iri/releases/download/v1.4.0/iri-1.4.0.jar 
+		cd $Consensus_dir
+	else
+		rm $iri
+	fi
 	cd $Consensus_dir
 	cd $IOTA
 	git clone https://github.com/iotaledger/iota.lib.py.git 
@@ -73,29 +81,6 @@ function Installation_Check() {
 	pyOTA=$3
 	cd $Consensus_dir
 	
-	#Make sure iri is there to run the node 
-	iri=($(find $IOTA_Node -name *".jar")) > /dev/null 2>&1
-	if [[ "$iri" == "" ]];
-	then 
-		cd $IOTA_Node
-		#retry the download
-		echo "Retrying the download of iri"
-		wget https://github.com/iotaledger/iri/releases/download/v1.4.0/iri-1.4.0.jar 
-		cd $Consensus_dir
-	else
-		echo "iri: ...Ok"
-	fi
-	
-	#Make sure the pyOTA lib is there. Then execute the setup.py script
-	cd $pyOTA
-	py=($(find $pyOTA -name *"setup.py")) > /dev/null 2>&1
-	if [[ "$py" == "" ]];
-	then 
-		echo "Retrying the download of pyOTA"
-		git clone https://github.com/iotaledger/iota.lib.py.git
-	else 
-		echo "pyOTA: ...Ok"
-	fi
 	cd iota.lib.py
 	python setup.py test
 }
