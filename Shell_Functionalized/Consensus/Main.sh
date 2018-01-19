@@ -26,7 +26,7 @@ then
 fi
 
 #New User Enters the network. We need to create a folder for his data. 
-mkdir $UserData
+#mkdir $UserData
 
 #Now the user generates his Public address from his private seed.
 #Client private seed which gets saved under UserData/Seed.txt
@@ -36,15 +36,20 @@ Private_Seed=$(Seed_Address $UserData "Seed.txt" "Seed")
 Client_Address=$(Seed_Address $UserData "Address.txt" "Address" $Communication_Py $Private_Seed $Server)
 
 #Some public address from the public seed so that client can send current address to public ledger.
-Address_Of_Public_Seed=$(Address_Generator $Communication_Py $Public_Seed $Server)
+#Address_Of_Public_Seed=$(Address_Generator $Communication_Py $Public_Seed $Server)
 
 #We now broadcast it to the public ledger 
-Send=$(Send_Module_Function $Communication_Py $Address_Of_Public_Seed $Private_Seed $Client_Address $Server)
+#Send=$(Send_Module_Function $Communication_Py $Address_Of_Public_Seed $Private_Seed $Client_Address $Server)
 
 #We now want to save all the public addresses on the ledger to a local file
 Public_Addresses=$(Public_Addresses $Public_Seed $Server $Communication_Py $UserData)
 
+#Now we want to determine if we need to perform a ledger migration.
+Dynamic_Ledger $Communication_Py $Public_Seed "2" $UserData $Server
 
+#Perform the migration.
+Data=$(Ledger_Migration $Communication_Py $UserData $Server $Public_Seed)
+echo "$Data"
 
 
 #Killing the app
