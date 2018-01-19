@@ -146,6 +146,7 @@ function Seed_Address() {
 			Seed=$5
 			Server=$6
 			Address=$(Address_Generator $Communication $Seed $Server)
+			rm $User
 			echo "$Address" > $User
 		fi
 	fi
