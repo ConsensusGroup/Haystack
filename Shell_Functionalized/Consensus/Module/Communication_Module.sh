@@ -5,7 +5,7 @@
 ############################### Constants of the Protocol ##############################
 ########################################################################################
 	
-Server_List=("http://eugene.iota.community:14265" "http://eugene.iotasupport.com:14999" "http://eugeneoldisoft.iotasupport.com:14265" "http://node01.iotatoken.nl:14265" "http://node02.iotatoken.nl:14265" "http://node03.iotatoken.nl:15265" "http://node04.iotatoken.nl:14265" "http://node05.iotatoken.nl:16265" "http://node06.iotatoken.nl:14265" "http://node.deviceproof.org:14265" "http://mainnet.necropaz.com:14500" "http://5.9.149.169:14265" "http://wallets.iotamexico.com:80" "http://5.9.137.199:14265" "http://5.9.118.112:14265" "http://88.198.230.98:14265" "http://176.9.3.149:14265" "https://n1.iota.nu:443" "http://node.lukaseder.de:14265" "https://node.tangle.works:443" "https://iota.thathost.net:443" "http://node.hans0r.de:14265" "http://cryptoiota.win:14265")
+#Server_List=("http://eugene.iota.community:14265" "http://eugene.iotasupport.com:14999" "http://eugeneoldisoft.iotasupport.com:14265" "http://node01.iotatoken.nl:14265" "http://node02.iotatoken.nl:14265" "http://node03.iotatoken.nl:15265" "http://node04.iotatoken.nl:14265" "http://node05.iotatoken.nl:16265" "http://node06.iotatoken.nl:14265" "http://node.deviceproof.org:14265" "http://mainnet.necropaz.com:14500" "http://5.9.149.169:14265" "http://wallets.iotamexico.com:80" "http://5.9.137.199:14265" "http://5.9.118.112:14265" "http://88.198.230.98:14265" "http://176.9.3.149:14265" "https://n1.iota.nu:443" "http://node.lukaseder.de:14265" "https://node.tangle.works:443" "https://iota.thathost.net:443" "http://node.hans0r.de:14265" "http://cryptoiota.win:14265")
 
 ########################################################################################
 #################### Things to still do for the functions ##############################
@@ -82,7 +82,7 @@ function Full_Node(){
  	   --neighbors "mainnet.deviota.com/16600 mainnet2.deviota.com/16600 mainnet3.deviota.com/16600 iotairi.tt-tec.net/16600"
 }
 
-#This function generates a random address when called
+#This function generates an address when called
 function Address_Generator() {
 	Communication=$1
 	Seed=$2
@@ -177,7 +177,6 @@ function Scan_Entries() {
 	Communication_Py=$1
 	Directory_Of_File=$2
 	Purpose=$3
-	
 	Module="Scan_Entries"
 	Entry=$(python $Communication_Py $Module $Directory_Of_File $Purpose)
 	echo "$Entry"
@@ -302,3 +301,37 @@ function Ledger_Migration() {
 	mv $SaveToDirectory $Old_List
 	New_List=$(Public_Addresses $New_Public_Seed $Server $Communication_Py $UserData)
 }
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
