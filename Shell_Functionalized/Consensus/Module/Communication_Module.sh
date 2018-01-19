@@ -88,7 +88,7 @@ function Address_Generator() {
 	Seed=$2
 	Server=$3
 	Module="Address_Generator"
-	output=$(python $Communication $Module "$Seed" "$Server")
+	output=$(python $Communication $Module $Seed $Server)
 	echo "$output"
 }
 
@@ -173,6 +173,16 @@ function Random_Bounce() {
 	echo "$Random_Address_From_Public_Ledger"
 }
 
+function Scan_Entries() {
+	Communication_Py=$1
+	Directory_Of_File=$2
+	Purpose=$3
+	
+	Module="Scan_Entries"
+	Entry=$(python $Communication_Py $Module $Directory_Of_File $Purpose)
+	echo "$Entry"
+}
+
 #This bounce method is a primitive solution we still need to add some other stuff to this. 
 function Bounce() {
 	
@@ -212,7 +222,7 @@ function Bounce() {
 			#This now choses a random address from the public pool (Or we can include all)
 			Address=$(Random_Bounce $Communication_Py $Address_Pool)
 		
-			#Just for demonstration we want to bounce the message now 
+			#Bounce the message now 
 			Sending=$(Send_Module_Function $Communication_Py $Address $Private_Seed $Message $Server)
 	
 			#Here we need to include a decryption method for the messages (Needs to be still implemented)
@@ -256,19 +266,39 @@ function Dynamic_Ledger() {
 
 function Ledger_Migration() {
 	
-	#Scan current Public Seed for the LATEST seed in the pool and save to a file.
-	...
+	#Input variables 
+	Communication_Py=$1
+	UserData=$2
+	Server=$3
+	Public_Seed=$4
 	
-	#Generate a new public address
-	...
+	SaveToDirectory="$UserData/Current_Public_Address_Pool.txt"
+	Old_List="$UserData/Current_Public_Address_Pool_Old.txt"
+	User="$UserData/Address.txt"
+	Private_Seed="$UserData/Seed.txt"
+	
+	#Reading the private seed from the text file
+	while read line 
+	do 
+		Private_Seed=$line
+	done < "$Private_Seed"
+	
+	#Generate an address from the private seed
+	Address=$(Address_Generator $Communication_Py $Private_Seed $Server)
+	echo "$Address" >> $User
+	
+	#Read the seed from the saved file "Current_Public_Address_Pool.txt" 
+	New_Public_Seed=$(Scan_Entries $Communication_Py $SaveToDirectory "Seed")
+	echo "$New_Public_Seed"
 	
 	#Generate a new public ledger address 
-	...
+	Receive=$(Address_Generator $Communication_Py $New_Public_Seed $Server)
+	echo "$Receive"
 	
 	#Send new public address to new Public Seed
-	...
-	
+	send=$(Send_Module_Function $Communication_Py $Receive $Private_Seed $Address $Server)
+
 	#Save new Current_Public_Address_Pool.txt and replace the previous one
-	...
-	
+	mv $SaveToDirectory $Old_List
+	New_List=$(Public_Addresses $New_Public_Seed $Server $Communication_Py $UserData)
 }
