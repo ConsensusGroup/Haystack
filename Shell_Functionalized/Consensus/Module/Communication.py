@@ -36,7 +36,7 @@ def Sender_Module(Seed_key, receive, message, server):
 def Address_Generator(Seed_key, Server):
 	api = Iota(RoutingWrapper(Server).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed_key)
 	
-	Generate = api.get_new_addresses()
+	Generate = api.get_new_addresses(security_level=1) #This command throws an error when I add start=..
 	Address = str(Generate.get('addresses')).strip("[Address(").strip(")]").strip("'")
 	print(Address)
 	
@@ -114,6 +114,36 @@ def Dynamic_Ledger(Public_Seed, Max_Address_Pool, Current_Public_Address_Pool):
 		print("True")
 	else:
 		print("False")
+		
+def Scan_Entries(Directory_Of_File, Purpose):
+
+	#Open the text file to be scanned
+	file = open(Directory_Of_File,"r")
+	Entries = []
+	for i in file:
+		Entries.append(i)
+	
+	if Purpose == "Seed":
+		Seeds_Found = []
+		for i in Entries:
+			if "#New_Seed#" in i:
+				Seed = i.strip("#New_Seed#").strip("\n")
+				Seeds_Found.append(Seed)
+				
+		#This might need to be improved to ensure that the seed is actually working properly. 
+		Target_Seed = Seeds_Found[0]
+		
+		#Here we might implement some testing mechanism to validate the seed. 
+		#....
+		
+		print(Target_Seed)
+	
+	if Purpose == "Address":
+		index = len(Entries)
+		Address = Entries[index-1]
+		print(Address)
+			
+
 ########################################################################################
 ################ Routing of functions from a shell script ##############################
 ########################################################################################
@@ -156,7 +186,11 @@ if Module == "Dynamic_Ledger":
 	Max_Address_Pool = int(sys.argv[3])
 	Current_Public_Address_Pool = str(sys.argv[4])
 	Dynamic_Ledger(Public_Seed, Max_Address_Pool, Current_Public_Address_Pool)
-
+	
+if Module == "Scan_Entries":
+	Directory_Of_File = str(sys.argv[2])
+	Purpose = str(sys.argv[3])
+	Scan_Entries(Directory_Of_File, Purpose)
 
 
 
