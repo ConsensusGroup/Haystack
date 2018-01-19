@@ -136,9 +136,9 @@ function Seed_Address() {
 			Private_Seed=$(Seed_Module_Generator)
 			echo "$Private_Seed" > $User
 		fi
-	
+	fi
 	#This option will either generate a new address visible to a public ledger or retrieve an existing one.
-	elif [[ "$Purpose" == "Address" ]];
+	if [[ "$Purpose" == "Address" ]];
 	then
 		if [[ "$File" == "" ]];
 		then	
@@ -284,22 +284,26 @@ function Ledger_Migration() {
 	
 	#Generate an address from the private seed
 	Address=$(Address_Generator $Communication_Py $Private_Seed $Server)
-	echo "$Address" >> $User
+	echo "$Address"
 	
 	#Read the seed from the saved file "Current_Public_Address_Pool.txt" 
 	New_Public_Seed=$(Scan_Entries $Communication_Py $SaveToDirectory "Seed")
 	echo "$New_Public_Seed"
 	
-	#Generate a new public ledger address 
-	Receive=$(Address_Generator $Communication_Py $New_Public_Seed $Server)
-	echo "$Receive"
+	if [[ "$New_Public_Seed" != "" ]];
+	then 
 	
-	#Send new public address to new Public Seed
-	send=$(Send_Module_Function $Communication_Py $Receive $Private_Seed $Address $Server)
+		#Generate a new public ledger address 
+		Receive=$(Address_Generator $Communication_Py $New_Public_Seed $Server)
+		echo "$Receive"
+	
+		#Send new public address to new Public Seed
+		send=$(Send_Module_Function $Communication_Py $Receive $Private_Seed $Address $Server)
 
-	#Save new Current_Public_Address_Pool.txt and replace the previous one
-	mv $SaveToDirectory $Old_List
-	New_List=$(Public_Addresses $New_Public_Seed $Server $Communication_Py $UserData)
+		#Save new Current_Public_Address_Pool.txt and replace the previous one
+		mv $SaveToDirectory $Old_List
+		New_List=$(Public_Addresses $New_Public_Seed $Server $Communication_Py $UserData)
+	fi
 }
 	
 	
