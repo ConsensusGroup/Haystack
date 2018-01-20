@@ -12,9 +12,9 @@
 ########################################################################################
 #-Need to add an encryption method for the messages presumably we use IOTA api 
 #-A timeout function for the different servers to find the fastest one available to user
-#-Add the dynamic ledger solution (we migrate away from the static one)
-#-Need to find a full node script which finds neighbours (see https://github.com/deltaskelta/iota-iri)
-#-Imoprove the bouncing function (add full anon (goes through all addresses) or partial anon)
+#-Add the dynamic ledger solution (we migrate away from the static one)..... Complete: yes Tested: Yes Stress Tested: No
+#-Need to find a full node script which finds neighbours (see https://github.com/deltaskelta/iota-iri) Complete.
+#-Imoprove the bouncing function (add full anon (goes through all addresses) or partial anon) Still needs improvement.
 
 
 ########################################################################################
@@ -55,7 +55,7 @@ function Full_Node(){
 	cd ~
 
 	# download the current tangle database
-	wget http://db.iota.partners/IOTA.partners-mainnetdb.tar.gz
+	#wget http://db.iota.partners/IOTA.partners-mainnetdb.tar.gz
 
 	# make a data directory for the database and unpack it
 	mkdir -p iri/mainnetdb
