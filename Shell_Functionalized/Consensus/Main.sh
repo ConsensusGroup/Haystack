@@ -11,16 +11,16 @@ UserData="$current_dir/UserData"
 Communication_Module="$Module/Communication_Module.sh"
 Communication_Py="$Module/Communication.py"
 iri="$current_dir/Node/iri-1.4.0.jar"
-Server="http://node.hans0r.de:14265"
+Server="http://localhost:14265"
 Public_Seed="WNP9GHNTNJGMEFZHTYTEEILEDHNZFSNJGVVSDDLAVXVHRQDLSKKPRTNEZVFFXQCVKFCFHKYTXZTXVRLNF"
 
 #Source the shell script with all the functions 
 source "$Communication_Module"
 
-#PID=$(Node_Run "$iri" "PID")
-
 #We initiate the Node using the function Node_run
 #Node_run "$iri" "Run" > /dev/null 2>&1
+
+#PID=$(Node_Run "$iri" "PID")
 
 #New User Enters the network. We need to create a folder for his data. 
 mkdir $UserData
