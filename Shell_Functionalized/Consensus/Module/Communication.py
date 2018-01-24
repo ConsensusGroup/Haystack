@@ -96,7 +96,6 @@ def Random_Bounce(Public_Addresses):
 	
 	Clean = Addresses[1].split("\n")
 	return Clean
-	#print(Clean[choice])
 
 def Dynamic_Ledger(Public_Seed, Max_Address_Pool, Current_Public_Address_Pool):
 
@@ -185,7 +184,6 @@ def Scan_Entries1(Directory_Of_File, Purpose):
 #################################################################################
 ################## Encryption Section ###########################################
 #################################################################################
-
 def Key_Generation(secret_code, directory):
 	###### Key Generator ######
 	key = RSA.generate(2048)
@@ -225,23 +223,26 @@ def Decrypt_Message(directory, ciphertext, secret_code):
 	Message = unlock.decrypt(ciphertext)
 	return Message
 
+
+
 def split(input, size):
 	return [input[start:start+size] for start in range(0, len(input), size)]
 	
-def Prepare_and_Broadcast(Public_KeyS, Addresses, Message_To_Encrypt):
+def Prepare_and_Broadcast(Recipient_Public_Key, Public_KeyS, Addresses, Message_To_Encrypt):
 	
 	#========== Encryption Section for this function ==============#
-	#Decompose the message
-	Message_Decomposed = split(Message_To_Decrypt,64)
-	
 	#First we encrypt the message
+	Message_Decomposed = split(Message_To_Encrypt,64)
+	
 	Container = []
 	for i in Message_Decomposed:
-		Part = Encrypt_Message(Public_Key, i)
+		Part = Encrypt_Message(Recipient_Public_Key, i)
 		Container.append(Part)
-
-	for i in Addresses:
-		With_Address = str("Address:"+i)
+	
+	for i in range(len(Addresses)):
+		Address = Addresses[i]
+		Public_Key = Public_KeyS[i]
+		With_Address = str("Address:"+Address)
 		Encrypted_Addresses = Encrypt_Message(Public_Key,With_Address)
 		Container.append(Encrypted_Addresses)
 
@@ -250,16 +251,15 @@ def Prepare_and_Broadcast(Public_KeyS, Addresses, Message_To_Encrypt):
 		To_Send = str(str(To_Send)+"######:######"+str(i))
 		
 	return To_Send
-
-def Receive_And_Decrypt(directory, secret_code, Seed_Key, Server):
-	#Receive the encrypted message:
-	ciphertext = Receiver_Module(Seed_key, Server)
 	
-	#Break the ciphertext apart
-	Separated = ciphertext.split("######:######")
+def Receiver_Decryption(Secret_Password, Encrypted_Message, Public_Key):
+
+	#Pull apart the string to make it a list
+	Separated = Encrypted_Message.split("######:######")
 
 	#Iterate through each entry to see if it is decrypted. 
 	Contain = []
+	Operation = []
 	for i in Separated:
 		if i == '':
 			continue
@@ -267,21 +267,33 @@ def Receive_And_Decrypt(directory, secret_code, Seed_Key, Server):
 			try:
 				Part = Decrypt_Message(directory, i, Secret_Password)
 				Contain.append(Part)
+				Open = "True"
+				Operation.append(Open)
 			except ValueError:
 				Contain.append(i)
+				Open = "False"
+				Operation.append(Open)
+			
 
-	To_Bounce = []
-	Reconstructed = ""
-	for i in Contain:
-		if "Address:" in i:
-			Next_Address = i.strip("Address:")
-			#print(Next_Address) 
-		if "Address:" not in i:
-			Reconstructed = str(Reconstructed+str(i))
-
-	print(Reconstructed)
-
-
+	bounce = ""
+	Address = ""
+	Decrypted = ""
+	counter = 1
+	Conditions = Operation.count("True")
+	for i in range(len(Operation)):
+		message = Contain[i]
+		decrypt = Operation[i]
+		if decrypt == "False":
+			bounce = str(str(bounce)+"######:######"+str(message))
+		if decrypt == "True" and Operation[0] == "True" and counter < Conditions:
+			Decrypted = str(str(Decrypted)+str(message))
+			counter = counter +1
+		if decrypt == "True" and Conditions >= 1:
+			Address = message.strip("Address:")
+			Appending = Encrypt_Message(Public_Key, "Dummy")
+			bounce = str(str(bounce)+"######:######"+str(Appending))
+			
+	return [bounce, Address, Decrypted]
 
 
 
@@ -370,9 +382,31 @@ if Module == "Prepare_and_Broadcast":
 	Private_Seed = str(sys.argv[5])
 	Receiver = str(sys.argv[6])
 	Server = str(sys.argv[7])
-	To_Send = Prepare_and_Broadcast(Public_KeyS, Addresses, Message_To_Encrypt)
+	Recipient_Public_Key = str(sys.argv[8])
+	
+	#Build function which reads the Public_KeyS, Addresses, Private_Seed, 
+	To_Send = Prepare_and_Broadcast(Recipient_Public_Key, Public_KeyS, Addresses, Message_To_Encrypt)
 	Sender_Module(Private_Seed, Receiver, To_Send, Server)
 
+if Module == "Receiver_Decryption":
+	Secret_Password = str(sys.argv[2])
+	Encrypted_Message = str(sys.argv[3])
+	Private_Seed = str(sys.argv[4])
+	Server = str(sys.argv[5])
+	Public_Key = str(sys.argv[4])
+	
+	Encrypted_Message = Receiver_Module(Private_Seed, Server)
+	Parts = Receiver_Decryption(Secret_Password, Encrypted_Message, Public_Key)
+	Bounce = Parts[0]
+	Address = Parts[1]
+	Message = Parts[2]
+	if Message == "" and Address == "":
+		continue
+	if Address != "":
+		Sender_Module(Private_Seed, Address, Bounce, Server)
+	if Message != "":
+		print(Message)
+		
 
 ######## Need to find a proper implementation of this still
 if Module == "Node_Finder":
