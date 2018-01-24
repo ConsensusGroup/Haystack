@@ -19,24 +19,12 @@ source "$Communication_Module"
 Private_Seed="$UserData/Seed.txt"
 Current_Public_Address_Pool="$UserData/Current_Public_Address_Pool.txt"
 
-Node_Run $iri "Run" > /dev/null 2>&1
 
 #Bouncing 
-#while [[ "" == "" ]];
-#do
-#	Message_Being_Bounced=$(Bounce $Communication_Py $UserData $Server $Public_Seed)
-#	echo "$Message_Being_Bounced"
-#done
-
-#This tests the migration mechanism
-#First we scan the current pool 
-Message_Being_Bounced=$(Bounce $Communication_Py $UserData $Server $Public_Seed)
-echo "$Message_Being_Bounced"
-
-#Now we determine the number of addresses in the pool
-Dynamic_Ledger $Communication_Py $Public_Seed "2" $UserData $Server
-
-#Migrate
-Seed=$(Ledger_Migration $Communication_Py $UserData $Server $Public_Seed)
-echo "$Seed"
+runtime="yes"
+while [[ "$runtime" == "yes" ]];
+do
+	Message_Being_Bounced=$(Bounce $Communication_Py $UserData $Server $Public_Seed)
+	echo "$Message_Being_Bounced"
+done
 
