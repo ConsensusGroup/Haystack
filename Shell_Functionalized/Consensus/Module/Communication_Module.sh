@@ -2,20 +2,11 @@
 #!/bin/python
 
 ########################################################################################
-############################### Constants of the Protocol ##############################
-########################################################################################
-	
-#Server_List=("http://eugene.iota.community:14265" "http://eugene.iotasupport.com:14999" "http://eugeneoldisoft.iotasupport.com:14265" "http://node01.iotatoken.nl:14265" "http://node02.iotatoken.nl:14265" "http://node03.iotatoken.nl:15265" "http://node04.iotatoken.nl:14265" "http://node05.iotatoken.nl:16265" "http://node06.iotatoken.nl:14265" "http://node.deviceproof.org:14265" "http://mainnet.necropaz.com:14500" "http://5.9.149.169:14265" "http://wallets.iotamexico.com:80" "http://5.9.137.199:14265" "http://5.9.118.112:14265" "http://88.198.230.98:14265" "http://176.9.3.149:14265" "https://n1.iota.nu:443" "http://node.lukaseder.de:14265" "https://node.tangle.works:443" "https://iota.thathost.net:443" "http://node.hans0r.de:14265" "http://cryptoiota.win:14265")
-
-########################################################################################
 #################### Things to still do for the functions ##############################
 ########################################################################################
 #-Need to add an encryption method for the messages presumably we use IOTA api 
 #-A timeout function for the different servers to find the fastest one available to user
-#-Add the dynamic ledger solution (we migrate away from the static one)..... Complete: yes Tested: Yes Stress Tested: No
-#-Need to find a full node script which finds neighbours (see https://github.com/deltaskelta/iota-iri) Complete.
-#-Imoprove the bouncing function (add full anon (goes through all addresses) or partial anon) Still needs improvement.
-
+#-Imoprove the bouncing function (add full anon (goes through all addresses) or partial anon)
 
 ########################################################################################
 ############################### Start of all functions #################################
@@ -58,8 +49,8 @@ function Full_Node(){
 	#wget http://db.iota.partners/IOTA.partners-mainnetdb.tar.gz
 
 	# make a data directory for the database and unpack it
-	mkdir -p iri/mainnetdb
-	tar -xvf IOTA.partners-mainnetdb.tar.gz -C iri/mainnetdb
+	#mkdir -p iri/mainnetdb
+	#tar -xvf IOTA.partners-mainnetdb.tar.gz -C iri/mainnetdb
 
 	# run IRI with the data mounted into it
 	docker run -d \
@@ -308,9 +299,42 @@ function Ledger_Migration() {
 	fi
 }
 
-	
-	
-	
+function Key_Generation() {
+	Communication_Py=$1
+	Secret_Code=$2
+	Directory_Of_File=$3
+	Module="Key_Generation"
+	Key_Gen=$(python $Communication_Py $Module $Secret_Code $Directory_Of_File)
+}
+
+function Get_Public_Key() {
+	Communication_Py=$1
+	Secret_Code=$2
+	Directory_Of_File=$3
+	Module="Get_Public_Key"
+	Public_Key=$(python $Communication_Py $Module $Secret_Code $Directory_Of_File)
+	echo "$Public_Key"
+}	
+
+function Encrypt_Message() {
+	Communication_Py=$1
+	Public_Key=$2
+	Message=$3
+	Module="Encrypt_Message"
+	Ciphertext=$(python $Communication_Py $Module $Public_Key $Message)
+	echo "$Ciphertext"
+}
+
+function Decrypt_Message() {
+	Communication_Py=$1
+	Directory_Of_File=$2
+	Ciphertext=$3
+	Secret_Code=$4
+	Module="Decrypt_Message"
+	Message=$(python $Communication_Py $Module $Directory_Of_File $Ciphertext $Secret_Code)
+	echo "$Message"
+}
+
 	
 	
 	
