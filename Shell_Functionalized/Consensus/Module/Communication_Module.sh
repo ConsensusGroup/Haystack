@@ -117,7 +117,7 @@ function Seed_Address() {
 	Name_Of_File=$2
 	Purpose=$3
 	File=($(find $Directory -name $Name_Of_File))
-	User="$UserData/$Name_Of_File"
+	User="$Directory/$Name_Of_File"
 	
 	#With this option it finds or generates a new seed
 	if [[ "$Purpose" == "Seed" ]];
@@ -137,6 +137,7 @@ function Seed_Address() {
 			Seed=$5
 			Server=$6
 			Address=$(Address_Generator $Communication $Seed $Server)
+			Public_Key=$(Get_Public_Key $Communication $Directory_Of_File
 			rm $User
 			echo "$Address" > $User
 		fi
@@ -146,6 +147,16 @@ function Seed_Address() {
 		echo "$line"
 	done < "$User"
 }
+
+function Get_Public_Key() {
+	Communication_Py=$1
+	Secret_Code=$2
+	Directory_Of_File=$3
+	Module="Get_Public_Key"
+	Public_Key=$(python $Communication_Py $Module $Secret_Code $Directory_Of_File)
+	echo "$Public_Key"
+
+
 
 function Public_Addresses() {
 	Public_Seed=$1
