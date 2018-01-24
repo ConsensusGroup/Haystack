@@ -2,8 +2,10 @@ from iota import TryteString, Address, ProposedBundle, ProposedTransaction, Bund
 from iota.crypto.addresses import AddressGenerator
 from iota.adapter.wrappers import RoutingWrapper
 from iota import *
+from Crypto.PublicKey import RSA
+from Crypto.Random import get_random_bytes
+from Crypto.Cipher import PKCS1_OAEP
 import sys
-import multiprocessing
 import random
 
 def Sender_Module(Seed_key, receive, message, server):
@@ -57,7 +59,7 @@ def Receiver_Module(Seed_key, Server):
 
 		#This cleans the string of the receiving side. 
 		Message = message.lstrip("[u'").rstrip(" ']")
-	print(Message)
+	return Message
 		
 def Public_Addresses(Public_Seed, server, SaveToDirectory):
 	api_rec = Iota(RoutingWrapper(server).add_route('attachToTangle', 'http://localhost:14265'), seed = Public_Seed)
@@ -93,7 +95,8 @@ def Random_Bounce(Public_Addresses):
 	choice = random.randrange(0,len(Addresses),1)
 	
 	Clean = Addresses[1].split("\n")
-	print(Clean[choice])
+	return Clean
+	#print(Clean[choice])
 
 def Dynamic_Ledger(Public_Seed, Max_Address_Pool, Current_Public_Address_Pool):
 
@@ -114,8 +117,8 @@ def Dynamic_Ledger(Public_Seed, Max_Address_Pool, Current_Public_Address_Pool):
 	if Max_Address_Pool <= Number_Of_Current_Addresses and There_Is_a_Seed_In_Pool_Already == "no":
 		print("True")
 	else:
-		print("False")
-		
+		print("False")		
+			
 def Scan_Entries(Directory_Of_File, Purpose):
 
 	#Open the text file to be scanned
@@ -142,7 +145,145 @@ def Scan_Entries(Directory_Of_File, Purpose):
 		index = len(Entries)
 		Address = Entries[index]
 		print(Address)
-			
+
+	if Purpose
+	
+	
+##### To build #####
+'''
+def Scan_Entries1(Directory_Of_File, Purpose):
+
+	#Open the text file to be scanned
+	file = open(Directory_Of_File,"r")
+	Addresses = []
+	Seeds_Found = []
+	for i in file:
+		if "#New_Seed#" in i:
+			Seed = i.strip("#New_Seed#").strip("\n")
+			Seeds_Found.append(Seed)
+		if "Address:" in i:
+			Address = i.strip("Address:").strip("\n")
+			Addresses.append(Address)	
+		if 
+		
+	if Purpose == "Seed":
+		length = len(Seeds_Found)
+		if length > 0:
+			print(Seeds_Found[0])
+	#This might need to be improved to ensure that the seed is actually working properly. 
+		
+		#Here we might implement some testing mechanism to validate the seed. 
+		#....
+	
+	if Purpose == "Address":
+		index = len(Addresses)
+		Address = Entries[index]
+		print(Address)
+
+	#if Purpose == "Public_Key":
+'''
+#################################################################################
+################## Encryption Section ###########################################
+#################################################################################
+
+def Key_Generation(secret_code, directory):
+	###### Key Generator ######
+	key = RSA.generate(2048)
+	
+	#--Encrypt the private key using a password --#
+	encrypted_key = key.exportKey(passphrase=secret_code, pkcs=8, protection="scryptAndAES128-CBC")
+
+	#--- Save the encrypted private key ---#
+	file_out = open(str(directory), "wb")
+	file_out.write(encrypted_key)
+
+def Get_Public_Key(secret_code, directory):
+	#--- Open the file with the encrypted private key ---#
+	encoded_key = open("rsa_key.bin", "rb").read()
+
+	#-- decrypt private key ---#
+	key1 = RSA.import_key(encoded_key, passphrase=secret_code)
+
+	#Public Key which we need to broadcast
+	recipient = key1.publickey().exportKey()
+	return recipient
+
+def Encrypt_Message(Public_Key, Message):
+
+	#We encrypt the message using the public key
+	keys = RSA.importKey(Public_Key)
+	cipher = PKCS1_OAEP.new(keys)
+	ciphertext = cipher.encrypt(Message)
+	return ciphertext #This gets sent to the tangle.
+
+def Decrypt_Message(directory, ciphertext, secret_code):
+	
+	#first we open the RSA file which is stored under directory
+	private_key_encoded = open(str(directory),"rb").read()
+	Private_Key = RSA.import_key(private_key_encoded, passphrase = secret_code)
+	unlock = PKCS1_OAEP.new(Private_Key)
+	Message = unlock.decrypt(ciphertext)
+	return Message
+
+def split(input, size):
+	return [input[start:start+size] for start in range(0, len(input), size)]
+	
+def Prepare_and_Broadcast(Public_KeyS, Addresses, Message_To_Encrypt):
+	
+	#========== Encryption Section for this function ==============#
+	#Decompose the message
+	Message_Decomposed = split(Message_To_Decrypt,64)
+	
+	#First we encrypt the message
+	Container = []
+	for i in Message_Decomposed:
+		Part = Encrypt_Message(Public_Key, i)
+		Container.append(Part)
+
+	for i in Addresses:
+		With_Address = str("Address:"+i)
+		Encrypted_Addresses = Encrypt_Message(Public_Key,With_Address)
+		Container.append(Encrypted_Addresses)
+
+	To_Send = ""
+	for i in Container:
+		To_Send = str(str(To_Send)+"######:######"+str(i))
+		
+	return To_Send
+
+def Receive_And_Decrypt(directory, secret_code, Seed_Key, Server):
+	#Receive the encrypted message:
+	ciphertext = Receiver_Module(Seed_key, Server)
+	
+	#Break the ciphertext apart
+	Separated = ciphertext.split("######:######")
+
+	#Iterate through each entry to see if it is decrypted. 
+	Contain = []
+	for i in Separated:
+		if i == '':
+			continue
+		else:
+			try:
+				Part = Decrypt_Message(directory, i, Secret_Password)
+				Contain.append(Part)
+			except ValueError:
+				Contain.append(i)
+
+	To_Bounce = []
+	Reconstructed = ""
+	for i in Contain:
+		if "Address:" in i:
+			Next_Address = i.strip("Address:")
+			#print(Next_Address) 
+		if "Address:" not in i:
+			Reconstructed = str(Reconstructed+str(i))
+
+	print(Reconstructed)
+
+
+
+
 
 ########################################################################################
 ################ Routing of functions from a shell script ##############################
@@ -170,6 +311,7 @@ if Module == "Receiver_Module":
 	Seed_key = str(sys.argv[2]) #User seed key
 	Server = str(sys.argv[3]) #Server address
 	Bundle = Receiver_Module(Seed_key, Server)
+	print(Bundle)
 	
 if Module == "Public_Addresses":
 	Seed_Key = str(sys.argv[2])
@@ -180,7 +322,8 @@ if Module == "Public_Addresses":
 if Module == "Random_Bounce":
 	Public_Addresses = str(sys.argv[2])
 	Address = Random_Bounce(Public_Addresses)
-
+	print(Address)
+	
 if Module == "Dynamic_Ledger":
 	Public_Seed = str(sys.argv[2])
 	Max_Address_Pool = int(sys.argv[3])
@@ -192,12 +335,43 @@ if Module == "Scan_Entries":
 	Purpose = str(sys.argv[3])
 	Scan_Entries(Directory_Of_File, Purpose)
 
+#################################################################################
+################## Encryption Section ###########################################
+#################################################################################
 
+if Module == "Key_Generation":
+	Secret_Code = str(sys.argv[2])
+	Directory_Of_File = str(sys.argv[3])
+	Key_Generation(Secret_Code, Directory_Of_File)
+	
+if Module == "Get_Public_Key":
+	Secret_Code = str(sys.argv[2])
+	Directory_Of_File = str(sys.argv[3])
+	Public_Key = Get_Public_Key(Secret_Code, Directory_Of_File)
+	print(Public_Key)
+	
+if Module == "Encrypt_Message":
+	Public_Key = str(sys.argv[2])
+	Message = str(sys.argv[3])
+	Ciphertext = Encrypt_Message(Public_Key, Message)
+	print(Ciphertext)
 
+if Module == "Decrypt_Message":
+	Directory_Of_File = str(sys.argv[2])
+	Ciphertext = str(sys.agv[3])
+	Secret_Code = str(sys.argv[4])
+	Message = Decrypt_Message(Directory_Of_File, Ciphertext, Secret_Code)
+	print(Message)
 
-
-
-
+if Module == "Prepare_and_Broadcast":
+	Public_KeyS = str(sys.argv[2])
+	Addresses = str(sys.argv[3])
+	Message_To_Encrypt = str(sys.argv[4])
+	Private_Seed = str(sys.argv[5])
+	Receiver = str(sys.argv[6])
+	Server = str(sys.argv[7])
+	To_Send = Prepare_and_Broadcast(Public_KeyS, Addresses, Message_To_Encrypt)
+	Sender_Module(Private_Seed, Receiver, To_Send, Server)
 
 
 ######## Need to find a proper implementation of this still
