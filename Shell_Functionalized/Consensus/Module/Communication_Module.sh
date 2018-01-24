@@ -346,9 +346,13 @@ function Decrypt_Message() {
 	echo "$Message"
 }
 
-	
-	
-	
+function Prepare_and_Broadcast() {
+
+}
+
+function Receiver_Decryption() {
+
+}	
 	
 	
 	
