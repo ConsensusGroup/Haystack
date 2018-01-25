@@ -142,45 +142,23 @@ def Scan_Entries(Directory_Of_File, Purpose):
 	
 	if Purpose == "Address":
 		index = len(Entries)
-		Address = Entries[index]
-		print(Address)
+		Address = Entries[index].split("###")
+		print(Address[0])
 
-	if Purpose
+	if Purpose == "Sending_Encrypt":
+		Content = []
+		for i in Entries:
+			Splitted = i.split("###")
+			Address = Splitted[0]
+			Public_Key = Splitted[1]
+			Save = [Address,Public_Key]
+			Content.append(Save)
+		return Content
+	if Purpose == "Read":
+		for i in Entries:
+			Seed = i.strip("\n")
+		return Seed 
 	
-	
-##### To build #####
-'''
-def Scan_Entries1(Directory_Of_File, Purpose):
-
-	#Open the text file to be scanned
-	file = open(Directory_Of_File,"r")
-	Addresses = []
-	Seeds_Found = []
-	for i in file:
-		if "#New_Seed#" in i:
-			Seed = i.strip("#New_Seed#").strip("\n")
-			Seeds_Found.append(Seed)
-		if "Address:" in i:
-			Address = i.strip("Address:").strip("\n")
-			Addresses.append(Address)	
-		if 
-		
-	if Purpose == "Seed":
-		length = len(Seeds_Found)
-		if length > 0:
-			print(Seeds_Found[0])
-	#This might need to be improved to ensure that the seed is actually working properly. 
-		
-		#Here we might implement some testing mechanism to validate the seed. 
-		#....
-	
-	if Purpose == "Address":
-		index = len(Addresses)
-		Address = Entries[index]
-		print(Address)
-
-	#if Purpose == "Public_Key":
-'''
 #################################################################################
 ################## Encryption Section ###########################################
 #################################################################################
@@ -274,7 +252,6 @@ def Receiver_Decryption(Secret_Password, Encrypted_Message, Public_Key):
 				Open = "False"
 				Operation.append(Open)
 			
-
 	bounce = ""
 	Address = ""
 	Decrypted = ""
@@ -376,34 +353,91 @@ if Module == "Decrypt_Message":
 	print(Message)
 
 if Module == "Prepare_and_Broadcast":
-	Public_KeyS = str(sys.argv[2])
-	Addresses = str(sys.argv[3])
-	Message_To_Encrypt = str(sys.argv[4])
-	Private_Seed = str(sys.argv[5])
-	Receiver = str(sys.argv[6])
-	Server = str(sys.argv[7])
-	Recipient_Public_Key = str(sys.argv[8])
+	Message_To_Encrypt = str(sys.argv[2])
+	Receiver_Address = str(sys.argv[3])
+	UserData = str(sys.argv[4])
+	Server = str(sys.argv[5])
+	bounces = int(sys.argv[6])
+	
+	Pool = str(UserData+"Current_Public_Address_Pool.txt")
+	Seed = str(UserData+"Seed.txt")
 	
 	#Build function which reads the Public_KeyS, Addresses, Private_Seed, 
+	Entries = Scan_Entries(Pool, "Sending_Encrypt")
+	Private_Seed = Scan_Entries(Seed, "Read")
+	
+	Public_Addresses = Entries[0]
+	Public_Keys = Entries[1]
+	
+	Public_KeyS = []
+	Addresses = []
+	
+	if bounces > 0:
+		for i in range(bounces):
+			Address = Random_Bounce(Public_Addresses)
+			Indexing = Public_Keys.index(str(Address))
+			Public_Key = Public_Keys[Indexing]
+			Public_KeyS.append(Public_Key)
+			Addresses.append(Address)
+	
+	#We find the Public key of the recipient.
+	Indexing = Public_Keys.index(str(Receiver_Address))
+	Recipient_Public_Key = Public_Keys[Indexing]
+	
+	#Now add the destination address with the public key
+	Addresses.append(Receiver_Address)
+	Public_KeyS.append(Recipient_Public_Key)
+	
+	#Remove the first address. See the lists below:
+	#Public_Keys = [A,B,C,D]
+	#Addresses = ["B","C","D","E"]
+	First_Send = Addresses.pop[0]
+	
+	#Add some more random receivers
+	if bounces > 0:
+		for i in range(bounces):
+			Address = Random_Bounce(Public_Addresses)
+			Indexing = Public_Keys.index(str(Address))
+			Public_Key = Public_Keys[Indexing]
+			Public_KeyS.append(Public_Key)
+			Addresses.append(Address)
+	
+	#Add one more address to replace the removes address previously
+	Address = Random_Bounce(Public_Addresses)
+	Addresses.append(Address)
+	
+	#Prepare the encryption of the message:
 	To_Send = Prepare_and_Broadcast(Recipient_Public_Key, Public_KeyS, Addresses, Message_To_Encrypt)
-	Sender_Module(Private_Seed, Receiver, To_Send, Server)
+	
+	#Send the message off.
+	Sender_Module(Private_Seed, First_Send, To_Send, Server)
 
 if Module == "Receiver_Decryption":
-	Secret_Password = str(sys.argv[2])
-	Encrypted_Message = str(sys.argv[3])
-	Private_Seed = str(sys.argv[4])
-	Server = str(sys.argv[5])
-	Public_Key = str(sys.argv[4])
+
+	UserData = str(sys.argv[2])
+	Server = str(sys.argv[3])
+	RSA = str(sys.argv[4])
+	
+	Directory = str(UserData+RSA)
+	Seed = str(UserData+"Seed.txt")
+	
+	Public_Key = Get_Public_Key(Seed, Directory)
+	Private_Seed = Scan_Entries(Seed, "Read")
+
 	
 	Encrypted_Message = Receiver_Module(Private_Seed, Server)
-	Parts = Receiver_Decryption(Secret_Password, Encrypted_Message, Public_Key)
-	Bounce = Parts[0]
-	Address = Parts[1]
-	Message = Parts[2]
+	Parts = Receiver_Decryption(Private_Seed, Encrypted_Message, Public_Key)
+
+
+	#First Case destroys the propagation of a "dummy" message
 	if Message == "" and Address == "":
 		continue
+	
+	#Second Case the message is bounced
 	if Address != "":
 		Sender_Module(Private_Seed, Address, Bounce, Server)
+	
+	#Third Case the receiver is able to decrypt the message. 
 	if Message != "":
 		print(Message)
 		
