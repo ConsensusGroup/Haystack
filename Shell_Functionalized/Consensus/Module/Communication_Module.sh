@@ -128,7 +128,7 @@ function Seed_Address() {
 			echo "$Private_Seed" > $User
 		fi
 	fi
-	#This option will either generate a new address visible to a public ledger or retrieve an existing one.
+	#This option will either generate a new address + public key visible to a public ledger or retrieve an existing one.
 	if [[ "$Purpose" == "Address" ]];
 	then
 		if [[ "$File" == "" ]];
@@ -137,9 +137,9 @@ function Seed_Address() {
 			Seed=$5
 			Server=$6
 			Address=$(Address_Generator $Communication $Seed $Server)
-			Public_Key=$(Get_Public_Key $Communication $Directory_Of_File
+			Public_Key=$(Get_Public_Key $Communication $Directory_Of_File)
 			rm $User
-			echo "$Address" > $User
+			echo "$Address###$Public_Key" > $User
 		fi
 	fi
 	while read -r line
@@ -347,11 +347,27 @@ function Decrypt_Message() {
 }
 
 function Prepare_and_Broadcast() {
-
+	Communication_Py=$1
+	Message_To_Encrypt=$2
+	Receiver_Address=$3
+	UserData=$4
+	Server=$5
+	Bounces=$6
+	Module="Prepare_and_Broadcast"
+	Send=$(python $Communication_Py $Module $Message_To_Encrypt $Receiver_Address $UserData $Server $Bounces)
 }
 
 function Receiver_Decryption() {
-
+	Communication_Py=$1
+	UserData=$2
+	Server=$3
+	RSA=$4
+	Module="Receiver_Decryption"
+	Message=$(python $Communication_Py $Module $UserData $Server $RSA)
+	if [[ "$Message" != "" ]];
+	then
+		echo "$Message"
+	fi
 }	
 	
 	
