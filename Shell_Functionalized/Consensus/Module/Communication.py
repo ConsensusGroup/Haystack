@@ -10,15 +10,10 @@ import random
 
 def Sender_Module(Seed_key, receive, message, server):
 	#This essentially connects python to the locahost which was initiated with the Java package (iri-X.X.X.X.jar) (see Node_Module.sh)
-	api = Iota(RoutingWrapper(server).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed_key)	
-
-	Send_to_IOTA=str(message)
+	api = Iota(RoutingWrapper(str(server)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed_key)	
+	
 	#We are now converting a message into the tribyte representation
-	text_transfer = TryteString.from_string(Send_to_IOTA)
-
-	#Decode the message as a test
-	Tryte = TryteString(str(text_transfer))
-	message = Tryte.as_string()
+	text_transfer = TryteString.from_string(str(message))
 
 	#This now proposes a transaction to a person. The "message = ..." command is a message that the receiver should be able to decode once arrived. 
 	txn_2 = ProposedTransaction(address = Address(receive), message = text_transfer,value = 0)
@@ -33,8 +28,7 @@ def Sender_Module(Seed_key, receive, message, server):
 	bundle.finalize()
 	coded = bundle.as_tryte_strings()
 	send = api.send_trytes(trytes = coded, depth = 4)
-	print(send)
-	
+
 def Address_Generator(Seed_key, Server):
 	api = Iota(RoutingWrapper(str(Server)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed_key)
 	
@@ -76,25 +70,29 @@ def Public_Addresses(Public_Seed, server, SaveToDirectory):
 	Unique_Addresses = []
 	for i in Addresses:
 		if i not in Unique_Addresses:
-			Unique_Addresses.append(i)
+			if i != "":
+				Unique_Addresses.append(i)
 	for i in Unique_Addresses:
 		file.write(str(i))
 		file.write(str("\n"))
 	file.close()
 
-def Random_Bounce(Public_Addresses):
-	file = open(Public_Addresses,"r")
-	Addresses = []
-	for i in file:
-		if "#New_Seed#" in i:
-			continue
-		else:
-			Addresses.append(i)
+def Random_Bounce(Public_Addresses, File_Type):
+	if File_Type == ".txt":
+		file = open(Public_Addresses,"r")
+		Addresses = []
+		for i in file:
+			if "#New_Seed#" in i:
+				continue
+			else:
+				Addresses.append(i)
+	if File_Type == "List":
+		Addresses = Public_Addresses
 	
 	#Generate a random number from the range 0 to length of number of addresses in the public address pool
 	choice = random.randrange(0,len(Addresses),1)
 	
-	Clean = Addresses[1].split("\n")
+	Clean = Addresses[1]
 	return Clean
 
 def Dynamic_Ledger(Public_Seed, Max_Address_Pool, Current_Public_Address_Pool):
@@ -146,18 +144,19 @@ def Scan_Entries(Directory_Of_File, Purpose):
 		print(Address[0])
 
 	if Purpose == "Sending_Encrypt":
-		Content = []
+		Addresses = []
+		Public_Keys = []
 		for i in Entries:
 			Splitted = i.split("###")
 			Address = Splitted[0]
 			Public_Key = Splitted[1]
-			Save = [Address,Public_Key]
-			Content.append(Save)
-		return Content
+			Addresses.append(Address)
+			Public_Keys.append(Public_Key)
+		return Addresses, Public_Keys
 	if Purpose == "Read":
 		for i in Entries:
 			Seed = i.strip("\n")
-		return Seed 
+			return Seed 
 	
 #################################################################################
 ################## Encryption Section ###########################################
@@ -172,42 +171,46 @@ def Key_Generation(secret_code, directory):
 	#--- Save the encrypted private key ---#
 	file_out = open(str(directory), "wb")
 	file_out.write(encrypted_key)
+	print(directory)
 
 def Get_Public_Key(secret_code, directory):
 	#--- Open the file with the encrypted private key ---#
-	encoded_key = open("rsa_key.bin", "rb").read()
-
+	encoded_key = open(str(directory), "rb").read()
+	
 	#-- decrypt private key ---#
 	key1 = RSA.import_key(encoded_key, passphrase=secret_code)
 
 	#Public Key which we need to broadcast
 	recipient = key1.publickey().exportKey()
+	
 	return recipient
 
 def Encrypt_Message(Public_Key, Message):
-
+	
+	Public_Key = Public_Key.replace("\\n","\n")
+	
 	#We encrypt the message using the public key
 	keys = RSA.importKey(Public_Key)
 	cipher = PKCS1_OAEP.new(keys)
-	ciphertext = cipher.encrypt(Message)
-	return ciphertext #This gets sent to the tangle.
-
+	ciphertext = cipher.encrypt(Message).encode("hex")
+	
+	#This gets sent to the tangle.
+	return ciphertext 
+	
 def Decrypt_Message(directory, ciphertext, secret_code):
 	
 	#first we open the RSA file which is stored under directory
 	private_key_encoded = open(str(directory),"rb").read()
 	Private_Key = RSA.import_key(private_key_encoded, passphrase = secret_code)
 	unlock = PKCS1_OAEP.new(Private_Key)
-	Message = unlock.decrypt(ciphertext)
+	Message = unlock.decrypt(ciphertext.decode("hex"))
 	return Message
-
-
-
+	
 def split(input, size):
 	return [input[start:start+size] for start in range(0, len(input), size)]
 	
 def Prepare_and_Broadcast(Recipient_Public_Key, Public_KeyS, Addresses, Message_To_Encrypt):
-	
+
 	#========== Encryption Section for this function ==============#
 	#First we encrypt the message
 	Message_Decomposed = split(Message_To_Encrypt,64)
@@ -216,6 +219,7 @@ def Prepare_and_Broadcast(Recipient_Public_Key, Public_KeyS, Addresses, Message_
 	for i in Message_Decomposed:
 		Part = Encrypt_Message(Recipient_Public_Key, i)
 		Container.append(Part)
+
 	
 	for i in range(len(Addresses)):
 		Address = Addresses[i]
@@ -230,7 +234,7 @@ def Prepare_and_Broadcast(Recipient_Public_Key, Public_KeyS, Addresses, Message_
 		
 	return To_Send
 	
-def Receiver_Decryption(Secret_Password, Encrypted_Message, Public_Key):
+def Receiver_Decryption(directory, Secret_Password, Encrypted_Message, Public_Key):
 
 	#Pull apart the string to make it a list
 	Separated = Encrypted_Message.split("######:######")
@@ -300,7 +304,7 @@ if Module == "Receiver_Module":
 	Seed_key = str(sys.argv[2]) #User seed key
 	Server = str(sys.argv[3]) #Server address
 	Bundle = Receiver_Module(Seed_key, Server)
-	print(Bundle)
+	print(str(Bundle))
 	
 if Module == "Public_Addresses":
 	Seed_Key = str(sys.argv[2])
@@ -322,8 +326,8 @@ if Module == "Dynamic_Ledger":
 if Module == "Scan_Entries":
 	Directory_Of_File = str(sys.argv[2])
 	Purpose = str(sys.argv[3])
-	Scan_Entries(Directory_Of_File, Purpose)
-
+	entry = Scan_Entries(Directory_Of_File, Purpose)
+	print(entry)
 #################################################################################
 ################## Encryption Section ###########################################
 #################################################################################
@@ -337,7 +341,7 @@ if Module == "Get_Public_Key":
 	Secret_Code = str(sys.argv[2])
 	Directory_Of_File = str(sys.argv[3])
 	Public_Key = Get_Public_Key(Secret_Code, Directory_Of_File)
-	print(Public_Key)
+	print(Public_Key.strip("\n"))
 	
 if Module == "Encrypt_Message":
 	Public_Key = str(sys.argv[2])
@@ -364,6 +368,7 @@ if Module == "Prepare_and_Broadcast":
 	
 	#Build function which reads the Public_KeyS, Addresses, Private_Seed, 
 	Entries = Scan_Entries(Pool, "Sending_Encrypt")
+
 	Private_Seed = Scan_Entries(Seed, "Read")
 	
 	Public_Addresses = Entries[0]
@@ -374,74 +379,78 @@ if Module == "Prepare_and_Broadcast":
 	
 	if bounces > 0:
 		for i in range(bounces):
-			Address = Random_Bounce(Public_Addresses)
-			Indexing = Public_Keys.index(str(Address))
+			Address = Random_Bounce(Public_Addresses, "List")
+			Indexing = Public_Addresses.index(str(Address))
 			Public_Key = Public_Keys[Indexing]
 			Public_KeyS.append(Public_Key)
 			Addresses.append(Address)
 	
 	#We find the Public key of the recipient.
-	Indexing = Public_Keys.index(str(Receiver_Address))
+	Indexing = Public_Addresses.index(str(Receiver_Address))
 	Recipient_Public_Key = Public_Keys[Indexing]
+	
 	
 	#Now add the destination address with the public key
 	Addresses.append(Receiver_Address)
 	Public_KeyS.append(Recipient_Public_Key)
 	
-	#Remove the first address. See the lists below:
-	#Public_Keys = [A,B,C,D]
-	#Addresses = ["B","C","D","E"]
-	First_Send = Addresses.pop[0]
-	
 	#Add some more random receivers
 	if bounces > 0:
+		#Remove the first address. See the lists below:
+		#Public_Keys = [A,B,C,D]
+		#Addresses = ["B","C","D","E"]
+		
+		First_Send = Addresses.pop(0)
+	
 		for i in range(bounces):
-			Address = Random_Bounce(Public_Addresses)
-			Indexing = Public_Keys.index(str(Address))
+			Address = Random_Bounce(Public_Addresses, "List")
+			Indexing = Public_Addresses.index(str(Address))
 			Public_Key = Public_Keys[Indexing]
 			Public_KeyS.append(Public_Key)
 			Addresses.append(Address)
-	
-	#Add one more address to replace the removes address previously
-	Address = Random_Bounce(Public_Addresses)
-	Addresses.append(Address)
+			
+		#Add one more address to replace the removes address previously
+		Address = Random_Bounce(Public_Addresses, "List")
+		Addresses.append(Address)
+	else: 
+		First_Send = Addresses[0]
 	
 	#Prepare the encryption of the message:
 	To_Send = Prepare_and_Broadcast(Recipient_Public_Key, Public_KeyS, Addresses, Message_To_Encrypt)
 	
 	#Send the message off.
 	Sender_Module(Private_Seed, First_Send, To_Send, Server)
-
+	
 if Module == "Receiver_Decryption":
 
 	UserData = str(sys.argv[2])
 	Server = str(sys.argv[3])
-	RSA = str(sys.argv[4])
+	Key = str(sys.argv[4])
 	
-	Directory = str(UserData+RSA)
 	Seed = str(UserData+"Seed.txt")
 	
-	Public_Key = Get_Public_Key(Seed, Directory)
 	Private_Seed = Scan_Entries(Seed, "Read")
-
+	Public_Key = Get_Public_Key(Private_Seed, Key)
 	
 	Encrypted_Message = Receiver_Module(Private_Seed, Server)
-	Parts = Receiver_Decryption(Private_Seed, Encrypted_Message, Public_Key)
-
+	Content = Receiver_Decryption(Key, Private_Seed, Encrypted_Message, Public_Key)
+	
+	Bounce = Content[0]
+	Address = Content[1]
+	Message = Content[2]
 
 	#First Case destroys the propagation of a "dummy" message
 	if Message == "" and Address == "":
-		continue
+		pass
 	
 	#Second Case the message is bounced
-	if Address != "":
+	if Address != "" and Message == "":
 		Sender_Module(Private_Seed, Address, Bounce, Server)
 	
 	#Third Case the receiver is able to decrypt the message. 
 	if Message != "":
 		print(Message)
-		
-
+	
 ######## Need to find a proper implementation of this still
 if Module == "Node_Finder":
 	Random_Test_Seed = str(sys.argv[2])
