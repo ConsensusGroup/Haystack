@@ -91,7 +91,7 @@ function Send_Module_Function() {
 	Message=$4
 	Server=$5
 	Module="Sender_Module"
-	Sender=$(python $Communication $Module $Seed $Receive $Message $Server)
+	Sender=$(python $Communication $Module $Seed $Receive "$Message" $Server)
 	echo "$Sender"
 }
 
@@ -127,25 +127,24 @@ function Seed_Address() {
 			Private_Seed=$(Seed_Module_Generator)
 			echo "$Private_Seed" > $User
 		fi
+		
+		while read -r line
+		do
+			echo "$line"
+		done < "$User"			
 	fi
 	#This option will either generate a new address + public key visible to a public ledger or retrieve an existing one.
 	if [[ "$Purpose" == "Address" ]];
 	then
-		if [[ "$File" == "" ]];
-		then	
-			Communication=$4
-			Seed=$5
-			Server=$6
-			Address=$(Address_Generator $Communication $Seed $Server)
-			Public_Key=$(Get_Public_Key $Communication $Directory_Of_File)
-			rm $User
-			echo "$Address###$Public_Key" > $User
-		fi
+		Communication=$4
+		Seed=$5
+		Server=$6
+		Address=$(Address_Generator $Communication $Seed $Server)
+		Public_Key=$(Get_Public_Key $Communication $Seed $Directory)
+		echo "$Address###$Public_Key" > $User
+		echo "$Address###$Public_Key"
 	fi
-	while read -r line
-	do
-		echo "$line"
-	done < "$User"
+
 }
 
 function Get_Public_Key() {
@@ -155,7 +154,7 @@ function Get_Public_Key() {
 	Module="Get_Public_Key"
 	Public_Key=$(python $Communication_Py $Module $Secret_Code $Directory_Of_File)
 	echo "$Public_Key"
-
+}
 
 
 function Public_Addresses() {
@@ -321,9 +320,19 @@ function Key_Generation() {
 function Get_Public_Key() {
 	Communication_Py=$1
 	Secret_Code=$2
-	Directory_Of_File=$3
+	UserData=$3
 	Module="Get_Public_Key"
-	Public_Key=$(python $Communication_Py $Module $Secret_Code $Directory_Of_File)
+	
+	#See if there is already a RSA file and generates one if not present
+	RSA=$(find $UserData -name "rsa_key.bin")
+	
+	if [[ "$RSA" == "" ]];
+	then
+		RSA=$(Key_Generation $Communication_Py $Secret_Code "$UserData/rsa_key.bin")
+		echo "$RSA"
+	fi
+	
+	Public_Key=$(python $Communication_Py $Module $Secret_Code $RSA)
 	echo "$Public_Key"
 }	
 
@@ -350,11 +359,12 @@ function Prepare_and_Broadcast() {
 	Communication_Py=$1
 	Message_To_Encrypt=$2
 	Receiver_Address=$3
-	UserData=$4
+	UserData="$4/"
 	Server=$5
 	Bounces=$6
 	Module="Prepare_and_Broadcast"
-	Send=$(python $Communication_Py $Module $Message_To_Encrypt $Receiver_Address $UserData $Server $Bounces)
+	Send=$(python $Communication_Py $Module "$Message_To_Encrypt" $Receiver_Address $UserData $Server $Bounces)
+	echo "$Send"
 }
 
 function Receiver_Decryption() {
@@ -369,29 +379,5 @@ function Receiver_Decryption() {
 		echo "$Message"
 	fi
 }	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
