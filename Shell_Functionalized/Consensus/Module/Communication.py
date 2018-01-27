@@ -16,7 +16,7 @@ def Sender_Module(Seed_key, receive, message, server):
 	text_transfer = TryteString.from_string(str(message))
 
 	#This now proposes a transaction to a person. The "message = ..." command is a message that the receiver should be able to decode once arrived. 
-	txn_2 = ProposedTransaction(address = Address(receive), message = text_transfer,value = 0)
+	txn_2 = ProposedTransaction(address = Address(receive), message = text_transfer, value = 0)
 
 	#Now create a new bundle (i.e. propose a bundle)
 	bundle = ProposedBundle()
@@ -47,6 +47,7 @@ def Receiver_Module(Seed_key, Server):
 	bundle = mess.get('bundles')
 	Address = mess.get('addresses')
 	
+	Message = ""
 	for i in bundle:
 		message_rec = i.get_messages(errors='drop')
 		message=str(message_rec)
@@ -64,8 +65,8 @@ def Public_Addresses(Public_Seed, server, SaveToDirectory):
 	#Decompose the Bundle into components
 	Addresses_In_Ledger = mess.get('bundles')
 	for i in Addresses_In_Ledger:
-		Public_Addresses = str(i.get_messages()).strip("[u'").strip("']")
-		Addresses.append(Public_Addresses)
+		Public_Address = str(i.get_messages()).strip("[u'").strip("']")
+		Addresses.append(Public_Address)
 	file = open(str(SaveToDirectory+"/Current_Public_Address_Pool.txt"),"w")
 	Unique_Addresses = []
 	for i in Addresses:
@@ -77,9 +78,9 @@ def Public_Addresses(Public_Seed, server, SaveToDirectory):
 		file.write(str("\n"))
 	file.close()
 
-def Random_Bounce(Public_Addresses, File_Type):
+def Random_Bounce(Public_Address_List, File_Type):
 	if File_Type == ".txt":
-		file = open(Public_Addresses,"r")
+		file = open(Public_Address_List,"r")
 		Addresses = []
 		for i in file:
 			if "#New_Seed#" in i:
@@ -87,12 +88,12 @@ def Random_Bounce(Public_Addresses, File_Type):
 			else:
 				Addresses.append(i)
 	if File_Type == "List":
-		Addresses = Public_Addresses
+		Address = Public_Address_List
 	
 	#Generate a random number from the range 0 to length of number of addresses in the public address pool
-	choice = random.randrange(0,len(Addresses),1)
+	choice = random.randrange(0,len(Address),1)
 	
-	Clean = Addresses[1]
+	Clean = Address[int(choice)]
 	return Clean
 
 def Dynamic_Ledger(Public_Seed, Max_Address_Pool, Current_Public_Address_Pool):
@@ -371,53 +372,48 @@ if Module == "Prepare_and_Broadcast":
 
 	Private_Seed = Scan_Entries(Seed, "Read")
 	
-	Public_Addresses = Entries[0]
-	Public_Keys = Entries[1]
+	Public_Pool = Entries[0]
+	Public_Key = Entries[1]
 	
 	Public_KeyS = []
 	Addresses = []
 	
 	if bounces > 0:
 		for i in range(bounces):
-			Address = Random_Bounce(Public_Addresses, "List")
-			Indexing = Public_Addresses.index(str(Address))
-			Public_Key = Public_Keys[Indexing]
-			Public_KeyS.append(Public_Key)
-			Addresses.append(Address)
-	
+			Random_Address_Chosen = str(Random_Bounce(Public_Pool, "List"))
+			Indexing = Public_Pool.index(Random_Address_Chosen)
+			Public = Public_Key[Indexing]
+			Public_KeyS.append(Public)
+			Addresses.append(Random_Address_Chosen)
+			
 	#We find the Public key of the recipient.
-	Indexing = Public_Addresses.index(str(Receiver_Address))
-	Recipient_Public_Key = Public_Keys[Indexing]
-	
+	Recipient_Public_Key = Public_Key[Public_Pool.index(str(Receiver_Address))]
 	
 	#Now add the destination address with the public key
 	Addresses.append(Receiver_Address)
 	Public_KeyS.append(Recipient_Public_Key)
 	
+	#Remove the first address. See the lists below:
+	#Public_Keys = [A,B,C,D]
+	#Public_Pool = ["B","C","D","E"]
+	First_Send = Addresses.pop(0)
+	
 	#Add some more random receivers
 	if bounces > 0:
-		#Remove the first address. See the lists below:
-		#Public_Keys = [A,B,C,D]
-		#Addresses = ["B","C","D","E"]
-		
-		First_Send = Addresses.pop(0)
-	
 		for i in range(bounces):
-			Address = Random_Bounce(Public_Addresses, "List")
-			Indexing = Public_Addresses.index(str(Address))
-			Public_Key = Public_Keys[Indexing]
-			Public_KeyS.append(Public_Key)
-			Addresses.append(Address)
-			
-		#Add one more address to replace the removes address previously
-		Address = Random_Bounce(Public_Addresses, "List")
-		Addresses.append(Address)
-	else: 
-		First_Send = Addresses[0]
+			Random_Address_Chosen = str(Random_Bounce(Public_Pool, "List"))
+			Indexing = Public_Pool.index(Random_Address_Chosen)
+			Public = Public_Key[Indexing]
+			Public_KeyS.append(Public)
+			Addresses.append(Random_Address_Chosen)
+	
+	#Add the last address for the dummy to be terminated
+	Random_Address_Chosen = str(Random_Bounce(Public_Pool, "List"))
+	Addresses.append(Random_Address_Chosen)
 	
 	#Prepare the encryption of the message:
 	To_Send = Prepare_and_Broadcast(Recipient_Public_Key, Public_KeyS, Addresses, Message_To_Encrypt)
-	
+
 	#Send the message off.
 	Sender_Module(Private_Seed, First_Send, To_Send, Server)
 	
@@ -426,26 +422,26 @@ if Module == "Receiver_Decryption":
 	UserData = str(sys.argv[2])
 	Server = str(sys.argv[3])
 	Key = str(sys.argv[4])
-	
 	Seed = str(UserData+"Seed.txt")
 	
-	Private_Seed = Scan_Entries(Seed, "Read")
-	Public_Key = Get_Public_Key(Private_Seed, Key)
+	PrivateSeed = Scan_Entries(Seed, "Read")
+	PublicKey = Get_Public_Key(PrivateSeed, Key)
 	
-	Encrypted_Message = Receiver_Module(Private_Seed, Server)
-	Content = Receiver_Decryption(Key, Private_Seed, Encrypted_Message, Public_Key)
+	EncryptedMessage = Receiver_Module(PrivateSeed, Server)
+	Content = Receiver_Decryption(Key, PrivateSeed, EncryptedMessage, PublicKey)
 	
+	#[bounce, Address, Decrypted]
 	Bounce = Content[0]
-	Address = Content[1]
+	Next_Destination = Content[1]
 	Message = Content[2]
-
+	
 	#First Case destroys the propagation of a "dummy" message
-	if Message == "" and Address == "":
-		pass
+	if Message == "" and Next_Destination == "":
+		print("Dummy terminated")
 	
 	#Second Case the message is bounced
-	if Address != "" and Message == "":
-		Sender_Module(Private_Seed, Address, Bounce, Server)
+	if (str(Next_Destination) != "" and str(Message) == ""):		
+		Sender_Module(PrivateSeed, Next_Destination, Bounce, Server)
 	
 	#Third Case the receiver is able to decrypt the message. 
 	if Message != "":
