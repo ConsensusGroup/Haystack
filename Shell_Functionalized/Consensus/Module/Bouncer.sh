@@ -8,16 +8,14 @@
 #######################################################################################################
 
 #These are the required directories which we need to have:
-#root="$HOME/IOTA/Consensus/"	#This is the root but it will be input $1
+root="$HOME/Bouncing/"	#This is the root but it will be input $1
 
-#Change to the root dir
-#cd $root
 
 #Make it the current working dir 
 current_dir=$PWD
 
 #Define the individual directories 
-Module="$current_dir/Module"
+Module="$root""Module"
 UserData="$current_dir/UserData"
 
 mkdir $UserData
@@ -37,34 +35,35 @@ Private_Seed="$UserData/Seed.txt"
 source $Communication_Module
 
 #Generate the private seed
-Seed_Address $UserData "Seed.txt" "Seed"
+#Seed_Address $UserData "Seed.txt" "Seed"
 
 #We need to get the private seed from the user files
 Private=$(Scan_Entries $Communication_Py $Private_Seed "Read")
 
 #Generate an RSA key
-Key_Generation $Communication_Py $Private $RSA
+#Key_Generation $Communication_Py $Private $RSA
 
 #Compose a test message which is encrypted
-Send_Message="Hello I am IOTA 1 and I am sending to IOTA 3 with a bouncing method."
-Receiver="QYFMQCBWBGLYRIRRWKZPYKSXGHCGMJCTFKPGRKXWHMFUKKDZAPQDKDHHHLEYUMVBEHIOEQIDCWKXTHJOZ"
+Send_Message="Hello again this is a test message"
+Receiver="JZQGZEVKXSFXYORRWNTBRBM9SJKTTWAUTQUFTJNHJDDK9UCGRXUA9IMQJGCKVBUKDOILQGLIACBDUEHCA"
 
 #================= Initialization ============================#
-Public_Seed="GBWBEPMRPWBXC9UBOZJSV9HMR9EGIYGNAYCVCOTQOFTXZVZVRIQPOTGZGXMJXULSKEVXUFHHUAWSRLH9S"
+Public_Seed="EYAIGNZTORXNDHDXDXCHQXWUSQIXFNVUKTMF9OYVKXICOLZDWOSHXEJUALQSTPACNNUU9LCKYLFPQCUPJ"
 
 #Generate an address from the public seed
-Address_Of_Public_Seed=$(Address_Generator $Communication_Py $Public_Seed $Server $UserData)
+#Address_Of_Public_Seed=$(Address_Generator $Communication_Py $Public_Seed $Server $UserData)
 
 #Generate a Personal Address + Public Key to be broadcasted to the public ledger
-Client_Address=$(Seed_Address $UserData "Address.txt" "Address" $Communication_Py $Private $Server)
+#Client_Address=$(Seed_Address $UserData "Address.txt" "Address" $Communication_Py $Private $Server)
 
 #We now broadcast it to the public ledger 
-Send_Module_Function $Communication_Py $Address_Of_Public_Seed $Private "$Client_Address" $Server
+#Send_Module_Function $Communication_Py $Address_Of_Public_Seed $Private "$Client_Address" $Server
 
 #Check the public seed to see if the sending has worked
-Received=$(Receiver_Module_Function $Communication_Py $Public_Seed $Server)
+#Received=$(Receiver_Module_Function $Communication_Py $Public_Seed $Server)
 
-Prepare_and_Broadcast $Communication_Py "$Send_Message" $Receiver $UserData $Server "3"
+send=$(Prepare_and_Broadcast $Communication_Py "$Send_Message" $Receiver $UserData $Server "1")
+echo "$send"
 
 run="true"
 while [[ "$run" == "true" ]];
@@ -75,3 +74,4 @@ do
 	Message=$(Receiver_Decryption $Communication_Py "$UserData/" $Server $RSA)
 	echo "$Message"
 done
+
