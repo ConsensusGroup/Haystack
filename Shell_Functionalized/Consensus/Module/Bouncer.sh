@@ -27,7 +27,7 @@ Communication_Module="$Module/Communication_Module.sh"
 Communication_Py="$Module/Communication.py"
 
 #The server which will be used
-Server="http://cryptoiota.win:14265"
+Server="http://localhost:14265"
 
 #The RSA asymmetric encryption key directory:
 RSA="$UserData/rsa_key.bin"
@@ -46,11 +46,11 @@ Private=$(Scan_Entries $Communication_Py $Private_Seed "Read")
 Key_Generation $Communication_Py $Private $RSA
 
 #Compose a test message which is encrypted
-Send_Message="Hello there 3 using five bounces"
+Send_Message="Hello I am IOTA 1 and I am sending to IOTA 3 with a bouncing method."
 Receiver="QYFMQCBWBGLYRIRRWKZPYKSXGHCGMJCTFKPGRKXWHMFUKKDZAPQDKDHHHLEYUMVBEHIOEQIDCWKXTHJOZ"
 
 #================= Initialization ============================#
-Public_Seed="TKXBPWRHBHQDKYAHCQQTSQQBVGTDLJPZWORMF9IEYZCFDEFWSG9YIFBXWEYIBSRBKRFMBGTHWZGLLXPV9"
+Public_Seed="GBWBEPMRPWBXC9UBOZJSV9HMR9EGIYGNAYCVCOTQOFTXZVZVRIQPOTGZGXMJXULSKEVXUFHHUAWSRLH9S"
 
 #Generate an address from the public seed
 Address_Of_Public_Seed=$(Address_Generator $Communication_Py $Public_Seed $Server $UserData)
@@ -64,7 +64,7 @@ Send_Module_Function $Communication_Py $Address_Of_Public_Seed $Private "$Client
 #Check the public seed to see if the sending has worked
 Received=$(Receiver_Module_Function $Communication_Py $Public_Seed $Server)
 
-Prepare_and_Broadcast $Communication_Py "$Send_Message" $Receiver $UserData $Server "5"
+Prepare_and_Broadcast $Communication_Py "$Send_Message" $Receiver $UserData $Server "3"
 
 run="true"
 while [[ "$run" == "true" ]];
