@@ -14,7 +14,6 @@ def Sender_Module(Seed_key, receive, message, server):
 	
 	#We are now converting a message into the tribyte representation
 	text_transfer = TryteString.from_string(str(message))
-
 	#This now proposes a transaction to a person. The "message = ..." command is a message that the receiver should be able to decode once arrived. 
 	txn_2 = ProposedTransaction(address = Address(receive), message = text_transfer, value = 0)
 
@@ -260,21 +259,24 @@ def Receiver_Decryption(directory, Secret_Password, Encrypted_Message, Public_Ke
 	bounce = ""
 	Address = ""
 	Decrypted = ""
-	counter = 1
-	Conditions = Operation.count("True")-1
+	counter = 0
+	Conditions = Operation.count("True")
 	for i in range(len(Operation)):
 		message = Contain[i]
 		decrypt = Operation[i]
+		tag = "no"
+		if len(message) == 89:
+			tag = "yes"
 		if decrypt == "False":
 			bounce = str(str(bounce)+"######:######"+str(message))
-		if decrypt == "True" and Operation[0] == "True" and counter < Conditions:
+		if decrypt == "True" and Operation[0] == "True" and counter < Conditions-1 and tag == "no":
 			Decrypted = str(str(Decrypted)+str(message))
 			counter = counter +1
-		if decrypt == "True" and Conditions >= 1:
-			Address = message.strip("Address:")
+		if decrypt == "True" and Conditions >= 1 and tag == "yes":
+			Address = message.replace('Address:','')
 			Appending = Encrypt_Message(Public_Key, "Dummy")
 			bounce = str(str(bounce)+"######:######"+str(Appending))
-			
+
 	return [bounce, Address, Decrypted]
 
 
@@ -444,19 +446,21 @@ if Module == "Receiver_Decryption":
 		pass
 
 	#First Case destroys the propagation of a "dummy" message
-	if Message == "" and Next_Destination == "":
+	if Next_Destination == "":
 		print("Dummy terminated")
 	
 	#Second Case the message is bounced
 	if (str(Next_Destination) != "" and str(Message) == "" and str(Latest) != str(EncryptedMessage)):		
 		Sender_Module(PrivateSeed, Next_Destination, Bounce, Server)
+		print("pass",Next_Destination)
 		file = open(Latest_Received,"w")
 		file.write(str(EncryptedMessage))
 		file.close()
 		
 	#Third Case the receiver is able to decrypt the message. 
 	if Message != "" and Next_Destination != "":
-		Sender_Module(PrivateSeed, Next_Destination, Bounce, Server)
+		if  str(Latest) != str(EncryptedMessage):
+			Sender_Module(PrivateSeed, Next_Destination, Bounce, Server)
 		print(Message)
 		print(Next_Destination)
 	
