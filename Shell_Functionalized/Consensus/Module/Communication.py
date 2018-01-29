@@ -156,8 +156,8 @@ def Scan_Entries(Directory_Of_File, Purpose):
 		return Addresses, Public_Keys
 	if Purpose == "Read":
 		for i in Entries:
-			Seed = i.strip("\n")
-			return Seed 
+			Entry = i.strip("\n")
+			return Entry 
 	
 #################################################################################
 ################## Encryption Section ###########################################
@@ -261,7 +261,7 @@ def Receiver_Decryption(directory, Secret_Password, Encrypted_Message, Public_Ke
 	Address = ""
 	Decrypted = ""
 	counter = 1
-	Conditions = Operation.count("True")
+	Conditions = Operation.count("True")-1
 	for i in range(len(Operation)):
 		message = Contain[i]
 		decrypt = Operation[i]
@@ -423,6 +423,7 @@ if Module == "Receiver_Decryption":
 	Server = str(sys.argv[3])
 	Key = str(sys.argv[4])
 	Seed = str(UserData+"Seed.txt")
+	Latest_Received = str(UserData+"Latest.txt")
 	
 	PrivateSeed = Scan_Entries(Seed, "Read")
 	PublicKey = Get_Public_Key(PrivateSeed, Key)
@@ -435,17 +436,30 @@ if Module == "Receiver_Decryption":
 	Next_Destination = Content[1]
 	Message = Content[2]
 	
+	#Now we compare the previous received to the current receive to avoid resending the same message. 
+	Latest = ""
+	try:
+		Latest = Scan_Entries(Latest_Received, "Read")
+	except IOError:
+		pass
+
 	#First Case destroys the propagation of a "dummy" message
 	if Message == "" and Next_Destination == "":
 		print("Dummy terminated")
 	
 	#Second Case the message is bounced
-	if (str(Next_Destination) != "" and str(Message) == ""):		
+	if (str(Next_Destination) != "" and str(Message) == "" and str(Latest) != str(EncryptedMessage)):		
 		Sender_Module(PrivateSeed, Next_Destination, Bounce, Server)
-	
+		file = open(Latest_Received,"w")
+		file.write(str(EncryptedMessage))
+		file.close()
+		
 	#Third Case the receiver is able to decrypt the message. 
-	if Message != "":
+	if Message != "" and Next_Destination != "":
+		Sender_Module(PrivateSeed, Next_Destination, Bounce, Server)
 		print(Message)
+		print(Next_Destination)
+	
 	
 ######## Need to find a proper implementation of this still
 if Module == "Node_Finder":
