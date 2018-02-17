@@ -36,7 +36,7 @@ def normalise(plaintext):
     return normaltext
 
 def split(input):
-	return [input[start:start+default_size] for start in range(0, len(input), default_size)]
+	return [input[start:start+default_size-len(identifier)] for start in range(0, len(input), default_size - len(identifier))]
 
 def random_address():
     rand = SystemRandom()
@@ -284,6 +284,21 @@ def unlock(locked_message, secret_code):
     else:
         print 'Bouncing...'
     return needle
+
+###This demonstration will generate a new set of RSA keys and a random ###
+###example public address pool. the message is then encrypted and then ###
+###bounced around the network. The encrypted packed is then decomposed and###
+###the metadata is encrypted to reveal a secret key and bounce address. The ###
+###content is then decrypted with the secret key and in the event that the ###
+###randomly generated receiver index is == 0, the message is successfully ###
+###received and authenticated. this occurs with probability 1/5 ###
+
+#print read_private_key('abcdefg')
+#address = '999ZZZ999'*9
+#locked = lock_n_load('will the real slim shady please stand up please stand up please stand up take me to the moon let me play above the stars four score and seven years ago the great states of yo momma', 'swagyolo', address, read_public_key())
+#needle = unlock(locked[0], 'swagyolo')
+#verify_needle(needle, read_public_key())
+
 
 ########################################################################################
 ################ Routing of functions from a shell script ##############################
