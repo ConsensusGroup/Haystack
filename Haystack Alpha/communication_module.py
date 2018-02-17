@@ -4,6 +4,7 @@ from iota import TryteString, Address, ProposedBundle, ProposedTransaction, Bund
 from iota.crypto.addresses import AddressGenerator
 from iota.adapter.wrappers import RoutingWrapper
 from encryption_module import decode
+from random import SystemRandom
 from iota import *
 import sys
 import random
@@ -50,13 +51,13 @@ def read_seed_key(secret_code):
 
 '''Send and receive functions'''
 
-def generate_address(seed_key):
+def generate_address(seed_key, index):
 	api = Iota(RoutingWrapper(str(server)).add_route('attachToTangle', 'http://localhost:14265'), seed = seed_key)
-	generate = api.get_new_addresses()
+	generate = api.get_new_addresses(index = int(index))
 	address = str(generate.get('addresses')).strip("[Address(").strip(")]").strip("'")
 	return address
 
-def send(secret_code, receiver_address, message):
+def send(receiver_address, message, secret_code):
     seed_key = read_seed_key(str(secret_code))
 	#This essentially connects python to the locahost which was initiated with the Java package (iri-X.X.X.X.jar) (see Node_Module.sh)
     api = Iota(RoutingWrapper(str(server)).add_route('attachToTangle', 'http://localhost:14265'), seed = seed_key)
@@ -97,29 +98,7 @@ def quick_receive(seed_key):
     message = str(bundle[len(bundle)-1].get_messages(errors='drop')).lstrip("[u'").rstrip(" ']")
     return message
 
-
-'''Dynamic Public Ledger functions'''
-
-def public_addresses(public_seed):
-	api_rec = Iota(RoutingWrapper(server).add_route('attachToTangle', 'http://localhost:14265'), seed = public_seed)
-	#We pull the assigned address history of the account (using the seed)
-	mess = api_rec.get_account_data(start = 0)
-	addresses = []
-	#Decompose the Bundle into components
-	addresses_in_ledger = mess.get('bundles')
-	for i in addresses_in_ledger:
-		public_address = str(i.get_messages()).strip("[u'").strip("']")
-		addresses.append(public_address)
-	file = open(str("UserData/Public_Address_Pool.txt"),"w")
-	unique_addresses = []
-	for i in Addresses:
-		if i not in unique_addresses:
-			if i != "":
-				unique_addresses.append(i)
-	for i in unique_addresses:
-		file.write(str(i))
-		file.write(str("\n"))
-	file.close()
+'''Utilities for the public ledger'''
 
 def check_ledger(public_seed, max_address_pool):
 	#Here we open the Current_Public_Address_Pool.txt file and count the number of addresses
@@ -138,17 +117,6 @@ def check_ledger(public_seed, max_address_pool):
 		return True
 	else:
 		return False
-
-def get_timestamps(public_seed):
-    api_rec = Iota(RoutingWrapper(server).add_route('attachToTangle', 'http://localhost:14265'), seed = receiver_seed)
-    transfers = api_rec.get_transfers(start = 0)
-    bundles = transfers.get('bundles')
-    times = []
-    for i in bundles:
-        for x in i:
-            timestamp = x.attachment_timestamp
-            times.append(timestamp)
-    return times
 
 def scan_entries(filepath, purpose):
 	#Open the text file to be scanned
@@ -171,6 +139,27 @@ def scan_entries(filepath, purpose):
 		for i in entries:
 			entry = i.strip("\n")
 			return entry
+
+def public_addresses(public_seed, current_block):
+	api_rec = Iota(RoutingWrapper(server).add_route('attachToTangle', 'http://localhost:14265'), seed = public_seed)
+	#We pull the assigned address history of the account (using the seed)
+	mess = api_rec.get_account_data(start = int(current_block), stop = int(current_block+1))
+	addresses = []
+	#Decompose the Bundle into components
+	addresses_in_ledger = mess.get('bundles')
+	for i in addresses_in_ledger:
+		public_address = str(i.get_messages()).strip("[u'").strip("']")
+		addresses.append(public_address)
+	file = open(str("UserData/Public_Address_Pool.txt"),"w")
+	unique_addresses = []
+	for i in Addresses:
+		if i not in unique_addresses:
+			if i != "":
+				unique_addresses.append(i)
+	for i in unique_addresses:
+		file.write(str(i))
+		file.write(str("\n"))
+	file.close()
 
 ###REQUIRED###
 ##function for deciding on a public address
