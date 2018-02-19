@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+
 #Iota library
 from iota import TryteString, Address, ProposedBundle, ProposedTransaction, Bundle
 from iota.crypto.addresses import AddressGenerator
@@ -22,23 +25,24 @@ from base64 import b64encode, b64decode
 
 #This class is responsible for the encryption side of things
 class Encryption:
-	def __init__(self, PlainText = "", PubKey = "", ReceiverAddress = "", CharLib = ".,!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= ", password = "", bounce = 1):
+	def __init__(self, PlainText = "", PubKey = "", ReceiverAddress = "", CharLib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= ', password = "", bounce = 1):
 		self.PlainText = PlainText
 		self.PubKey = PubKey
 		self.CharLib = CharLib
 		self.Password = password
 		self.ReceiverAddress = ReceiverAddress
-		self.bounce = bounce 
+		self.bounce = 1
 
 	def Encrypt(self):
 		#First statement is the symmetric encryption
-		if self.PubKey == "":
-			SecretKey = Generators().Secret_Key().SecretKey
-			cipher = pyffx.String(SecretKey, alphabet = self.CharLib , length=len(str(self.PlainText)))
+		if str(self.PubKey) == "":
+			cipher = pyffx.String(str(self.Password), alphabet = str(self.CharLib) , length=len(str(self.PlainText)))
+			self.CipherText = cipher.encrypt(str(self.PlainText))
+
 		#Asymetric encryption
 		else:
-			cipher = PKCS1_OAEP.new(RSA.importKey(self.PubKey))				
-		self.CipherText = cipher.encrypt(self.PlainText)
+			cipher = PKCS1_OAEP.new(self.PubKey)				
+		self.CipherText = cipher.encrypt(str(self.PlainText))
 		return self		
 
 	def Message_Signature(self):
@@ -56,94 +60,94 @@ class Encryption:
 	
 	def Lock_And_Load(self):
 		needle = self.Prepare_Needle().Needle
-		Gen = Generators(bounce = self.bounce).Path_Finder()
-		Tranjectory = Gen.Address
-		TrajKeys = Gen.PublicKey
-		Insertion = random.randrange(0,int(self.bounce),1)
-		Tranjectory[Insertion] = self.ReceiverAddress
-		TrajKeys[Insertion] = Dynamic_Ledger(FindAddress = self.ReceiverAddress).Key_Finder().FoundKey
-		self.PubKey = Dynamic_Ledger(FindAddress = self.ReceiverAddress).Key_Finder().FoundKey
-
+		Trajectory = Generators(bounce = self.bounce).Path_Finder().Address
+		TrajKeys = Dynamic_Ledger(FindAddress = Trajectory).Key_Finder().FoundKey
+		Insertion = int(random.randrange(0,int(self.bounce),1))
+		Trajectory[int(Insertion)] = self.ReceiverAddress
+		TrajKeys[int(Insertion)] = Dynamic_Ledger(FindAddress = [self.ReceiverAddress]).Key_Finder().FoundKey[0]
 		metadata = []
+
 		for i in range(int(self.bounce)-1, Insertion, -1):
-			if i == int(self.bounce)-1:
+			if i == int(self.bounce-1):
 				bounce_address = '0' * 81
+				print(bounce_address)
 			else:
-				bounce_address = Tranjectory[i+1]
-			bounce_key = TrajKeys[i]
-			self.PlainText = str(bounce_address)+str(bounce_key)
+				bounce_address = Trajectory[i+1]
+			self.PubKey = TrajKeys[i]
+			self.PlainText = str(bounce_address)+str(self.PubKey)
 			encoded_bouncedata = self.Encrypt().CipherText
 			metadata.append(encoded_bouncedata)
 
-		for i in range(Insertion, -1, -1):
+		for i in range (int(Insertion), -1, -1):
+			self.Password = Generators().Secret_Key().SecretKey
+			self.PlainText = needle
 			self.PubKey = ""
-			self.PlainText = needle 
 			needle = self.Encrypt().CipherText
 			if i == int(self.bounce)-1:
-				bounce_address = '0' * 81
+				bounce_address = '0'*81
 			else:
-				bounce_address = Tranjectory[i+1]
-			self.PlainText = str(bounce_address) + str(Generators().Secret_Key().SecretKey)
-			self.PubKey = TrajKeys[i].replace(r"\n","\n")
+				bounce_address = Trajectory[i+1]
+
+			self.PubKey = TrajKeys[i]
+			self.PlainText = str(bounce_address) + str(self.Password)
 			encoded_bouncedata = self.Encrypt().CipherText
 			metadata.append(encoded_bouncedata)
-			self.PlainText = needle
 
 		random.shuffle(metadata)
-		message_data = ""
+		message_data = ''
 		for i in range(0, len(metadata)):
-			message_data = str(message_data) + str(metadata[i]) + "##:##"
-		self.MessageLocked = str(self.PlainText) + "##Begin#Metadata##" + str(message_data)
-		self.FirstAddress = Tranjectory[0]
+			message_data = str(message_data) + str(metadata[i]) + '##:##'
+		self.MessageLocked = str(needle) + '##Begin#Metadata##' + str(message_data)
+		self.FirstAddress = Trajectory[0]
 		return self
 
 
 class Decryption:
-	def __init__(self, Password ="", CipherText = "", CharLib = "#,!:''.\ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-=", Default_Size = 256):
+	def __init__(self, Password ="", CipherText = "", CharLib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= ', Default_Size = 256):
 		self.Default_Size = Default_Size
 		self.CipherText = CipherText
 		self.CharLib = CharLib
 		self.Password = Password
 		self.PrivateKey = Generators(Pass = Password).Key_Pair().PrivateKey
 		self.fractal = self.CipherText
-		self.SecretKey = Generators().Secret_Key().SecretKey
+		#self.SecretKey = Generators().Secret_Key().SecretKey
 		self.identifier = '////'
 
 	def Decrypt(self):
-		if self.Password != "" and str(self.PrivateKey) != "":
+		if self.Password != "":
 			try:
 				cipher = PKCS1_OAEP.new(self.PrivateKey)
-				self.DecryptedText = cipher.decrypt(self.fractal)
+				self.DecryptedText = cipher.decrypt(str(self.fractal))
 			except ValueError:
 				self.DecryptedText = ""
 				pass
 		else:
-			self.DecryptedText = pyffx.String(self.SecretKey, alphabet = self.CharLib, length = len(str(self.fractal))).decrypt(str(self.fractal))
+			self.DecryptedText = pyffx.String(str(self.SecretKey), alphabet=str(self.CharLib), length=len(str(self.fractal))).decrypt(str(self.fractal))
 		return self
 
 	def Unlock(self):
 		Cipher = self.CipherText[:600]
 		metadata = self.CipherText[618:].split("##:##")
-		metadata.remove("")
-		decoded_data = ""
-		for i in metadata:
+		metadata.remove('')
+		decoded_data = ''
+		
+		for i in range(len(metadata)):
 			try:
-				print(i)
-				self.fractal = i
+				self.fractal = metadata[i]
 				decoded_data = self.Decrypt().DecryptedText
 			except:
 				pass
-
 			try:
-				bounce_address = self.fractal[:81]
+				bounce_address = decoded_data[:81]
 			except:
 				sys.exit(1)
+
 		self.SecretKey = decoded_data[81:]
 		self.Password = ""
+		self.fractal = Cipher
 		needle = self.Decrypt().DecryptedText
 		if needle[int(self.Default_Size - len(self.identifier)):int(self.Default_Size)] == str(self.identifier):
-			print("Message successfully received.")
-			print('Message:', needle[:int(int(self.default_size) - len(self.identifier))])
+			self.Message = str(needle[:int(int(self.Default_Size) - len(self.identifier))])
 		else:
 			print('Message is still locked!')
 		if bounce_address == '0'*81:
@@ -151,16 +155,17 @@ class Decryption:
 		else:
 			print('Bouncing...')
 		self.DecryptedText = needle
+		self.Verification = self.Verify_Needle().NeedleVerified
 		return self
 
 	def Verify_Needle(self):
-		PlainText = self.DecryptedText[:int(self.Default_Size)]
+		self.DecryptedText = self.DecryptedText[:int(self.Default_Size)]
 		Addresses_PubKey = Dynamic_Ledger().Scan_Address_Pool().Addresses
 		for i in Addresses_PubKey:
-			self.PublicKey = i[1] 
+			self.PublicKey = i[1].replace("\\n","\n")
 			try:
 				self.Signature = b64decode(self.DecryptedText[int(self.Default_Size):])
-				self.NeedleVerified = self.Signature_Verification().Verification
+				self.NeedleVerified = self.Signature_Verification()
 				self.FromAddress = i[0]
 			except:
 				self.NeedleVerified = "Authentication failed."
@@ -169,11 +174,8 @@ class Decryption:
 	def Signature_Verification(self):
 		digest = SHA256.new()
 		digest.update(self.DecryptedText)
-		verifier = PKCS1_v1_5.new(self.PublicKey)
-		verified = verifier.verify(digest, self.Signature)
-		assert verified, "Signature verfication failed"
-		self.Verification = verified
-
+		verifier = PKCS1_v1_5.new(RSA.importKey(self.PublicKey))
+		print(verifier.verify(digest, self.Signature))
 
 
 class User_Module:
@@ -274,7 +276,7 @@ class Generators:
    		return self
 
 	def Secret_Key(self):
-		self.SecretKey = str(os.urandom(64))
+		self.SecretKey = os.urandom(64)
 		return self
 	
 	def Path_Finder(self):
@@ -298,7 +300,7 @@ class Writing_And_Reading:
 		return data
 	def ReadingLine(self,directory):
 		with open(directory) as f:
-			data = f.readlines()
+			data = f.readline()
 		return data
 
 	
@@ -391,7 +393,7 @@ class Dynamic_Ledger:
 	def __init__(self, directory = "UserData", Public = "Public_Address_Pool.txt", PubSeed = "Public_Seed.txt", Server = "https://cryptoiota.win:14625",Password = "", max_address_pool = 2, FindAddress = ""):
 
 		self.PublicSeed = User_Module().PublicSeed 
-		self.Entry = Writing_And_Reading().ReadingLine(directory = str(directory+"/"+Public))
+		self.Entry = [Writing_And_Reading().ReadingLine(directory = str(directory+"/"+Public))]
 		self.FindAddress = FindAddress
 		self.directory = directory
 		self.Public = Public
@@ -400,9 +402,9 @@ class Dynamic_Ledger:
 		self.Password = Password
 		self.max_address_pool = max_address_pool
 		self.Seed = []
-
+		self.FoundKey = []
 	def Scan_Address_Pool(self):
-		Address_PublicKey = []		
+		Address_PublicKey = []
 		for i in self.Entry:
 			if "#New_Seed#" in i:
 				self.Seed.append(i)
@@ -452,94 +454,29 @@ class Dynamic_Ledger:
 	def Key_Finder(self):
 		self.Scan_Address_Pool()
 		try:
-			for i in self.Addresses:
-				if i[0] == self.FindAddress:
-					self.FoundKey = i[1]
+			for i in self.FindAddress:
+				for j in self.Addresses:
+					if str(i) == str(j[0]):
+						self.FoundKey.append(RSA.importKey(str(j[1]).replace('\\n','\n')))
 		except ValueError:
-			self.FoundKey = "No such address found!"
+			self.FoundKey.append(str("Address: " + i + " not found!"))
 		return self
-
-
-
-global chars
-chars = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= '
-global identifier
-identifier = '////'
-global default_size
-default_size = 256
-global alpha # number of trajectories
-alpha = 1
-global beta # number of bounces
-beta = 1
-
-
-def decode(ciphertext, secret_code):
-	priv_key = User_Module(password = secret_code).PrivateKey
-	cipher = PKCS1_OAEP.new(priv_key)
-	msg = cipher.decrypt(str(ciphertext))
-	return msg
-
-def decrypt(ciphertext, secret_key):
-	cipher = pyffx.String(str(User_Module(password = secret_key).PrivateKey), alphabet=str(chars), length=len(str(ciphertext)))
-	plaintext = cipher.decrypt(str(ciphertext))
-	return plaintext
-
-
-
-def unlock(locked_message, secret_code):
-    ciphertext = locked_message[:600]
-    metadata = locked_message[618:].split("##:##")
-    metadata.remove('')
-    for i in range (0, len(metadata)):
-        try:
-            decoded_data = decode(metadata[i], secret_code)
-        except:
-            pass
-        try:
-            bounce_address = decoded_data[:81]
-        except:
-            print 'Format error: No metadata could be decoded or the message exceeds 252 characters.'
-            sys.exit(1)
-    secret_key = decoded_data[81:]
-    needle = decrypt(ciphertext, secret_code)
-    if needle[int(default_size - len(identifier)):int(default_size)] == str(identifier):
-        print 'Message successfully received.'
-        print 'Message:', needle[:int(int(default_size) - len(identifier))]
-    else:
-        print 'Message is still locked!'
-    if bounce_address == '0'*81:
-        print 'Message terminated.'
-    else:
-        print 'Bouncing...'
-    return needle
-
-
-
-
-
-
-
-
 
 
 
 # Here we initialize the script:
 Password = "Hello World"
-message = "Ergo "
-address = "DCNHW9HVYKNLC9DJVDOJIWB9FMCERABH9NVIKHVKQFBMTV9DL9SFNPFDYRNCEDMGDVJPKSIOZTTLGGMAX"
+message = "wefWFWFWefWEFWfeFxcvxvxvyxcxyvxcvWEFEWFGERAERSAGERGEergeartgergerg"
+address = 'DCNHW9HVYKNLC9DJVDOJIWB9FMCERABH9NVIKHVKQFBMTV9DL9SFNPFDYRNCEDMGDVJPKSIOZTTLGGMAX'
 Sev = "http://localhost:14265"
-Setup = User_Module(password = Password, Server = Sev)
+Setup = User_Module(password = Password, Server = Sev).PublicKey
 
 AboutToSend = Encryption(password = Password, PlainText = message, ReceiverAddress = str(address)).Lock_And_Load()
 cipher = AboutToSend.MessageLocked
 addressing = AboutToSend.FirstAddress
+print(Generators(Pass = Password).Key_Pair().PublicKey)
 
-needle = unlock(cipher, Password)
-#verify_needle(needle, read_public_key())
-
-
-#Faction = Decryption(Password = Password, CipherText = cipher)
-#unlocked = Faction.Unlock().DecryptedText
-#verify = Faction.Verify_Needle().NeedleVerified
+Faction = Decryption(Password = Password, CipherText = cipher).Unlock()
+unlocked = Faction.Message
 #print(unlocked)
-#print(verify)
+print(Faction.NeedleVerified)
