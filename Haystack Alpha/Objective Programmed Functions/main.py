@@ -36,7 +36,6 @@ class Encryption:
 		#First statement is the symmetric encryption
 		if str(self.PubKey) == "":
 			cipher = pyffx.String(str(self.Password), alphabet = str(self.CharLib) , length=len(str(self.PlainText)))
-			self.CipherText = cipher.encrypt(str(self.PlainText))
 
 		#Asymetric encryption
 		else:
@@ -73,7 +72,6 @@ class Encryption:
 		for i in range(int(self.bounce)-1, Insertion, -1):
 			if i == int(self.bounce-1):
 				bounce_address = '0' * 81
-				print(bounce_address)
 			else:
 				bounce_address = Trajectory[i+1]
 			self.PubKey = TrajKeys[i]
@@ -147,15 +145,16 @@ class Decryption:
 		self.SecretKey = decoded_data[81:]
 		self.Password = ""
 		self.fractal = Cipher
+		self.Status = ""
 		needle = self.Decrypt().DecryptedText
 		if needle[int(self.Default_Size - len(self.identifier)):int(self.Default_Size)] == str(self.identifier):
 			self.Message = str(needle[:int(int(self.Default_Size) - len(self.identifier))])
 		else:
-			print('Message is still locked!')
+			self.Status = 'Message is still locked!'
 		if bounce_address == '0'*81:
-			print('Message terminated.')
+			self.Status = 'Message terminated.'
 		else:
-			print('Bouncing...')
+			self.Status = 'Bouncing...'
 		self.DecryptedText = needle
 		self.Verification = self.Verify_Needle().NeedleVerified
 		return self
@@ -184,7 +183,7 @@ class Decryption:
 class User_Module:
 	#initializes the class by building the directory
 	def __init__(self, Server = "https://cryptoiota.win:14625", directory = "UserData", SeedFile = "Seed_Key.txt", RSA = "Keys", password = "", PublicSeed = "Public_Seed.txt", UserAddress = "Public_Address.txt"):
-
+	
 		if not os.path.exists(str(directory+"/"+RSA)):
 			try:
 				os.makedirs(directory)
@@ -205,10 +204,7 @@ class User_Module:
 			self.PublicKey = Generators(Pass = password).Key_Pair().PublicKey
 		
 		if not os.path.isfile(str(directory+"/"+SeedFile)):
-			self.PrivateSeed = Generators().Seed_Generator().Seed
-			EncodedSeed = Encryption(PlainText = self.PrivateSeed, PubKey = self.PublicKey).Encrypt().CipherText	
-			Writing_And_Reading().Writing(str(directory+"/"+SeedFile), EncodedSeed)
-
+			self.PrivateKey = Generators(PublicKey = self.PublicKey).Private_Seed(directory = str(directory+"/"+SeedFile)).PrivateKey	
 			SendToLedger = IOTA_Module(server = Server).Generate_Address().Address
 			self.PublicLedgerAddress = IOTA_Module(server = Server, Password = password).Generate_Address().Address
 
@@ -234,15 +230,14 @@ class User_Module:
 		if password != "":
 			EncodedSeed = Writing_And_Reading().Reading(str(directory+"/"+SeedFile))
 			self.PrivateSeed = Decryption(CipherText = EncodedSeed, Password = password).Decrypt().DecryptedText
-	
 		
 class Generators:
 	#Generates a random seed
-	def __init__(self, Pass = "", bounce = 1):
+	def __init__(self, Pass = "", bounce = 1, PublicKey = []):
 		self.password = Pass
 		self.beta = bounce
 		self.Address = []
-		self.PublicKey = []
+		self.PublicKey = PublicKey
 
 	def Seed_Generator(self):
 		rand = SystemRandom()
@@ -251,7 +246,13 @@ class Generators:
 		seed = [random_trytes[rand.randrange(len(random_trytes))] for x in range(81)]
 		self.Seed = ''.join(seed)
 		return self
- 		
+		
+ 	def Private_Seed(self, directory = ""):
+ 		self.PrivateKey = self.Seed_Generator().Seed
+ 		EncodedSeed = Encryption(PlainText = str(self.PrivateKey), PubKey = RSA.importKey(self.Key_Pair().PublicKey)).Encrypt().CipherText
+ 		Writing_And_Reading().Writing(directory, EncodedSeed)
+ 		return self
+
  	def Key_Pair(self, directory = "UserData", Keys = "Keys", PrivKey = "priv_key.pem", PubKey = "pub_key.pem"):
  		PublKey = str(directory+"/"+Keys+"/"+PubKey)
  		PrivaKey = str(directory+"/"+Keys+"/"+PrivKey)
@@ -271,11 +272,9 @@ class Generators:
 			Priv = Writing_And_Reading().Reading(PrivaKey)
 			try:	
    				self.PrivateKey = RSA.importKey(Priv, passphrase = self.password)
-   				Data = Writing_And_Reading().Reading(PublKey)
-   				self.PublicKey = RSA.importKey(Data.replace("\\n","\n")).exportKey()
+   				self.PublicKey = RSA.importKey(Writing_And_Reading().Reading(PublKey)).exportKey()
    			except ValueError:
    				self.PrivateKey = ""
-   				pass
    		return self
 
 	def Secret_Key(self):
@@ -352,10 +351,10 @@ class IOTA_Module:
 		Message = []
 		for i in bundle:
 			message = str(i.get_messages()).strip("[u'").strip("']")
-			Message.append(message)
+			Message.append(message.decode("hex"))
 		self.Messages = Message
 		try:
-			self.LatestMessage = Message[len(bundle)-1].decode("hex")
+			self.LatestMessage = Message[len(bundle)-1]
 		except IndexError:
 			self.LatestMessage = "No Message"
 		return self		
@@ -406,6 +405,7 @@ class Dynamic_Ledger:
 		self.max_address_pool = max_address_pool
 		self.Seed = []
 		self.FoundKey = []
+
 	def Scan_Address_Pool(self):
 		Address_PublicKey = []
 		for i in self.Entry:
@@ -466,19 +466,3 @@ class Dynamic_Ledger:
 		return self
 
 
-
-# Here we initialize the script:
-Password = "Hello World"
-message = "fnffxpbxrahxujuqiiiomhbosrcnklfvuzesehajvahjqprjtdnaqhgqqzzdcbmovmxqmfaugglrgrtfwoatjxrnrdctszhupneitlvrymgjwrcpwbzrcwvowmxdsuzqniyuawytjilmiixwlkbrpcztcdjdjmssnyigpevfbpsjdekpcajvajlqpqgcbizmmigxusgfnnktwfdxfxgslpinfkaupmclmmsinrlqzsgfljnlidxbaodmnvmm"
-address = 'DCNHW9HVYKNLC9DJVDOJIWB9FMCERABH9NVIKHVKQFBMTV9DL9SFNPFDYRNCEDMGDVJPKSIOZTTLGGMAX'
-Sev = "http://localhost:14265"
-Setup = User_Module(password = Password, Server = Sev).PublicKey
-
-AboutToSend = Encryption(password = Password, PlainText = message, ReceiverAddress = str(address)).Lock_And_Load()
-cipher = AboutToSend.MessageLocked
-addressing = AboutToSend.FirstAddress
-
-Faction = Decryption(Password = Password, CipherText = cipher).Unlock()
-unlocked = Faction.Message
-print(unlocked)
-print(Faction.NeedleVerified)
