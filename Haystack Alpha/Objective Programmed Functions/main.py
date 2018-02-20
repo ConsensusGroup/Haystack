@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-#-*- coding: utf-8 -*-
-
 #Iota library
 from iota import TryteString, Address, ProposedBundle, ProposedTransaction, Bundle
 from iota.crypto.addresses import AddressGenerator
@@ -26,6 +23,8 @@ from base64 import b64encode, b64decode
 #This class is responsible for the encryption side of things
 class Encryption:
 	def __init__(self, PlainText = "", PubKey = "", ReceiverAddress = "", CharLib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= ', password = "", bounce = 1):
+
+		#Here we set the attributes of the class
 		self.PlainText = PlainText
 		self.PubKey = PubKey
 		self.CharLib = CharLib
@@ -47,21 +46,25 @@ class Encryption:
 
 	def Message_Signature(self):
 		digest = SHA256.new()
-		digest.update(self.PlainText)
+		digest.update(self.Normal)
 		signer = PKCS1_v1_5.new(Generators(Pass = self.Password).Key_Pair().PrivateKey)
 		self.Signature = signer.sign(digest)
 		return self	
 
 	def Prepare_Needle(self):
+		self.Normal = Transform().normalise(self.PlainText)
 		Signed = self.Message_Signature().Signature
-		Normalize = Transform().normalise(self.PlainText)
-		self.Needle = str(Normalize)+str(b64encode(Signed))
+		self.Needle = str(self.Normal)+str(b64encode(Signed))
 		return self
 	
 	def Lock_And_Load(self):
 		needle = self.Prepare_Needle().Needle
+
+		#Generate a list of random addresses which are the trajectory of a message
 		Trajectory = Generators(bounce = self.bounce).Path_Finder().Address
 		TrajKeys = Dynamic_Ledger(FindAddress = Trajectory).Key_Finder().FoundKey
+
+		#Generate a random index to add the recipent in the trajectory
 		Insertion = int(random.randrange(0,int(self.bounce),1))
 		Trajectory[int(Insertion)] = self.ReceiverAddress
 		TrajKeys[int(Insertion)] = Dynamic_Ledger(FindAddress = [self.ReceiverAddress]).Key_Finder().FoundKey[0]
@@ -110,7 +113,6 @@ class Decryption:
 		self.Password = Password
 		self.PrivateKey = Generators(Pass = Password).Key_Pair().PrivateKey
 		self.fractal = self.CipherText
-		#self.SecretKey = Generators().Secret_Key().SecretKey
 		self.identifier = '////'
 
 	def Decrypt(self):
@@ -159,24 +161,25 @@ class Decryption:
 		return self
 
 	def Verify_Needle(self):
-		self.DecryptedText = self.DecryptedText[:int(self.Default_Size)]
+		self.Text = self.DecryptedText[:int(self.Default_Size)]
 		Addresses_PubKey = Dynamic_Ledger().Scan_Address_Pool().Addresses
+		self.Signature = b64decode(self.DecryptedText[int(self.Default_Size):])
+		self.NeedleVerified = []
 		for i in Addresses_PubKey:
 			self.PublicKey = i[1].replace("\\n","\n")
-			try:
-				self.Signature = b64decode(self.DecryptedText[int(self.Default_Size):])
-				self.NeedleVerified = self.Signature_Verification()
-				self.FromAddress = i[0]
-			except:
-				self.NeedleVerified = "Authentication failed."
+		try:
+			self.Signature_Verification().Verified
+			self.NeedleVerified.append("From Address: '{}'".format(i[0]))
+		except:
+			self.NeedleVerified.append("Authentication failed.")
 		return self
 
 	def Signature_Verification(self):
 		digest = SHA256.new()
-		digest.update(self.DecryptedText)
+		digest.update(self.Text)
 		verifier = PKCS1_v1_5.new(RSA.importKey(self.PublicKey))
-		print(verifier.verify(digest, self.Signature))
-
+		self.Verified = verifier.verify(digest, self.Signature)
+		return self
 
 class User_Module:
 	#initializes the class by building the directory
@@ -328,7 +331,7 @@ class IOTA_Module:
 		self.api = Iota(RoutingWrapper(str(server)).add_route('attachToTangle', 'http://localhost:14265'), seed = self.Seed)
 
 	def Sending(self, ReceiverAddress, Message):
-		text_transfer = TryteString.from_string(str(Message))
+		text_transfer = TryteString.from_string(str(Message.encode("hex")))
 		#This now proposes a transaction to a person. The "message = ..." command is a message that the receiver should be able to decode once arrived.
 		txn_2 = ProposedTransaction(address = Address(ReceiverAddress), message = text_transfer, value = 0)
 		#Now create a new bundle (i.e. propose a bundle)
@@ -352,7 +355,7 @@ class IOTA_Module:
 			Message.append(message)
 		self.Messages = Message
 		try:
-			self.LatestMessage = Message[len(bundle)-1]
+			self.LatestMessage = Message[len(bundle)-1].decode("hex")
 		except IndexError:
 			self.LatestMessage = "No Message"
 		return self		
@@ -466,7 +469,7 @@ class Dynamic_Ledger:
 
 # Here we initialize the script:
 Password = "Hello World"
-message = "wefWFWFWefWEFWfeFxcvxvxvyxcxyvxcvWEFEWFGERAERSAGERGEergeartgergerg"
+message = "fnffxpbxrahxujuqiiiomhbosrcnklfvuzesehajvahjqprjtdnaqhgqqzzdcbmovmxqmfaugglrgrtfwoatjxrnrdctszhupneitlvrymgjwrcpwbzrcwvowmxdsuzqniyuawytjilmiixwlkbrpcztcdjdjmssnyigpevfbpsjdekpcajvajlqpqgcbizmmigxusgfnnktwfdxfxgslpinfkaupmclmmsinrlqzsgfljnlidxbaodmnvmm"
 address = 'DCNHW9HVYKNLC9DJVDOJIWB9FMCERABH9NVIKHVKQFBMTV9DL9SFNPFDYRNCEDMGDVJPKSIOZTTLGGMAX'
 Sev = "http://localhost:14265"
 Setup = User_Module(password = Password, Server = Sev).PublicKey
@@ -474,9 +477,8 @@ Setup = User_Module(password = Password, Server = Sev).PublicKey
 AboutToSend = Encryption(password = Password, PlainText = message, ReceiverAddress = str(address)).Lock_And_Load()
 cipher = AboutToSend.MessageLocked
 addressing = AboutToSend.FirstAddress
-print(Generators(Pass = Password).Key_Pair().PublicKey)
 
 Faction = Decryption(Password = Password, CipherText = cipher).Unlock()
 unlocked = Faction.Message
-#print(unlocked)
+print(unlocked)
 print(Faction.NeedleVerified)
