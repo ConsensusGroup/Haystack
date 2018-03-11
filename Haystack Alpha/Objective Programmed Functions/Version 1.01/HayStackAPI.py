@@ -307,9 +307,43 @@ class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynam
 
 		#Generate a random index to add the recipent in the trajectory
 		Insertion = int(random.randrange(0,len(Trajectory),1))
+		Trajectory[int(Insertion)] = [Address, ReceiverPublicKey.replace("\n","\\n")]
+		
+		metadata = []
+		for i in range(int(len(Trajectory))-1, Insertion, -1):
+			if i == int(len(Trajectory)-1):
+				bounce_address = '0' * 81
+			else:
+				bounce_address = Trajectory[i+1][0]
+			PublicKey = Trajectory[i][1]
+			PlainText = str(bounce_address)+str(PublicKey)
 
-		Trajectory[int(Insertion)] = [Address, ReceiverPublicKey]
-		print(Trajectory)
+			encoded_bouncedata = self.AsymmetricEncryption(PlainText = PlainText, PublicKey = PublicKey)
+			metadata.append(encoded_bouncedata)
+			print(PublicKey)
+
+#		for i in range (int(Insertion), -1, -1):
+#			self.Password = Generators().Secret_Key().SecretKey
+#			self.PlainText = needle
+#			self.PubKey = ""
+#			needle = self.Encrypt().CipherText
+#			if i == int(self.bounce)-1:
+#				bounce_address = '0'*81
+#			else:
+#				bounce_address = Trajectory[i+1]
+#
+#			self.PubKey = TrajKeys[i]
+#			self.PlainText = str(bounce_address) + str(self.Password)
+#			encoded_bouncedata = self.Encrypt().CipherText
+#			metadata.append(encoded_bouncedata)
+
+#		random.shuffle(metadata)
+#		message_data = ''
+#		for i in range(0, len(metadata)):
+#			message_data = str(message_data) + str(metadata[i]) + '##:##'
+#		self.MessageLocked = str(needle) + '##Begin#Metadata##' + str(message_data)
+#		self.FirstAddress = Trajectory[0]
+#		return self
 
 	def NormalizeSign(self, PlainText):
 		Normal = self.Normalize(string = PlainText)
@@ -320,7 +354,6 @@ class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynam
 	def PathFinder(self, Length = 1, ReceiverPublicKey = ""):
 		self.Trajectory = []
 		self.Addresses = Dynamic_Ledger().CurrentBlock().PublicLedger
-		print()
 		for i in range(Length):
 			index = random.randrange(0, len(self.Addresses))
 			self.Trajectory.append(self.Addresses[index-1])
@@ -357,8 +390,6 @@ if function == "Encrypt_Decrypt":
 	ReceiverPublicKey = User_Profile().Client().ClientPublicKey
 	Text = "Hello there How are we today my friend I am trying to implement the decryption"
 	Messages().ToEncrypt(PlainText = Text, ReceiverPublicKey = ReceiverPublicKey, TrajectoryLength = 4)
-
-
 
 
 if function == "IOTA":
