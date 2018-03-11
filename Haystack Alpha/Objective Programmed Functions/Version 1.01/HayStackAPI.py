@@ -38,8 +38,9 @@ class Configuration:
 		self.PrivateKeyFile = "PrivateKeyFile.pem"
 		self.PublicKeyFile = "PublicKeyFile.pem"
 		self.Identifier = "////"
-		self.Genesis = 362400
-		self.BlockStep = 200
+		self.GenesisTime = 1520726570370
+		self.BlockTime = 2000000
+		self.LastBlockInclusion = 0
 
 		##### Directories #####
 		self.PrivateKeyDir = str(self.Root+"/"+self.RSA+"/"+self.PrivateKeyFile)
@@ -50,6 +51,7 @@ class Configuration:
 ######### Base Classes ###########
 class IOTA_Module(Configuration):
 	def __init__(self, Seed, Server = "http://localhost:14265"):
+		Configuration.__init__(self)
 		self.api = Iota(RoutingWrapper(str(Server)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed)
 
 	def Sending(self, ReceiverAddress, Message):
@@ -64,17 +66,22 @@ class IOTA_Module(Configuration):
 		coded = bundle.as_tryte_strings()
 		send = self.api.send_trytes(trytes = coded, depth = 4)
 
-	def Receive(self):
+	def Receive(self, Starting = 0, Stopping = ""):
 		#We pull the transaction history of the account (using the seed)
-		mess = self.api.get_account_data(start = 0)
-		
+		if Stopping == "":
+			mess = self.api.get_account_data(start = Starting)
+		else:
+			mess = self.api.get_account_data(start = Starting, stop = Stopping)
+
 		#Decompose the Bundle into components
 		bundle = mess.get('bundles')
 		Message = []
-		AssociatedMessages = []
+		self.JsonEntries = []
 		for i in bundle:
 			message = str(i.get_messages()).strip("[u'").strip("']")
-
+			Json = str(i.as_json_compatible()[0])
+			combine = [Json,message]
+			self.JsonEntries.append(combine)
 			Message.append(message)
 
 		self.Messages = Message
@@ -89,27 +96,48 @@ class IOTA_Module(Configuration):
 		self.Address = str(generate.get('addresses')).strip("[Address(").strip(")]").strip("'")		
 		return self
 
-	def LatestMileStone(self):
+	def LatestTangleTime(self):
 		Node = self.api.get_node_info()
-		self.MileStone = Node.get("latestMilestoneIndex")
+		self.TangleTime = Node.get("time")
 		return self
 
-	def AssociatedMessages(self):
-		data = self.api.get_account_data(start = 0)
+	def AssociatedMessages(self, Block, Address):
+		data = self.api.get_transfers(start = Block, stop = Block +1)
 		bundle = data.get('bundles')
 		self.PublicLedger = []
+		Conf = Configuration()
+		self.Check = False
 		if bundle != []:
 			for i in bundle:
 				Entry = str(i.get_messages()).strip("[u'").strip("']")
 				json = i.as_json_compatible()
-				dictionary = eval(str(json))
-				AssociatedAddress = str(dictionary[0].get('address'))
-				Combine = [Entry, AssociatedAddress]
-				print(Combine)
-				self.PublicLedger.append(Combine)
+				AttachedTime = str(json[0].get('attachment_timestamp'))
+
+				#Verify that client is in pool
+				if Address in Entry:
+					self.Check = True
+
+				#Block at which message was sent to
+				BlockOfAddress = float(int(AttachedTime) - Conf.GenesisTime) / float(Conf.BlockTime)
+
+				if BlockOfAddress >= Block:
+					if Entry not in self.PublicLedger:
+						self.PublicLedger.append(Entry)
+		return self
+	
+	def InboxHistory(self):
+		Dyn = Dynamic_Ledger().CurrentBlock()
+		Entries = self.Receive(Starting = self.LastBlockInclusion, Stopping = Dyn.Block).JsonEntries
+		self.Inbox = []
+		for i in Entries:
+			Time = eval(i[0]).get('attachment_timestamp')
+			Blocks = Dynamic_Ledger().CalculateBlock(Current = Time).Block
+			Addresses = i[1]
+			Combine = [Blocks, Addresses]
+			self.Inbox.append(Combine)
 		return self
 
-class Generators(Configuration, IOTA_Module):
+class Generators(Configuration):
 
 	def Seed_Generator(self):
 		random_trytes = [i for i in map(chr, range(65,91))]
@@ -230,20 +258,7 @@ class Decryption(Configuration, User_Profile):
 		self.Verified = Verifier.verify(digest, Signature)
 		return self
 
-class Message(Encryption, Decryption, User_Profile, Tools):
-
-	def ToProcess(self, PlainText):
-		NormalizedSigned = self.NormalizeSign(PlainText = PlainText).Normal_Signed
-		print(NormalizedSigned)
-
-
-	def NormalizeSign(self, PlainText):
-		Normal = self.Normalize(string = PlainText)
-		Signature = self.MessageSignature(ToSign = Normal).Signature
-		self.Normal_Signed = str(Normal) + str(b64encode(Signature))
-		return self
-
-class Dynamic_Ledger(Configuration, User_Profile):
+class Dynamic_Ledger(Configuration, User_Profile, IOTA_Module):
 
 	def __init__(self):
 		User_Profile.__init__(self)
@@ -251,70 +266,108 @@ class Dynamic_Ledger(Configuration, User_Profile):
 		self.PrivateIOTA = IOTA_Module(Seed = self.Client().PrivateSeed)
 		self.ToPublish = str(self.Client().ClientAddress+"###"+str(self.Client().ClientPublicKey))
 
-	def MiletoneTrack(self):
-		#Check the current milestone
-		Current = self.PublicIOTA.LatestMileStone().MileStone
+	def CalculateBlock(self, Current):
+		#Calculate the current Block and use as index for current address
+		self.Blockfloat = float((Current - self.GenesisTime) / float(self.BlockTime))
+		self.Block = math.trunc(self.Blockfloat)
+		return self
 
-		#Calculate current Block and use as index for current address
-		Block = float((Current - self.Genesis)/float(self.BlockStep))
-		CurrentAddress = self.PublicIOTA.Generate_Address(Index = math.trunc(Block)).Address
+	def CurrentBlock(self):
+		#Check the current time of the Tangle
+		Current = self.PublicIOTA.LatestTangleTime().TangleTime
 
-		self.PublicPool(Check = "Yes", BlockAddress = CurrentAddress)
-		print(self.Present)
-		
-		#Check if nunber is integer. If yes client needs to send to new address
-		NewBlock = Block.is_integer()
+		self.CalculateBlock(Current = Current)
+		self.CurrentAddress = self.PublicIOTA.Generate_Address(Index = self.Block).Address
+		self.ClientCurrentAddress = self.PrivateIOTA.Generate_Address(Index = self.Block).Address
 
-		#Get new address public ledger block address
-		if (NewBlock is True and self.Present == "False") or self.Present == "False":
-			print("Changed Pool")
-			self.PrivateIOTA.Sending(ReceiverAddress = CurrentAddress, Message = self.ToPublish)
+		#Monitor the block to see if it is an integer. If yes client needs to send to new address
+		NewBlock = self.Blockfloat.is_integer() 
 
-	def PublicPool(self, BlockAddress, Check = "No"):
-		Entries = self.PublicIOTA.AssociatedMessages().PublicLedger
-		self.Pool = []
-		self.Present = "False"
-		for i in range(len(Entries)):
-			Clients = Entries[i][0]
-			AddressBlock = Entries[i][1]
-			if AddressBlock == BlockAddress:
-				if Clients not in self.Pool:
-					self.Pool.append(Clients)
+		#Check if the current address is in the current block:
+		AddressPool = self.PublicIOTA.AssociatedMessages(Block = self.Block, Address = str(self.ClientCurrentAddress))
+		if (AddressPool.Check is False or NewBlock is True):
+			ToPublish = str(self.ClientCurrentAddress +"###"+self.Client().ClientPublicKey)
+			self.PrivateIOTA.Sending(ReceiverAddress = self.CurrentAddress, Message = str(ToPublish))
 
-				if Check != "No":
-					if str(Clients).replace("\\n","\n") == self.ToPublish:
-						self.Present = "True"
-
-		#Now Write the pool to file
-#		if self.Pool != []:
-#			Tools().Writing(directory = self.AddressPool, data = self.Pool)
+		#Output a list of public addresses and public keys
+		self.PublicLedger = []
+		for i in AddressPool.PublicLedger:
+			Entry = i.split("###")
+			Combine = [Entry[0],Entry[1]]
+			self.PublicLedger.append(Combine)
 		return self
 
 
-function = "DynamicLedger"
+class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynamic_Ledger):
+
+	def ToEncrypt(self, PlainText, ReceiverPublicKey, TrajectoryLength = 1):
+		NormalizedSigned = self.NormalizeSign(PlainText = PlainText).Normal_Signed
+		Address = self.KeyFinder(PublicKeyToFind = ReceiverPublicKey).Address
+		Trajectory = self.PathFinder(Length = TrajectoryLength, ReceiverPublicKey = ReceiverPublicKey).Trajectory
+
+		#Generate a random index to add the recipent in the trajectory
+		Insertion = int(random.randrange(0,len(Trajectory),1))
+
+		Trajectory[int(Insertion)] = [Address, ReceiverPublicKey]
+		print(Trajectory)
+
+	def NormalizeSign(self, PlainText):
+		Normal = self.Normalize(string = PlainText)
+		Signature = self.MessageSignature(ToSign = Normal).Signature
+		self.Normal_Signed = str(Normal) + str(b64encode(Signature))
+		return self
+
+	def PathFinder(self, Length = 1, ReceiverPublicKey = ""):
+		self.Trajectory = []
+		self.Addresses = Dynamic_Ledger().CurrentBlock().PublicLedger
+		print()
+		for i in range(Length):
+			index = random.randrange(0, len(self.Addresses))
+			self.Trajectory.append(self.Addresses[index-1])
+		return self
+
+	def KeyFinder(self, PublicKeyToFind):
+
+		#grab all the transactions associated with the public ledger.
+		Entries = IOTA_Module(Seed = self.PublicSeed).InboxHistory().Inbox
+		self.Inclusions = []
+
+		x = 0
+		for i in Entries:
+			if PublicKeyToFind in i[1].replace("\\n","\n"):
+				if i[0] >= x:
+					x = i[0]
+					Splitted = i[1].split("###")
+					self.Address = Splitted[0]
+		return self
+
+
+
+
+
+function = "Encrypt_Decrypt"
 
 if function == "Build":
 	#Generate the dir and build the files
 	Initialization().Build_Directory()
 	Initialization().Build_Files()
-	x =User_Profile() 
-	x.Client()
-	passed = x.Check().Checked
-	print(passed)
-
 
 if function == "Encrypt_Decrypt":
-	Text = "Hello there"
-	Message().To_Process(PlainText = Text)
-	#Prepare the needle and encrypt it
+	#I am the receiver.
+	ReceiverPublicKey = User_Profile().Client().ClientPublicKey
+	Text = "Hello there How are we today my friend I am trying to implement the decryption"
+	Messages().ToEncrypt(PlainText = Text, ReceiverPublicKey = ReceiverPublicKey, TrajectoryLength = 4)
+
+
+
 
 if function == "IOTA":
 	Test = "Hello World"
-	x = IOTA_Module(Seed = "WCGOWTHOWPC9KYYDLOEDDZMUHPWVASCWPTX9PZEPWWNKNNEETCPZISMZTM99GNRCZQ9GGOBIBKNYNSPAS", Server = "http://node.lukaseder.de:14265")
+	x = IOTA_Module(Seed = "WCGOWTHOWPC9KYYDLOEDDZMUHPWVASCWPTX9PZEPWWNKNNEETCPZISMZTM99GNRCZQ9GGOBIBKNYNSPAS", Server = "http://localhost:14265")
 	x.Sending(ReceiverAddress = "NPBXSOXDPLXSCSZIVQCJBHPLJONYBZEASZHDXWPYDLBXXTH9HORYWTDZEXZODIHGF9QBIB9OZTKFMFUVDGBAHFYXPD", Message = Test)
 	x.Receive()
 
 if function == "DynamicLedger":
-	for i in range(10):
-		IOTA_Module(Seed = Configuration().PublicSeed)
-		Dynamic_Ledger().MiletoneTrack()
+	while True:
+		x = Dynamic_Ledger().CurrentBlock().PublicLedger
+		print(x)
