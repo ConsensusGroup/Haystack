@@ -22,10 +22,12 @@ import time
 from multiprocessing.pool import ThreadPool
 import time, math
 
+#java -jar iri-1.4.2.1.jar -p 14265
+
 ######## Configuration  ###########
 class Configuration:
 	def __init__(self):
-		self.Server = "http://cryptoiota.win:14265"
+		self.Server = "https://tuna.iotasalad.org:14265"
 		self.Password = "Hello World"
 		self.PublicSeed = "TEAWYYNAY9BBFR9RH9JGHSSAHYJGVYACUBBNBDJLWAATRYUZCXHCUNIPXOGXI9BBHKSHDFEAJOVZDLUWV"
 		self.Charlib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= '
@@ -40,7 +42,6 @@ class Configuration:
 		self.Identifier = "////"
 		self.GenesisTime = 1520726570370
 		self.BlockTime = 2000000
-		self.LastBlockInclusion = 0
 
 		##### Directories #####
 		self.PrivateKeyDir = str(self.Root+"/"+self.RSA+"/"+self.PrivateKeyFile)
@@ -54,7 +55,7 @@ class IOTA_Module(Configuration):
 		Configuration.__init__(self)
 		self.api = Iota(RoutingWrapper(str(Server)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed)
 
-	def Sending(self, ReceiverAddress, Message):
+	def Send(self, ReceiverAddress, Message):
 		text_transfer = TryteString.from_string(str(Message))
 		#This now proposes a transaction to a person. The "message = ..." command is a message that the receiver should be able to decode once arrived.
 		txn_2 = ProposedTransaction(address = Address(ReceiverAddress), message = text_transfer, value = 0)
@@ -66,12 +67,12 @@ class IOTA_Module(Configuration):
 		coded = bundle.as_tryte_strings()
 		send = self.api.send_trytes(trytes = coded, depth = 4)
 
-	def Receive(self, Starting = 0, Stopping = ""):
+	def Receive(self, Start = 0, Stop = ""):
 		#We pull the transaction history of the account (using the seed)
-		if Stopping == "":
-			mess = self.api.get_account_data(start = Starting)
+		if Stop == "":
+			mess = self.api.get_account_data(start = Start)
 		else:
-			mess = self.api.get_account_data(start = Starting, stop = Stopping)
+			mess = self.api.get_account_data(start = Start, stop = Stop)
 
 		#Decompose the Bundle into components
 		bundle = mess.get('bundles')
@@ -89,11 +90,11 @@ class IOTA_Module(Configuration):
 			self.LatestMessage = Message[len(bundle)-1]
 		except IndexError:
 			self.LatestMessage = "No Message"
-		return self		
+		return self
 
 	def Generate_Address(self, Index = 0):
 		generate = self.api.get_new_addresses(index = int(Index))
-		self.Address = str(generate.get('addresses')).strip("[Address(").strip(")]").strip("'")		
+		self.Address = str(generate.get('addresses')).strip("[Address(").strip(")]").strip("'")
 		return self
 
 	def LatestTangleTime(self):
@@ -101,7 +102,7 @@ class IOTA_Module(Configuration):
 		self.TangleTime = Node.get("time")
 		return self
 
-	def AssociatedMessages(self, Block, Address):
+	def GetAddresses(self, Block, Address):
 		data = self.api.get_transfers(start = Block, stop = Block +1)
 		bundle = data.get('bundles')
 		self.PublicLedger = []
@@ -124,16 +125,14 @@ class IOTA_Module(Configuration):
 					if Entry not in self.PublicLedger:
 						self.PublicLedger.append(Entry)
 		return self
-	
+
 	def InboxHistory(self):
-		Dyn = Dynamic_Ledger().CurrentBlock()
-		Entries = self.Receive(Starting = self.LastBlockInclusion, Stopping = Dyn.Block).JsonEntries
+		Entries = self.Receive(Start = 0).JsonEntries
 		self.Inbox = []
 		for i in Entries:
 			Time = eval(i[0]).get('attachment_timestamp')
-			Blocks = Dynamic_Ledger().CalculateBlock(Current = Time).Block
-			Addresses = i[1]
-			Combine = [Blocks, Addresses]
+			Messages = i[1]
+			Combine = [Time, Messages]
 			self.Inbox.append(Combine)
 		return self
 
@@ -143,18 +142,19 @@ class Generators(Configuration):
 		random_trytes = [i for i in map(chr, range(65,91))]
 		random_trytes.append('9')
 		seed = [random_trytes[SystemRandom().randrange(len(random_trytes))] for x in range(81)]
-		self.Seed = ''.join(seed)
-		return self
-	
+		return ''.join(seed)
+
 	def Key_Pair(self):
 		pair = RSA.generate(2048)
 		self.PrivateKey = pair.exportKey(format = "PEM", passphrase = self.Password)
 		self.PublicKey = pair.publickey().exportKey(format = 'PEM')
 		return self
 
+	def Secret_Key(self):
+	    return os.urandom(64)
 
 class Initialization(Configuration):
-	
+
 	def Build_Directory(self):
 		if not os.path.exists(self.Root):
 			try:
@@ -167,42 +167,35 @@ class Initialization(Configuration):
 		x = os.path
 		keys = Generators().Key_Pair()
 		if not (x.isfile(self.PrivateKeyDir) or x.isfile(self.PublicKeyDir) or x.isfile(self.PrivateSeedDir)):
-			ClientSeed = Generators().Seed_Generator().Seed
+			ClientSeed = Generators().Seed_Generator()
 			Ciphertext = Encryption().AsymmetricEncryption(PlainText = ClientSeed, Publickey = str(keys.PublicKey))
-			Tools().Writing(directory = self.PrivateSeedDir, data = Ciphertext)
-			Tools().Writing(directory = self.PrivateKeyDir, data = keys.PrivateKey)
-			Tools().Writing(directory = self.PublicKeyDir, data = keys.PublicKey)
+			Tools().Write(directory = self.PrivateSeedDir, data = Ciphertext)
+			Tools().Write(directory = self.PrivateKeyDir, data = keys.PrivateKey)
+			Tools().Write(directory = self.PublicKeyDir, data = keys.PublicKey)
 
 
 class User_Profile(Configuration):
 
-	def Client(self):
-		CipherPrivate = Tools().ReadingLine(directory = self.PrivateKeyDir)
-		Public = Tools().ReadingLine(directory = self.PublicKeyDir)
+	def __init__(self):
+		Configuration.__init__(self)
+		CipherPrivate = Tools().ReadLine(directory = self.PrivateKeyDir)
+		Public = Tools().ReadLine(directory = self.PublicKeyDir)
 
 		self.PrivateKey = RSA.importKey(Tools().List_To_String(CipherPrivate), passphrase = self.Password)
 		self.ClientPublicKey = RSA.importKey(Tools().List_To_String(Public)).exportKey()
-		self.PrivateSeed = Decryption().AsymmetricDecryption(CipherText = Tools().List_To_String(List = Tools().ReadingLine(directory = self.PrivateSeedDir)), PrivateKey = self.PrivateKey).DecryptedText
+		self.PrivateSeed = Decryption().AsymmetricDecryption(CipherText = Tools().List_To_String(List = Tools().ReadLine(directory = self.PrivateSeedDir)), PrivateKey = self.PrivateKey)
 		self.ClientAddress = IOTA_Module(Seed = self.PrivateSeed, Server = self.Server).Generate_Address().Address
-		return self
-
-	def Contacts(self, firstname = "", lastname = "", address = "", publickey = "", publicseed = ""):
-		self.FirstName = firstname
-		self.LastName = lastname
-		self.Address = address
-		self.PublicKey = publickey
-		self.PublicSeed = publicseed
 
 
 ########## Other Tools #########
-class Tools(Configuration): 
+class Tools(Configuration):
 
-	def Writing(self, directory, data, setting = "wb"):
+	def Write(self, directory, data, setting = "wb"):
 		f = open(directory, setting)
 		f.write(data)
 		f.close()
 
-	def ReadingLine(self, directory, setting = "r"):
+	def ReadLine(self, directory, setting = "r"):
 		data = []
 		for i in open(directory, setting):
 			data.append(i)
@@ -210,7 +203,7 @@ class Tools(Configuration):
 
 	def Normalize(self, string):
 		normaltext = str(string) + (self.Default_Size - len(string) - len(self.Identifier)) * str(' ') + str(self.Identifier)
-		return normaltext		
+		return normaltext
 
 	def Split(self, string):
 		return [string[start:start+self.Default_Size] for start in range(0, len(string), self.Default_Size)]
@@ -222,34 +215,34 @@ class Tools(Configuration):
 ######## Cryptography #########
 class Encryption(Configuration):
 
-	def AsymmetricEncryption(self, PlainText, Publickey):
-		cipher = PKCS1_OAEP.new(RSA.importKey(Publickey))
+	def AsymmetricEncryption(self, PlainText, PublicKey):
+		cipher = PKCS1_OAEP.new(RSA.importKey(PublicKey))
 		return cipher.encrypt(str(PlainText))
 
-	def SymmetricEncryption(self, PlainText, SymCode):
-		return pyffx.String(str(SymCode), alphabet = str(self.CharLib) , length=len(str(PlainText))).encode("hex")
+	def SymmetricEncryption(self, PlainText, SecretKey):
+		string = pyffx.String(str(SecretKey), alphabet = str(self.Charlib) , length=len(str(PlainText))).encrypt(str(PlainText))
+		return str(string)
 
 	def MessageSignature(self, ToSign):
 		digest = SHA256.new()
 		digest.update(ToSign)
-		Signer = PKCS1_v1_5.new(User_Profile().Client().PrivateKey)
+		Signer = PKCS1_v1_5.new(User_Profile().PrivateKey)
 		self.Signature = Signer.sign(digest)
 		return self
 
 class Decryption(Configuration, User_Profile):
 
 	def AsymmetricDecryption(self, CipherText, PrivateKey):
-		
+
 		cipher = PKCS1_OAEP.new(PrivateKey)
 		try:
-			self.DecryptedText = cipher.decrypt(str(CipherText))
+			DecryptedText = cipher.decrypt(str(CipherText))
 		except ValueError:
-			self.DecryptedText = "Failed"
-		return self
+			DecryptedText = "Failed"
+		return DecryptedText
 
-	def SymmetricDecryption(self, CipherText, SymCode):
-		self.DecryptedText = pyffx.String(str(SymCode), alphabet=str(self.CharLib), length=len(str(CipherText.decode("hex")))).decrypt(str(CipherText.decode("hex")))
-		return self
+	def SymmetricDecryption(self, CipherText, SecretKey):
+		return pyffx.String(str(SecretKey), alphabet=str(self.Charlib), length=len(str(CipherText))).decrypt(str(CipherText))
 
 	def SignatureVerification(self, ToVerify, PublicKey, Signature):
 		digest = SHA256.new()
@@ -263,33 +256,31 @@ class Dynamic_Ledger(Configuration, User_Profile, IOTA_Module):
 	def __init__(self):
 		User_Profile.__init__(self)
 		self.PublicIOTA = IOTA_Module(Seed = self.PublicSeed)
-		self.PrivateIOTA = IOTA_Module(Seed = self.Client().PrivateSeed)
-		self.ToPublish = str(self.Client().ClientAddress+"###"+str(self.Client().ClientPublicKey))
+		self.PrivateIOTA = IOTA_Module(Seed = self.PrivateSeed)
+		self.ToPublish = str(self.ClientAddress+"###"+str(self.ClientPublicKey))
 
 	def CalculateBlock(self, Current):
 		#Calculate the current Block and use as index for current address
-		self.Blockfloat = float((Current - self.GenesisTime) / float(self.BlockTime))
-		self.Block = math.trunc(self.Blockfloat)
+		Blockfloat = float((Current - self.GenesisTime) / float(self.BlockTime))
+		self.Block = math.trunc(Blockfloat)
 		return self
 
-	def CurrentBlock(self):
+	def UpdateLedger(self):
 		#Check the current time of the Tangle
 		Current = self.PublicIOTA.LatestTangleTime().TangleTime
 
 		self.CalculateBlock(Current = Current)
 		self.CurrentAddress = self.PublicIOTA.Generate_Address(Index = self.Block).Address
-		self.ClientCurrentAddress = self.PrivateIOTA.Generate_Address(Index = self.Block).Address
 
-		#Monitor the block to see if it is an integer. If yes client needs to send to new address
-		NewBlock = self.Blockfloat.is_integer() 
 
 		#Check if the current address is in the current block:
-		AddressPool = self.PublicIOTA.AssociatedMessages(Block = self.Block, Address = str(self.ClientCurrentAddress))
-		if (AddressPool.Check is False or NewBlock is True):
-			ToPublish = str(self.ClientCurrentAddress +"###"+self.Client().ClientPublicKey)
-			self.PrivateIOTA.Sending(ReceiverAddress = self.CurrentAddress, Message = str(ToPublish))
+		AddressPool = self.PublicIOTA.GetAddresses(Block = self.Block, Address = str(self.CurrentAddress))
+		if (AddressPool.Check is False):
+			ToPublish = str(self.ClientAddress +"###"+self.ClientPublicKey)
+			print self.CurrentAddress
+			self.PrivateIOTA.Send(ReceiverAddress = self.CurrentAddress, Message = str(ToPublish))
 
-		#Output a list of public addresses and public keys
+		#Output a list of available public addresses and public keys on the ledger
 		self.PublicLedger = []
 		for i in AddressPool.PublicLedger:
 			Entry = i.split("###")
@@ -300,60 +291,14 @@ class Dynamic_Ledger(Configuration, User_Profile, IOTA_Module):
 
 class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynamic_Ledger):
 
-	def ToEncrypt(self, PlainText, ReceiverPublicKey, TrajectoryLength = 1):
-		NormalizedSigned = self.NormalizeSign(PlainText = PlainText).Normal_Signed
-		Address = self.KeyFinder(PublicKeyToFind = ReceiverPublicKey).Address
-		Trajectory = self.PathFinder(Length = TrajectoryLength, ReceiverPublicKey = ReceiverPublicKey).Trajectory
-
-		#Generate a random index to add the recipent in the trajectory
-		Insertion = int(random.randrange(0,len(Trajectory),1))
-		Trajectory[int(Insertion)] = [Address, ReceiverPublicKey.replace("\n","\\n")]
-		
-		metadata = []
-		for i in range(int(len(Trajectory))-1, Insertion, -1):
-			if i == int(len(Trajectory)-1):
-				bounce_address = '0' * 81
-			else:
-				bounce_address = Trajectory[i+1][0]
-			PublicKey = Trajectory[i][1]
-			PlainText = str(bounce_address)+str(PublicKey)
-
-			encoded_bouncedata = self.AsymmetricEncryption(PlainText = PlainText, PublicKey = PublicKey)
-			metadata.append(encoded_bouncedata)
-			print(PublicKey)
-
-#		for i in range (int(Insertion), -1, -1):
-#			self.Password = Generators().Secret_Key().SecretKey
-#			self.PlainText = needle
-#			self.PubKey = ""
-#			needle = self.Encrypt().CipherText
-#			if i == int(self.bounce)-1:
-#				bounce_address = '0'*81
-#			else:
-#				bounce_address = Trajectory[i+1]
-#
-#			self.PubKey = TrajKeys[i]
-#			self.PlainText = str(bounce_address) + str(self.Password)
-#			encoded_bouncedata = self.Encrypt().CipherText
-#			metadata.append(encoded_bouncedata)
-
-#		random.shuffle(metadata)
-#		message_data = ''
-#		for i in range(0, len(metadata)):
-#			message_data = str(message_data) + str(metadata[i]) + '##:##'
-#		self.MessageLocked = str(needle) + '##Begin#Metadata##' + str(message_data)
-#		self.FirstAddress = Trajectory[0]
-#		return self
-
-	def NormalizeSign(self, PlainText):
+	def NormalizeAndSign(self, PlainText):
 		Normal = self.Normalize(string = PlainText)
 		Signature = self.MessageSignature(ToSign = Normal).Signature
-		self.Normal_Signed = str(Normal) + str(b64encode(Signature))
-		return self
+		return str(Normal) + str(b64encode(Signature))
 
 	def PathFinder(self, Length = 1, ReceiverPublicKey = ""):
 		self.Trajectory = []
-		self.Addresses = Dynamic_Ledger().CurrentBlock().PublicLedger
+		self.Addresses = Dynamic_Ledger().UpdateLedger().PublicLedger
 		for i in range(Length):
 			index = random.randrange(0, len(self.Addresses))
 			self.Trajectory.append(self.Addresses[index-1])
@@ -374,31 +319,67 @@ class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynam
 					self.Address = Splitted[0]
 		return self
 
+	def PrepareMessage(self, PlainText, ReceiverPublicKey, TrajectoryLength = 1):
+		NormalizedSigned = self.NormalizeAndSign(PlainText = PlainText)
+		Address = self.KeyFinder(PublicKeyToFind = ReceiverPublicKey)
+		Trajectory = self.PathFinder(Length = TrajectoryLength, ReceiverPublicKey = ReceiverPublicKey).Trajectory
+
+		#Generate a random index to add the recipent in the trajectory
+		Index = 3#int(random.randrange(0,len(Trajectory),1))
+		Trajectory[int(Index)] = [Address, ReceiverPublicKey.replace("\n","\\n")]
+
+		metadata = []
+		for i in range(int(len(Trajectory))-1, Insertion, -1):
+			if i == int(len(Trajectory)-1):
+				bounce_address = '0' * 81
+			else:
+				bounce_address = Trajectory[i+1][0]
+			PublicKey = Trajectory[i][1]
+			PlainData = str(bounce_address)+str(PublicKey)
+
+			encoded_bouncedata = self.AsymmetricEncryption(PlainText = PlainData, PublicKey = PublicKey)
+			metadata.append(encoded_bouncedata)
+			print(PublicKey)
 
 
 
 
-function = "Encrypt_Decrypt"
+
+function = "0Build"
 
 if function == "Build":
 	#Generate the dir and build the files
 	Initialization().Build_Directory()
 	Initialization().Build_Files()
 
-if function == "Encrypt_Decrypt":
+function = "PrepareMessage"
+
+
+if function == "PrepareMessage":
 	#I am the receiver.
-	ReceiverPublicKey = User_Profile().Client().ClientPublicKey
+	ReceiverPublicKey = User_Profile().ClientPublicKey
 	Text = "Hello there How are we today my friend I am trying to implement the decryption"
-	Messages().ToEncrypt(PlainText = Text, ReceiverPublicKey = ReceiverPublicKey, TrajectoryLength = 4)
+	Messages().PrepareMessage(PlainText = Text, ReceiverPublicKey = ReceiverPublicKey, TrajectoryLength = 4)
 
 
 if function == "IOTA":
 	Test = "Hello World"
 	x = IOTA_Module(Seed = "WCGOWTHOWPC9KYYDLOEDDZMUHPWVASCWPTX9PZEPWWNKNNEETCPZISMZTM99GNRCZQ9GGOBIBKNYNSPAS", Server = "http://localhost:14265")
-	x.Sending(ReceiverAddress = "NPBXSOXDPLXSCSZIVQCJBHPLJONYBZEASZHDXWPYDLBXXTH9HORYWTDZEXZODIHGF9QBIB9OZTKFMFUVDGBAHFYXPD", Message = Test)
+	x.Send(ReceiverAddress = "NPBXSOXDPLXSCSZIVQCJBHPLJONYBZEASZHDXWPYDLBXXTH9HORYWTDZEXZODIHGF9QBIB9OZTKFMFUVDGBAHFYXPD", Message = Test)
 	x.Receive()
 
 if function == "DynamicLedger":
 	while True:
-		x = Dynamic_Ledger().CurrentBlock().PublicLedger
+		x = Dynamic_Ledger().UpdateLedger().PublicLedger
 		print(x)
+
+if function == "Encrypt and print":
+	Message = 'chika chika slim shady'
+	NormalizedSigned = str(Messages().NormalizeAndSign(PlainText = Message))
+	print 'signature length:', len(NormalizedSigned)
+	SecretKey = Generators().Secret_Key()
+	PublicKey = User_Profile().ClientPublicKey
+	encrypted = Encryption().SymmetricEncryption(PlainText = NormalizedSigned, SecretKey = SecretKey)
+	print 'encrypted length:', len(str(encrypted))
+	decrypted = Decryption().SymmetricDecryption(CipherText = str(encrypted), SecretKey = SecretKey)
+	print 'message:', decrypted
