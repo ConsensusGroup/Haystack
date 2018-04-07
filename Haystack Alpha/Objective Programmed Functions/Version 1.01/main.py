@@ -11,8 +11,32 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 #OS imports
 from os import listdir
 
+##### Main Logic Commands ##########
+class LogicCommands:
+	def __init__(self):
+		pass
+	def ReadLogin(self, UserName, Password):
+		#if UserName == Password:
+		self.Result = True
+		#else:
+		#	self.Result = False
+		return self
+	def ShutDown(self):
+		App.get_running_app().stop()
 
-#Different windows/screens for the app
+	def ReadRegister(self, UserName, Password, Password2):
+		if Password == Password2 and Password != "" and UserName != "":
+			self.data  = True
+		elif Password != Password2 or Password == "":
+			self.data = "PassError"
+		elif UserName == "":
+			self.data = "UserError"
+		return self
+
+
+
+		
+###### App windows #################
 class LoginWindow(Screen):
 	def __init__(self, **kwargs):
 		super(LoginWindow, self).__init__(**kwargs)
@@ -26,37 +50,31 @@ class RegisterWindow(Screen):
 		self.add_widget(self.Register)
 
 class MessangerWindow(Screen):
-	pass
+	def __init__(self, **kwargs):
+		super(MessangerWindow, self).__init__(**kwargs)
+		self.Messanger = MessangerWidget()
+		self.add_widget(self.Messanger)
+
 ######################################
 
 
 
-######### Login Screen ##########
-class LoginWidget(Widget):
+######### Screens ##########
+#------ Login Windows -----------#
+class LoginWidget(Widget, LogicCommands):
+	pass
 
-	def ReadLogin(self, UserName, Password):
-		self.Password = Password
-		self.UserName = UserName
-		return self
+class RegisterWidget(Widget,LogicCommands):
+	pass
 
-	def ShutDown(self):
-		App.get_running_app().stop()
-
-class RegisterWidget(Widget):
-
-	def ReadRegister(self, UserName, Password, Password2):
-
-		if Password == Password2 and Password != "" and UserName != "":
-			self.data  = True
-		elif Password != Password2 or Password == "":
-			self.data = "PassError"
-		elif UserName == "":
-			self.data = "UserError"
-		return self
-
-
+#------ Messanger Windows -----------#
+class MessangerWidget(Widget, LogicCommands):
+	pass
 
 ##################################
+
+
+
 class KivyConfig:
 	def __init__(self):
 		self.KivyPath = "./Kivy/"
