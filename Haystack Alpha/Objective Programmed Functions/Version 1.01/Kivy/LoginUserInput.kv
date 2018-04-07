@@ -26,6 +26,11 @@
 		text: 'Password:'
 		pos: 125, 160
 	
+	Label:
+		id: Outcome
+		text: ""
+		pos: Login.pos[0]+150, Login.pos[1]-100
+
 	TextInput:
 		id: UserName
 		text: ""
@@ -58,7 +63,9 @@
 		id: Login
 		pos: 250, 150
 		text: "Login"
-		on_press: root.ReadLogin(UserName = UserName.text, Password = Password.text)
+		on_press: 
+			if root.ReadLogin(UserName = UserName.text, Password = Password.text).Result == True: app.root.current = "Messanger"
+			else: Outcome.text = "Wrong password or username"
 
 <RegisterWidget>:
 	canvas.before:
@@ -123,4 +130,3 @@
 		multiline: False
 		password: True
 		focus: True
-
