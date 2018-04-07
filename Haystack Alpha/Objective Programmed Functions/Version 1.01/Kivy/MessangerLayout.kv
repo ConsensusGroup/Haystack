@@ -1,0 +1,62 @@
+<Label>:
+	font_size: 20 
+
+<Button>:
+	font_size: 14
+	color: 0,0,0,1
+	background_normal: ''
+	background_color: (1, 1, 1, 1)
+
+<MessangerWidget>:
+	BoxLayout:
+		id: Split
+		size: root.size
+		padding: 0
+		orientation: 'horizontal'
+		BoxLayout:
+			orientation: 'vertical'
+			spacing: 2
+			BoxLayout:
+				size_hint: (1, 0.05)
+				Button:
+					text: "Search"
+					size_hint_x: 0.15
+				TextInput:
+					id: SearchField
+					focus: True
+					multiline: False
+
+			ScrollView:
+				GridLayout:
+					cols: 1
+					spacing: 35
+					height: self.minimum_height
+					size_hint: 1, None
+					padding: 20
+					Button:
+						text: "asdas"
+					Button:
+						text: "hello"
+					Button:
+						text: "asd"
+					Button:
+						text: "hello"
+
+		BoxLayout:
+			orientation: 'vertical'
+			size_hint_x: 0.2
+			spacing: 5
+			Button:
+				text: "Settings"
+			Button:
+				text: "Contacts"
+			Button:
+				text: "Edit"
+			Button:
+				text: "    New \n Message"
+			Button:
+				text: 'Logout'
+				on_press: app.root.current = 'Login'
+			Button:
+				text: 'Quit'
+				on_press: root.ShutDown()
