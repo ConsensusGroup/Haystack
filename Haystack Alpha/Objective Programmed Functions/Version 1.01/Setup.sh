@@ -41,7 +41,7 @@ sudo java -version >> /dev/null
 sudo docker stop iri nelson
 sudo docker rm iri nelson
 
-#wget http://db.iota.partners/IOTA.partners-mainnetdb.tar.gz
+wget http://db.iota.partners/IOTA.partners-mainnetdb.tar.gz
 cd ~
 mkdir -p iri/mainnetdb
 tar -xvf IOTA.partners-mainnetdb.tar.gz -C iri/mainnetdb
