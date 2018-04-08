@@ -24,11 +24,18 @@ import time, math
 
 #java -jar iri-1.4.2.3.jar -p 14265
 
+####### Instance initilization ######
+ClientPassword = ""
+class Start:
+	def __init__(self,Password):
+		ClientPassword = Password
+		global ClientPassword
+
 ######## Configuration  ###########
 class Configuration:
 	def __init__(self):
 		self.Server = "http://localhost:14265"
-		self.Password = "Hello World"
+		self.Password = ClientPassword
 		self.PublicSeed = "TEAWYYNAY9BBFR9RH9JGHSSAHYJGVYACUBBNBDJLWAATRYUZCXHCUNIPXOGXI9BBHKSHDFEAJOVZDLUWV"
 		self.Charlib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= '
 		self.Default_Size = 256
@@ -123,7 +130,6 @@ class User_Profile(Configuration):
 		Configuration.__init__(self)
 		CipherPrivate = Tools().ReadLine(directory = self.PrivateKeyDir)
 		Public = Tools().ReadLine(directory = self.PublicKeyDir)
-
 		self.PrivateKey = RSA.importKey(Tools().List_To_String(CipherPrivate), passphrase = self.Password)
 		self.ClientPublicKey = RSA.importKey(Tools().List_To_String(Public)).exportKey()
 		self.PrivateSeed = Decryption().AsymmetricDecryption(CipherText = Tools().List_To_String(List = Tools().ReadLine(directory = self.PrivateSeedDir)), PrivateKey = self.PrivateKey)
