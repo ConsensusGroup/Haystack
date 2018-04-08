@@ -22,12 +22,12 @@ import time
 from multiprocessing.pool import ThreadPool
 import time, math
 
-#java -jar iri-1.4.2.1.jar -p 14265
+#java -jar iri-1.4.2.3.jar -p 14265
 
 ######## Configuration  ###########
 class Configuration:
 	def __init__(self):
-		self.Server = "https://tuna.iotasalad.org:14265"
+		self.Server = "http://220.144.14.96:14265"
 		self.Password = "Hello World"
 		self.PublicSeed = "TEAWYYNAY9BBFR9RH9JGHSSAHYJGVYACUBBNBDJLWAATRYUZCXHCUNIPXOGXI9BBHKSHDFEAJOVZDLUWV"
 		self.Charlib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= '
@@ -36,7 +36,8 @@ class Configuration:
 		self.RSA = "Keys"
 		self.PrivateSeedFile = "Private_Seed.txt"
 		self.PublicSeedFile = "Public_Seed.txt"
-		self.UserAddresses = "Public_Address.txt"
+		self.PublicAddressFile = "Public_Address.txt"
+		self.AddressPoolFile = "Address_Pool.txt"
 		self.PrivateKeyFile = "PrivateKeyFile.pem"
 		self.PublicKeyFile = "PublicKeyFile.pem"
 		self.Identifier = "////"
@@ -47,11 +48,90 @@ class Configuration:
 		self.PrivateKeyDir = str(self.Root+"/"+self.RSA+"/"+self.PrivateKeyFile)
 		self.PublicKeyDir = str(self.Root+"/"+self.RSA+"/"+self.PublicKeyFile)
 		self.PrivateSeedDir = str(self.Root+"/"+self.PrivateSeedFile)
-		self.AddressPool = str(self.Root+"/"+self.UserAddresses)
+		self.PublicAddressDir = str(self.Root+"/"+self.PublicAddressFile)
+		self.AddressPool = str(self.Root+"/"+self.AddressPoolFile)
+
+########## Tools #########
+
+class Tools(Configuration):
+
+	def Write(self, directory, data, setting = "wb"):
+		f = open(directory, setting)
+		f.write(data)
+		f.close()
+
+	def ReadLine(self, directory, setting = "r"):
+		data = []
+		for i in open(directory, setting):
+			data.append(i)
+		return data
+
+	def Normalize(self, string):
+		normaltext = str(string) + (self.Default_Size - len(string) - len(self.Identifier)) * str(' ') + str(self.Identifier)
+		return normaltext
+
+	def Split(self, string):
+		return [string[start:start+self.Default_Size] for start in range(0, len(string), self.Default_Size)]
+
+	def List_To_String(self, List):
+		return ''.join(List)
 
 ######### Base Classes ###########
+
+class Generators(Configuration):
+
+	def Seed_Generator(self):
+		random_trytes = [i for i in map(chr, range(65,91))]
+		random_trytes.append('9')
+		seed = [random_trytes[SystemRandom().randrange(len(random_trytes))] for x in range(81)]
+		return ''.join(seed)
+
+	def Key_Pair(self):
+		pair = RSA.generate(2048)
+		self.PrivateKey = pair.exportKey(format = "PEM", passphrase = self.Password)
+		self.PublicKey = pair.publickey().exportKey(format = 'PEM')
+		return self
+
+	def Secret_Key(self):
+	    return os.urandom(64)
+
+class Initialization(Configuration):
+
+	def Build_Directory(self):
+		if not os.path.exists(self.Root):
+			try:
+				os.makedirs(self.Root)
+				os.makedirs(str(self.Root+"/"+self.RSA))
+			except OSError:
+				pass
+
+	def Build_Files(self):
+		x = os.path
+		keys = Generators().Key_Pair()
+		if not (x.isfile(self.PrivateKeyDir) or x.isfile(self.PublicKeyDir) or x.isfile(self.PrivateSeedDir)):
+			ClientSeed = Generators().Seed_Generator()
+			Ciphertext = Encryption().AsymmetricEncryption(PlainText = ClientSeed, Publickey = str(keys.PublicKey))
+			Tools().Write(directory = self.PrivateSeedDir, data = Ciphertext)
+			Tools().Write(directory = self.PrivateKeyDir, data = keys.PrivateKey)
+			Tools().Write(directory = self.PublicKeyDir, data = keys.PublicKey)
+
+####### Connectivity and User Profile ########
+
+class User_Profile(Configuration):
+
+	def __init__(self):
+		Configuration.__init__(self)
+		CipherPrivate = Tools().ReadLine(directory = self.PrivateKeyDir)
+		Public = Tools().ReadLine(directory = self.PublicKeyDir)
+
+		self.PrivateKey = RSA.importKey(Tools().List_To_String(CipherPrivate), passphrase = self.Password)
+		self.ClientPublicKey = RSA.importKey(Tools().List_To_String(Public)).exportKey()
+		self.PrivateSeed = Decryption().AsymmetricDecryption(CipherText = Tools().List_To_String(List = Tools().ReadLine(directory = self.PrivateSeedDir)), PrivateKey = self.PrivateKey)
+		self.ClientAddress = Tools().ReadLine(directory = self.PrivateSeedDir)
+
 class IOTA_Module(Configuration):
-	def __init__(self, Seed, Server = "http://localhost:14265"):
+
+	def __init__(self, Seed, Server = "http://220.144.14.96:14265"):
 		Configuration.__init__(self)
 		self.api = Iota(RoutingWrapper(str(Server)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed)
 
@@ -126,6 +206,12 @@ class IOTA_Module(Configuration):
 						self.PublicLedger.append(Entry)
 		return self
 
+	def Build_Inbox(self):
+		x = os.path
+		Address = self.Generate_Address().Address
+		if not (x.isfile(self.PublicAddressDir)):
+				Tools().Write(directory = self.PublicAddressDir, data = Address)
+
 	def InboxHistory(self):
 		Entries = self.Receive(Start = 0).JsonEntries
 		self.Inbox = []
@@ -135,81 +221,6 @@ class IOTA_Module(Configuration):
 			Combine = [Time, Messages]
 			self.Inbox.append(Combine)
 		return self
-
-class Generators(Configuration):
-
-	def Seed_Generator(self):
-		random_trytes = [i for i in map(chr, range(65,91))]
-		random_trytes.append('9')
-		seed = [random_trytes[SystemRandom().randrange(len(random_trytes))] for x in range(81)]
-		return ''.join(seed)
-
-	def Key_Pair(self):
-		pair = RSA.generate(2048)
-		self.PrivateKey = pair.exportKey(format = "PEM", passphrase = self.Password)
-		self.PublicKey = pair.publickey().exportKey(format = 'PEM')
-		return self
-
-	def Secret_Key(self):
-	    return os.urandom(64)
-
-class Initialization(Configuration):
-
-	def Build_Directory(self):
-		if not os.path.exists(self.Root):
-			try:
-				os.makedirs(self.Root)
-				os.makedirs(str(self.Root+"/"+self.RSA))
-			except OSError:
-				pass
-
-	def Build_Files(self):
-		x = os.path
-		keys = Generators().Key_Pair()
-		if not (x.isfile(self.PrivateKeyDir) or x.isfile(self.PublicKeyDir) or x.isfile(self.PrivateSeedDir)):
-			ClientSeed = Generators().Seed_Generator()
-			Ciphertext = Encryption().AsymmetricEncryption(PlainText = ClientSeed, Publickey = str(keys.PublicKey))
-			Tools().Write(directory = self.PrivateSeedDir, data = Ciphertext)
-			Tools().Write(directory = self.PrivateKeyDir, data = keys.PrivateKey)
-			Tools().Write(directory = self.PublicKeyDir, data = keys.PublicKey)
-
-
-class User_Profile(Configuration):
-
-	def __init__(self):
-		Configuration.__init__(self)
-		CipherPrivate = Tools().ReadLine(directory = self.PrivateKeyDir)
-		Public = Tools().ReadLine(directory = self.PublicKeyDir)
-
-		self.PrivateKey = RSA.importKey(Tools().List_To_String(CipherPrivate), passphrase = self.Password)
-		self.ClientPublicKey = RSA.importKey(Tools().List_To_String(Public)).exportKey()
-		self.PrivateSeed = Decryption().AsymmetricDecryption(CipherText = Tools().List_To_String(List = Tools().ReadLine(directory = self.PrivateSeedDir)), PrivateKey = self.PrivateKey)
-		self.ClientAddress = IOTA_Module(Seed = self.PrivateSeed, Server = self.Server).Generate_Address().Address
-
-
-########## Other Tools #########
-class Tools(Configuration):
-
-	def Write(self, directory, data, setting = "wb"):
-		f = open(directory, setting)
-		f.write(data)
-		f.close()
-
-	def ReadLine(self, directory, setting = "r"):
-		data = []
-		for i in open(directory, setting):
-			data.append(i)
-		return data
-
-	def Normalize(self, string):
-		normaltext = str(string) + (self.Default_Size - len(string) - len(self.Identifier)) * str(' ') + str(self.Identifier)
-		return normaltext
-
-	def Split(self, string):
-		return [string[start:start+self.Default_Size] for start in range(0, len(string), self.Default_Size)]
-
-	def List_To_String(self, List):
-		return ''.join(List)
 
 
 ######## Cryptography #########
@@ -251,13 +262,15 @@ class Decryption(Configuration, User_Profile):
 		self.Verified = Verifier.verify(digest, Signature)
 		return self
 
+####### Dynamic Ledger and Haystack Protocol #######
+
 class Dynamic_Ledger(Configuration, User_Profile, IOTA_Module):
 
 	def __init__(self):
 		User_Profile.__init__(self)
 		self.PublicIOTA = IOTA_Module(Seed = self.PublicSeed)
 		self.PrivateIOTA = IOTA_Module(Seed = self.PrivateSeed)
-		self.ToPublish = str(self.ClientAddress+"###"+str(self.ClientPublicKey))
+		self.ToPublish = str(str(self.ClientAddress)+"###"+str(self.ClientPublicKey))
 
 	def CalculateBlock(self, Current):
 		#Calculate the current Block and use as index for current address
@@ -276,7 +289,7 @@ class Dynamic_Ledger(Configuration, User_Profile, IOTA_Module):
 		#Check if the current address is in the current block:
 		AddressPool = self.PublicIOTA.GetAddresses(Block = self.Block, Address = str(self.CurrentAddress))
 		if (AddressPool.Check is False):
-			ToPublish = str(self.ClientAddress +"###"+self.ClientPublicKey)
+			ToPublish = str(str(self.ClientAddress) +"###"+ str(self.ClientPublicKey))
 			print self.CurrentAddress
 			self.PrivateIOTA.Send(ReceiverAddress = self.CurrentAddress, Message = str(ToPublish))
 
@@ -339,7 +352,6 @@ class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynam
 
 			encoded_bouncedata = self.AsymmetricEncryption(PlainText = PlainData, PublicKey = PublicKey)
 			metadata.append(encoded_bouncedata)
-			print(PublicKey)
 
 
 
@@ -351,6 +363,7 @@ if function == "Build":
 	#Generate the dir and build the files
 	Initialization().Build_Directory()
 	Initialization().Build_Files()
+	IOTA_Module(Seed = User_Profile().PrivateSeed).Build_Inbox()
 
 function = "PrepareMessage"
 
@@ -364,7 +377,7 @@ if function == "PrepareMessage":
 
 if function == "IOTA":
 	Test = "Hello World"
-	x = IOTA_Module(Seed = "WCGOWTHOWPC9KYYDLOEDDZMUHPWVASCWPTX9PZEPWWNKNNEETCPZISMZTM99GNRCZQ9GGOBIBKNYNSPAS", Server = "http://localhost:14265")
+	x = IOTA_Module(Seed = "WCGOWTHOWPC9KYYDLOEDDZMUHPWVASCWPTX9PZEPWWNKNNEETCPZISMZTM99GNRCZQ9GGOBIBKNYNSPAS", Server = "http://220.144.14.96:14265")
 	x.Send(ReceiverAddress = "NPBXSOXDPLXSCSZIVQCJBHPLJONYBZEASZHDXWPYDLBXXTH9HORYWTDZEXZODIHGF9QBIB9OZTKFMFUVDGBAHFYXPD", Message = Test)
 	x.Receive()
 
