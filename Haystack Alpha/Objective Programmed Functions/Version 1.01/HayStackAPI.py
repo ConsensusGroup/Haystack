@@ -27,7 +27,7 @@ import time, math
 ######## Configuration  ###########
 class Configuration:
 	def __init__(self):
-		self.Server = "http://220.144.14.96:14265"
+		self.Server = "http://localhost:14265"
 		self.Password = "Hello World"
 		self.PublicSeed = "TEAWYYNAY9BBFR9RH9JGHSSAHYJGVYACUBBNBDJLWAATRYUZCXHCUNIPXOGXI9BBHKSHDFEAJOVZDLUWV"
 		self.Charlib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= '
@@ -110,7 +110,7 @@ class Initialization(Configuration):
 		keys = Generators().Key_Pair()
 		if not (x.isfile(self.PrivateKeyDir) or x.isfile(self.PublicKeyDir) or x.isfile(self.PrivateSeedDir)):
 			ClientSeed = Generators().Seed_Generator()
-			Ciphertext = Encryption().AsymmetricEncryption(PlainText = ClientSeed, Publickey = str(keys.PublicKey))
+			Ciphertext = Encryption().AsymmetricEncryption(PlainText = ClientSeed, PublicKey = str(keys.PublicKey))
 			Tools().Write(directory = self.PrivateSeedDir, data = Ciphertext)
 			Tools().Write(directory = self.PrivateKeyDir, data = keys.PrivateKey)
 			Tools().Write(directory = self.PublicKeyDir, data = keys.PublicKey)
@@ -131,7 +131,7 @@ class User_Profile(Configuration):
 
 class IOTA_Module(Configuration):
 
-	def __init__(self, Seed, Server = "http://220.144.14.96:14265"):
+	def __init__(self, Seed, Server = "http://localhost:14265"):
 		Configuration.__init__(self)
 		self.api = Iota(RoutingWrapper(str(Server)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed)
 
@@ -352,47 +352,3 @@ class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynam
 
 			encoded_bouncedata = self.AsymmetricEncryption(PlainText = PlainData, PublicKey = PublicKey)
 			metadata.append(encoded_bouncedata)
-
-
-
-
-
-function = "0Build"
-
-if function == "Build":
-	#Generate the dir and build the files
-	Initialization().Build_Directory()
-	Initialization().Build_Files()
-	IOTA_Module(Seed = User_Profile().PrivateSeed).Build_Inbox()
-
-function = "PrepareMessage"
-
-
-if function == "PrepareMessage":
-	#I am the receiver.
-	ReceiverPublicKey = User_Profile().ClientPublicKey
-	Text = "Hello there How are we today my friend I am trying to implement the decryption"
-	Messages().PrepareMessage(PlainText = Text, ReceiverPublicKey = ReceiverPublicKey, TrajectoryLength = 4)
-
-
-if function == "IOTA":
-	Test = "Hello World"
-	x = IOTA_Module(Seed = "WCGOWTHOWPC9KYYDLOEDDZMUHPWVASCWPTX9PZEPWWNKNNEETCPZISMZTM99GNRCZQ9GGOBIBKNYNSPAS", Server = "http://220.144.14.96:14265")
-	x.Send(ReceiverAddress = "NPBXSOXDPLXSCSZIVQCJBHPLJONYBZEASZHDXWPYDLBXXTH9HORYWTDZEXZODIHGF9QBIB9OZTKFMFUVDGBAHFYXPD", Message = Test)
-	x.Receive()
-
-if function == "DynamicLedger":
-	while True:
-		x = Dynamic_Ledger().UpdateLedger().PublicLedger
-		print(x)
-
-if function == "Encrypt and print":
-	Message = 'chika chika slim shady'
-	NormalizedSigned = str(Messages().NormalizeAndSign(PlainText = Message))
-	print 'signature length:', len(NormalizedSigned)
-	SecretKey = Generators().Secret_Key()
-	PublicKey = User_Profile().ClientPublicKey
-	encrypted = Encryption().SymmetricEncryption(PlainText = NormalizedSigned, SecretKey = SecretKey)
-	print 'encrypted length:', len(str(encrypted))
-	decrypted = Decryption().SymmetricDecryption(CipherText = str(encrypted), SecretKey = SecretKey)
-	print 'message:', decrypted
