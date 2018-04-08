@@ -1,8 +1,10 @@
+
 <Label>:
 	font_size: 20 
 
-<Button>:
-	font_size: 14
+<MyButton@Button>:
+    size_hint_y:None
+    height: 10
 	color: 0,0,0,1
 	background_normal: ''
 	background_color: (1, 1, 1, 1)
@@ -10,12 +12,10 @@
 <MessangerWidget>:
 	BoxLayout:
 		id: Split
-		size: root.size
 		padding: 0
 		orientation: 'horizontal'
 		BoxLayout:
 			orientation: 'vertical'
-			spacing: 2
 			BoxLayout:
 				size_hint: (1, 0.05)
 				Button:
@@ -26,21 +26,15 @@
 					focus: True
 					multiline: False
 
-			ScrollView:
-				GridLayout:
-					cols: 1
-					spacing: 35
-					height: self.minimum_height
-					size_hint: 1, None
-					padding: 20
-					Button:
-						text: "asdas"
-					Button:
-						text: "hello"
-					Button:
-						text: "asd"
-					Button:
-						text: "hello"
+			BoxLayout:
+				ScrollView:
+					GridLayout:
+						id: MessageList
+						cols: 1
+						spacing: 20
+						padding: 20
+						size_hint_y: None
+						height: self.minimum_height
 
 		BoxLayout:
 			orientation: 'vertical'
@@ -54,6 +48,74 @@
 				text: "Edit"
 			Button:
 				text: "    New \n Message"
+				on_press: app.root.current = 'NewMessage'
+			Button:
+				text: 'Logout'
+				on_press: app.root.current = 'Login'
+			Button:
+				text: 'Quit'
+				on_press: root.ShutDown()
+
+<NewMessageWidget>:
+	BoxLayout:
+		id: Split
+		size: root.size
+		padding: 0
+		orientation: 'horizontal'
+		BoxLayout:
+			orientation: 'vertical'
+			spacing: 2
+			padding: 15
+			BoxLayout:
+				id: SearchField
+				size_hint: (1, 0.04)
+				padding_x: 10
+				padding_y: 20
+				Label:
+					id: To
+					text: "To:"
+					size_hint_x: 0.075
+
+				TextInput:
+					id: UserInput
+					focus: True
+					multiline: False 
+					size_hint_x: 1-To.size_hint_x
+					on_text: 
+						if root.ReadInput(Text = UserInput.text, Function = "Contact").Found != []: MessageField.size_hint= (1, 0.1); SearchField.size_hint= (1, 0.04); Contact.size_hint_y= 1-0.34; root.On_Type()
+						else: MessageField.size_hint= (1, 1-0.2-0.00001-0.04); Contact.size_hint_y= 0.00001; SearchField.size_hint= (1, 0.04); root.On_Type()
+			
+			BoxLayout:
+				size_hint_y: 0.00001
+				id: Contact
+				ScrollView:
+					GridLayout:
+						id: ContactsList
+						cols: 1
+						spacing: 20
+						padding: 20
+						size_hint_y: None
+						height: self.minimum_height
+
+			TextInput:
+				id: MessageField
+				focus: True
+				size_hint: (1, 1-0.2-0.1-0.03)
+				multiline: True
+
+		BoxLayout:
+			orientation: 'vertical'
+			size_hint_x: 0.2
+			spacing: 5
+			Button:
+				text: "Settings"
+			Button:
+				text: "Contacts"
+			Button:
+				text: "Cancel"
+				on_press: app.root.current = "Messanger"
+			Label:
+				text: ""
 			Button:
 				text: 'Logout'
 				on_press: app.root.current = 'Login'
