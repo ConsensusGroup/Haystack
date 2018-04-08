@@ -12,15 +12,18 @@ from kivy.uix.boxlayout import BoxLayout
 
 from os import listdir
 
+ClientPassword = ""
 ##### Main Logic Commands ##########
 class LogicCommands:
 	def __init__(self):
 		pass
 
 	def ReadLogin(self, UserName, Password):
-		if UserName == Password:
+		Start(Password = Password)
+		try:
+			User_Profile().PrivateKey
 			self.Result = True
-		else:
+		except ValueError:
 			self.Result = False
 		return self
 	def ShutDown(self):
@@ -29,10 +32,10 @@ class LogicCommands:
 	def ReadRegister(self, UserName, Password, Password2):
 		if Password == Password2 and Password != "" and UserName != "":
 			self.data  = True
-			init = Initialization()
-			init.Build_Directory()
-			init.Password = Password
-			init.Build_Files()
+			Client = Initialization()
+			Start(Password = Password)
+			Client.Build_Directory()
+			Client.Build_Files()
 		elif Password != Password2 or Password == "":
 			self.data = "PassError"
 		elif UserName == "":
