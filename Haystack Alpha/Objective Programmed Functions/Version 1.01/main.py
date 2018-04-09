@@ -8,15 +8,39 @@ from kivy.properties import ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
+from kivy.clock import Clock
+
+#Multi Threading 
+import threading
+from multiprocessing import Pipe
+
 #OS imports
-
 from os import listdir
+from time import sleep
 
-ClientPassword = ""
+refresh_rate = 5
+ledger_rate = 120
+
+#class BackGround(Configuration):
+#	stop = threading.Event()
+#
+#	def Ledger(self):
+#		while True:
+#			
+#
+##			#except:
+#			#	pass
+#			if self.stop.is_set():
+#				return
+#		return self
+#
+#	def StartLedger(self):
+#		threading.Thread(target = self.Ledger).start()
+#
 ##### Main Logic Commands ##########
-class LogicCommands:
+class LogicCommands(Configuration):
 	def __init__(self):
-		pass
+		Configuration.__init__(self)
 
 	def ReadLogin(self, UserName, Password):
 		Start(Password = Password)
@@ -27,6 +51,7 @@ class LogicCommands:
 			self.Result = False
 		return self
 	def ShutDown(self):
+		#x.stop.set()
 		App.get_running_app().stop()
 
 	def ReadRegister(self, UserName, Password, Password2):
@@ -79,6 +104,24 @@ class LogicCommands:
 			self.History.append(self.btn)	
 		return self
 
+	def BlockUpdate(self, *args):
+		try:
+			Dynamics = Dynamic_Ledger()
+			TangleTime = IOTA_Module(Seed = self.PublicSeed).LatestTangleTime().TangleTime
+			CurrentBlock = Dynamics.CalculateBlock(Current = TangleTime).Block
+			self.ids.StatusLabel.text = str("Block: "+str(CurrentBlock))
+		except ValueError:
+			pass
+		return self
+	def LedgerCheck(self, *args):
+		try:
+			Ledger = Dynamic_Ledger().UpdateLedger()
+			LedgerAddress = Ledger.CurrentAddress
+			print(LedgerAddress)
+			print(Ledger.PublicLedger)
+		except:
+			pass
+
 ######### Screens ##########
 #------ Login Windows -----------#
 class LoginWindow(Screen):
@@ -112,18 +155,22 @@ class MessangerWidget(BoxLayout, LogicCommands):
 		LogicCommands.__init__(self)
 		self.History = []
 		self.Message_Inbox()
+		Clock.schedule_interval(self.BlockUpdate, refresh_rate)
+		Clock.schedule_interval(self.LedgerCheck, ledger_rate)
+
 
 class NewMessageWindow(Screen):
 	def __init__(self, **kwargs):
 		super(NewMessageWindow, self).__init__(**kwargs)
 		self.NewMessage = NewMessageWidget()
 		self.add_widget(self.NewMessage)
-
-
+		
 class NewMessageWidget(Widget, LogicCommands):
 	def __init__(self):
 		Widget.__init__(self)
 		LogicCommands.__init__(self)
+		Clock.schedule_interval(self.BlockUpdate, refresh_rate)
+		Clock.schedule_interval(self.LedgerCheck, ledger_rate)
 		self.History = []
 ##################################
 
@@ -141,7 +188,6 @@ class KivyConfig:
 		self.sm.add_widget(LoginWindow(name = "Login"))
 		self.sm.add_widget(RegisterWindow(name = "Register"))
 		self.sm.add_widget(MessangerWindow(name = "Messanger"))
-
 		self.sm.add_widget(NewMessageWindow(name = "NewMessage"))
 		return self
 
@@ -154,6 +200,8 @@ class MainApp(App):
 
 ######### Start the app ##########
 if __name__ == "__main__":
+	#x = BackGround()
+	#x.StartLedger()
 	KivyConfig().ReadConfig()
 	app = MainApp()
 	app.run()
