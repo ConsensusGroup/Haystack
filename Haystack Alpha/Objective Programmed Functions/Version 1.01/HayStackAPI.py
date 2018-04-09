@@ -358,3 +358,17 @@ class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynam
 
 			encoded_bouncedata = self.AsymmetricEncryption(PlainText = PlainData, PublicKey = PublicKey)
 			metadata.append(encoded_bouncedata)
+
+class Background:
+
+	#Example use case:
+	#Background(function = Example().ExampleFunction, arguments = str("{'test': 3}")).Run()
+
+	def __init__(self, function, arguments = "()"):
+		self.Variable = ""
+		self.Function = function
+		self.Arg = arguments
+
+	def Run(self):
+		Pool = ThreadPool(processes = 1)
+		Start = Pool.apply_async(self.Function, eval(self.Arg))
