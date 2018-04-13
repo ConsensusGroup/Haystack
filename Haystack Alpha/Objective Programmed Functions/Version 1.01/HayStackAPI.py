@@ -18,14 +18,12 @@ import pyffx
 import os
 import sys
 from base64 import b64encode, b64decode
-import time
-from multiprocessing.pool import ThreadPool
 import time, math
 
 #java -jar iri-1.4.2.3.jar -p 14265
 
 ####### Instance initilization ######
-ClientPassword = ""
+ClientPassword = "5442"
 class Start:
 	def __init__(self,Password):
 		ClientPassword = Password
@@ -34,7 +32,7 @@ class Start:
 ######## Configuration  ###########
 class Configuration:
 	def __init__(self):
-		self.Server = "http://localhost:14265"
+		self.Server = "http://cryptoiota.win:14265"
 		self.Password = ClientPassword
 		self.PublicSeed = "TEAWYYNAY9BBFR9RH9JGHSSAHYJGVYACUBBNBDJLWAATRYUZCXHCUNIPXOGXI9BBHKSHDFEAJOVZDLUWV"
 		self.Charlib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= '
@@ -133,13 +131,12 @@ class User_Profile(Configuration):
 		self.PrivateKey = RSA.importKey(Tools().List_To_String(CipherPrivate), passphrase = self.Password)
 		self.ClientPublicKey = RSA.importKey(Tools().List_To_String(Public)).exportKey()
 		self.PrivateSeed = Decryption().AsymmetricDecryption(CipherText = Tools().List_To_String(List = Tools().ReadLine(directory = self.PrivateSeedDir)), PrivateKey = self.PrivateKey)
-		self.ClientAddress = Tools().ReadLine(directory = self.PrivateSeedDir)
 
 class IOTA_Module(Configuration):
 
-	def __init__(self, Seed, Server = "http://localhost:14265"):
+	def __init__(self, Seed):
 		Configuration.__init__(self)
-		self.api = Iota(RoutingWrapper(str(Server)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed)
+		self.api = Iota(RoutingWrapper(str(self.Server)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed)
 
 	def Send(self, ReceiverAddress, Message):
 		text_transfer = TryteString.from_string(str(Message))
@@ -276,7 +273,6 @@ class Dynamic_Ledger(Configuration, User_Profile, IOTA_Module):
 		User_Profile.__init__(self)
 		self.PublicIOTA = IOTA_Module(Seed = self.PublicSeed)
 		self.PrivateIOTA = IOTA_Module(Seed = self.PrivateSeed)
-		self.ToPublish = str(str(self.ClientAddress)+"###"+str(self.ClientPublicKey))
 
 	def CalculateBlock(self, Current):
 		#Calculate the current Block and use as index for current address
@@ -290,13 +286,13 @@ class Dynamic_Ledger(Configuration, User_Profile, IOTA_Module):
 
 		self.CalculateBlock(Current = Current)
 		self.CurrentAddress = self.PublicIOTA.Generate_Address(Index = self.Block).Address
-
+		self.ClientAddress = self.PrivateIOTA.Generate_Address(Index = self.Block).Address
 
 		#Check if the current address is in the current block:
-		AddressPool = self.PublicIOTA.GetAddresses(Block = self.Block, Address = str(self.CurrentAddress))
+		AddressPool = self.PublicIOTA.GetAddresses(Block = self.Block, Address = str(self.ClientAddress))
 		if (AddressPool.Check is False):
+			print("Address")
 			ToPublish = str(str(self.ClientAddress) +"###"+ str(self.ClientPublicKey))
-			print self.CurrentAddress
 			self.PrivateIOTA.Send(ReceiverAddress = self.CurrentAddress, Message = str(ToPublish))
 
 		#Output a list of available public addresses and public keys on the ledger
@@ -358,17 +354,3 @@ class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynam
 
 			encoded_bouncedata = self.AsymmetricEncryption(PlainText = PlainData, PublicKey = PublicKey)
 			metadata.append(encoded_bouncedata)
-
-class Background:
-
-	#Example use case:
-	#Background(function = Example().ExampleFunction, arguments = str("{'test': 3}")).Run()
-
-	def __init__(self, function, arguments = "()"):
-		self.Variable = ""
-		self.Function = function
-		self.Arg = arguments
-
-	def Run(self):
-		Pool = ThreadPool(processes = 1)
-		Start = Pool.apply_async(self.Function, eval(self.Arg))
