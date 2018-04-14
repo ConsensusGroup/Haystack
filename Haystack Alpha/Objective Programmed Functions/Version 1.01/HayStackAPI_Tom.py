@@ -32,7 +32,7 @@ class Start:
 ######## Configuration  ###########
 class Configuration:
 	def __init__(self):
-		self.Server = "http://cryptoiota.win:14265"
+		self.Server = "http://localhost:14265"
 		self.Password = ClientPassword
 		self.PublicSeed = "TEAWYYNAY9BBFR9RH9JGHSSAHYJGVYACUBBNBDJLWAATRYUZCXHCUNIPXOGXI9BBHKSHDFEAJOVZDLUWV"
 		self.Charlib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= '
@@ -47,7 +47,8 @@ class Configuration:
 		self.PublicKeyFile = "PublicKeyFile.pem"
 		self.Identifier = "////"
 		self.GenesisTime = 1520726570370
-		self.BlockTime = 2000000
+		self.BlockTime = 100000
+		self.UserBlockScale = 100
 
 		##### Directories #####
 		self.PrivateKeyDir = str(self.Root+"/"+self.RSA+"/"+self.PrivateKeyFile)
@@ -222,47 +223,82 @@ class Encryption(Configuration):
 
 class Decryption(Configuration, User_Profile):
 
+	def AsymmetricDecryption(self, CipherText, PrivateKey):
+
+		cipher = PKCS1_OAEP.new(PrivateKey)
+		try:
+			DecryptedText = cipher.decrypt(str(CipherText))
+		except ValueError:
+			DecryptedText = "Failed"
+		return DecryptedText
+
+	def SymmetricDecryption(self, CipherText, SecretKey):
+		return pyffx.String(str(SecretKey), alphabet=str(self.Charlib), length=len(str(CipherText))).decrypt(str(CipherText))
+
 	def SignatureVerification(self, ToVerify, PublicKey, Signature):
 		digest = SHA256.new()
 		digest.update(ToVerify)
-		Verifier = PKCS1_v1_5.nsw(RSA.importKey(PublicKey))
+		Verifier = PKCS1_v1_5.new(RSA.importKey(PublicKey))
 		self.Verified = Verifier.verify(digest, Signature)
 		return self
 
 ####### Dynamic Ledger and Haystack Protocol #######
 
-class Dynamic_Ledger(Configuration, User_Profile, IOTA_Module):
+class Dynamic_Ledger(Configuration, User_Profile):
 
 	def __init__(self):
 		User_Profile.__init__(self)
 		self.PublicIOTA = IOTA_Module(Seed = self.PublicSeed)
 		self.PrivateIOTA = IOTA_Module(Seed = self.PrivateSeed)
 
-	def CalculateBlock(self, Current):
-		#Calculate the current Block and use as index for current address
-		Blockfloat = float((Current - self.GenesisTime) / float(self.BlockTime))
-		self.Block = math.trunc(Blockfloat)
-		return self
-
-	def UpdateLedger(self):
+	def CalculateBlock(self):
 		#Check the current time of the Tangle
 		Current = self.PublicIOTA.LatestTangleTime().TangleTime
 
-		self.CalculateBlock(Current = Current)
+		#Calculate the current Block and use as index for current address
+		Blockfloat = float((Current - self.GenesisTime) / float(self.BlockTime))
+		UserBlockfloat = float(Blockfloat/float(self.UserBlockScale))
+		self.Block = math.trunc(Blockfloat)
+		self.UserBlock = math.trunc(UserBlockfloat)
+
+		Difference = Blockfloat -self.Block
+		print(Difference)
+		if Difference >= 0.80:
+			self.NewBlock = True 
+		else:
+			self.NewBlock = False
+		return self
+
+	def UpdateLedger(self):
+
+		self.CalculateBlock()
 		self.CurrentAddress = self.PublicIOTA.Generate_Address(Index = self.Block).Address
-		self.ClientAddress = self.PrivateIOTA.Generate_Address(Index = self.Block).Address
+		self.ClientAddress = self.PrivateIOTA.Generate_Address(Index = self.UserBlock).Address
 
 		#Check if the current address is in the current block:
 		AddressPool = self.PublicIOTA.GetAddresses(Block = self.Block, Address = str(self.ClientAddress))
 		if (AddressPool.Check is False):
-			print("Address")
-			ToPublish = str(str(self.ClientAddress) +"###"+ str(self.ClientPublicKey))
+			ClientContact = str(str(self.ClientAddress) +"###"+ str(self.ClientPublicKey.encode("hex")))
+
+			#Now we sign this string with the private key
+			Signed = Encryption().MessageSignature(ToSign = ClientContact).Signature
+			ToPublish = str(ClientContact+"|"+Signed.encode("hex"))
+
+			#Publish to public ledger
 			self.PrivateIOTA.Send(ReceiverAddress = self.CurrentAddress, Message = str(ToPublish))
 
 		#Output a list of available public addresses and public keys on the ledger
 		self.PublicLedger = []
 		for i in AddressPool.PublicLedger:
-			Entry = i.split("###")
-			Combine = [Entry[0],Entry[1]]
-			self.PublicLedger.append(Combine)
+			Entry = i.split("|")
+			AddressAndKeys = Entry[0].split("###")
+			Signature = Entry[1].decode("hex")
+
+			#Verify the authenticity of the users on the ledger
+			Authentic = Decryption().SignatureVerification(ToVerify = Entry[0], PublicKey = AddressAndKeys[1].decode("hex"), Signature = Signature).Verified
+
+			#Make into a list for output
+			Combine = [AddressAndKeys[0], AddressAndKeys[1],Authentic]
+			if Authentic == True:
+				self.PublicLedger.append(Combine)
 		return self
