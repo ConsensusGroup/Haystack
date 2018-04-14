@@ -43,6 +43,7 @@
 			Label:
 				id: StatusLabel
 				text: "Status"
+				font_size: 15
 			Button:
 				text: "Settings"
 			Button:
@@ -106,6 +107,20 @@
 				size_hint: (1, 1-0.2-0.1-0.03)
 				multiline: True
 
+			BoxLayout:
+
+				Button:
+					id: Send
+					text: "Send"
+					size_hint: (0.02, 0.04)
+					on_press: root.btn_pressed(instance = Send)
+
+				Label:
+					id: UAD
+					text: "Address"
+					font_size: 10
+
+
 		BoxLayout:
 			orientation: 'vertical'
 			size_hint_x: 0.2
@@ -113,6 +128,7 @@
 			Label:
 				id: StatusLabel
 				text: "Status"
+				font_size: 15
 			Button:
 				text: "Settings"
 			Button:
