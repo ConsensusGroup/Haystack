@@ -25,11 +25,19 @@ import time, math
 #cd Directory/iri/target
 #java -jar iri-1.4.2.3.jar -p 14265
 
+
+####### Instance initilization ######
+ClientPassword = "5442"
+class Start:
+	def __init__(self,Password):
+		ClientPassword = Password
+		global ClientPassword
+
 ######## Configuration  ###########
 class Configuration:
 	def __init__(self):
 		self.Server = "http://iotanode.host:14265"
-		self.Password = "Hello World"
+		self.Password = ClientPassword
 		self.PublicSeed = "TEAWYYNAY9BBFR9RH9JGHSSAHYJGVYACUBBNBDJLWAATRYUZCXHCUNIPXOGXI9BBHKSHDFEAJOVZDLUWV"
 		self.Charlib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-= '
 		self.Default_Size = 256
