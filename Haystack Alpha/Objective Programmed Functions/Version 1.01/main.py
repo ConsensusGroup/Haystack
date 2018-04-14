@@ -19,24 +19,7 @@ from os import listdir
 from time import sleep
 
 refresh_rate = 5
-ledger_rate = 120
 
-#class BackGround(Configuration):
-#	stop = threading.Event()
-#
-#	def Ledger(self):
-#		while True:
-#			
-#
-##			#except:
-#			#	pass
-#			if self.stop.is_set():
-#				return
-#		return self
-#
-#	def StartLedger(self):
-#		threading.Thread(target = self.Ledger).start()
-#
 ##### Main Logic Commands ##########
 class LogicCommands(Configuration):
 	def __init__(self):
@@ -51,7 +34,6 @@ class LogicCommands(Configuration):
 			self.Result = False
 		return self
 	def ShutDown(self):
-		#x.stop.set()
 		App.get_running_app().stop()
 
 	def ReadRegister(self, UserName, Password, Password2):
@@ -94,6 +76,7 @@ class LogicCommands(Configuration):
 
 	def btn_pressed(self, instance):
 	    print(instance.text)
+	    #threading.Thread(target = self.IOTA).start()
 
 	def Message_Inbox(self):
 		List = ["Cooper", "Cooper", "Kevin", "Hendrik", "Samim"]
@@ -105,22 +88,22 @@ class LogicCommands(Configuration):
 		return self
 
 	def BlockUpdate(self, *args):
+		ChangeBlock = False
 		try:
 			Dynamics = Dynamic_Ledger()
-			TangleTime = IOTA_Module(Seed = self.PublicSeed).LatestTangleTime().TangleTime
-			CurrentBlock = Dynamics.CalculateBlock(Current = TangleTime).Block
+			CurrentBlock = Dynamics.CalculateBlock().Block
+			ChangeBlock = Dynamics.CalculateBlock().NewBlock
 			self.ids.StatusLabel.text = str("Block: "+str(CurrentBlock))
 		except ValueError:
 			pass
-		return self
-	def LedgerCheck(self, *args):
+
 		try:
-			Ledger = Dynamic_Ledger().UpdateLedger()
-			LedgerAddress = Ledger.CurrentAddress
-			print(LedgerAddress)
-			print(Ledger.PublicLedger)
+			if ChangeBlock == True:
+				PublicLedger = Dynamics.UpdateLedger()
 		except:
 			pass
+
+		return self
 
 ######### Screens ##########
 #------ Login Windows -----------#
@@ -156,7 +139,6 @@ class MessangerWidget(BoxLayout, LogicCommands):
 		self.History = []
 		self.Message_Inbox()
 		Clock.schedule_interval(self.BlockUpdate, refresh_rate)
-		Clock.schedule_interval(self.LedgerCheck, ledger_rate)
 
 
 class NewMessageWindow(Screen):
@@ -170,7 +152,6 @@ class NewMessageWidget(Widget, LogicCommands):
 		Widget.__init__(self)
 		LogicCommands.__init__(self)
 		Clock.schedule_interval(self.BlockUpdate, refresh_rate)
-		Clock.schedule_interval(self.LedgerCheck, ledger_rate)
 		self.History = []
 ##################################
 
@@ -200,8 +181,7 @@ class MainApp(App):
 
 ######### Start the app ##########
 if __name__ == "__main__":
-	#x = BackGround()
-	#x.StartLedger()
+
 	KivyConfig().ReadConfig()
 	app = MainApp()
 	app.run()
