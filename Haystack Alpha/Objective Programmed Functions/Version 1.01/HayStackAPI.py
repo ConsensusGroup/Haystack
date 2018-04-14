@@ -184,6 +184,7 @@ class IOTA_Module(Configuration):
 		return self
 
 	def GetAddresses(self, Block, Address):
+		ClientAddress = Address.strip("[u'").strip("']")
 		data = self.api.get_transfers(start = Block, stop = Block +1)
 		bundle = data.get('bundles')
 		self.PublicLedger = []
@@ -196,8 +197,9 @@ class IOTA_Module(Configuration):
 				AttachedTime = str(json[0].get('attachment_timestamp'))
 
 				#Verify that client is in pool
-				if Address in Entry:
-					self.Check = True
+				for i in Entry.split('###'):
+					if i == ClientAddress:
+						self.Check = True
 
 				#Block at which message was sent to
 				BlockOfAddress = float(int(AttachedTime) - Conf.GenesisTime) / float(Conf.BlockTime)
@@ -288,37 +290,35 @@ class Dynamic_Ledger(Configuration, User_Profile, IOTA_Module):
 
 
 		#Check if the current address is in the current block:
-		AddressPool = self.PublicIOTA.GetAddresses(Block = self.Block, Address = str(self.CurrentAddress))
+		AddressPool = self.PublicIOTA.GetAddresses(Block = self.Block, Address = str(self.ClientAddress))
 		if AddressPool.Check is False:
-			print "Client Address:", str(self.ClientAddress).strip("[u'").strip("']")
-			ToPublish = str(str(self.ClientAddress) +"###"+ str(self.ClientPublicKey)).encode('hex')
-			print "String to publish:", ToPublish.decode('hex')
+			print "Address not found: Broadcasting to Ledger"
+			ToPublish = str(str(self.ClientAddress).strip("[u'").strip("']") +"###"+ str(self.ClientPublicKey).encode('hex'))
 			self.PrivateIOTA.Send(ReceiverAddress = self.CurrentAddress, Message = str(ToPublish))
 
 		#Output a list of available public addresses and public keys on the ledger
 		self.PublicLedger = []
 		for i in AddressPool.PublicLedger:
 			Entry = i.split("###")
-			Combine = [Entry[0],Entry[1]]
+			try:
+				RSA.importKey(Entry[1].decode('hex'))
+				Combine = [Entry[0],Entry[1].decode('hex')]
+			except:
+				Combined = 'Invalid Key'
+				try:
+					Combine = [Entry[0],Entry[1].decode('hex')]
+				except:
+					Combine = 'Invalid Entry'
 			self.PublicLedger.append(Combine)
-		print "public ledger:", self.PublicLedger.decode('hex')
+		print self.PublicLedger
 		return self
 
+class Contacts(Encryption, Decryption, User_Profile, Tools, Configuration, Dynamic_Ledger):
 
-class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynamic_Ledger):
-
-	def NormalizeAndSign(self, PlainText):
-		Normal = self.Normalize(string = PlainText)
-		Signature = self.MessageSignature(ToSign = Normal).Signature
-		return str(Normal) + str(b64encode(Signature))
-
-	def PathFinder(self, Length = 1, ReceiverPublicKey = ""):
-		self.Trajectory = []
-		self.Addresses = Dynamic_Ledger().UpdateLedger().PublicLedger
-		for i in range(Length):
-			index = random.randrange(0, len(self.Addresses))
-			self.Trajectory.append(self.Addresses[index-1])
-		return self
+	def __init__(self, Name, PublicKey):
+		self.Address = self.KeyFinder(PublicKeyToFind = ReceiverPublicKey)
+		self.Name = Name
+		self.LastInclusionBlock = 0
 
 	def KeyFinder(self, PublicKeyToFind):
 
@@ -335,13 +335,28 @@ class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynam
 					self.Address = Splitted[0]
 		return self
 
-	def PrepareMessage(self, PlainText, ReceiverPublicKey, TrajectoryLength = 1):
+class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynamic_Ledger, Contacts):
+
+	def NormalizeAndSign(self, PlainText):
+		Normal = self.Normalize(string = PlainText)
+		Signature = self.MessageSignature(ToSign = Normal).Signature
+		return str(Normal) + str(b64encode(Signature))
+
+	def PathFinder(self, Length = 1, ReceiverPublicKey = ""):
+		self.Trajectory = []
+		self.Addresses = Dynamic_Ledger().UpdateLedger().PublicLedger
+		for i in range(Length):
+			index = random.randrange(0, len(self.Addresses))
+			self.Trajectory.append(self.Addresses[index-1])
+		return self
+
+	def PrepareMessage(self, PlainText, ReceiverPublicKey, TrajectoryLength = 4):
 		NormalizedSigned = self.NormalizeAndSign(PlainText = PlainText)
 		Address = self.KeyFinder(PublicKeyToFind = ReceiverPublicKey)
 		Trajectory = self.PathFinder(Length = TrajectoryLength, ReceiverPublicKey = ReceiverPublicKey).Trajectory
 
 		#Generate a random index to add the recipent in the trajectory
-		Index = 3#int(random.randrange(0,len(Trajectory),1))
+		Index = int(random.randrange(0,len(Trajectory),1))
 		Trajectory[int(Index)] = [Address, ReceiverPublicKey.replace("\n","\\n")]
 
 		metadata = []
@@ -351,12 +366,34 @@ class Messages(Encryption, Decryption, User_Profile, Tools, Configuration, Dynam
 			else:
 				bounce_address = Trajectory[i+1][0]
 			PublicKey = Trajectory[i][1]
-			PlainData = str(bounce_address)+str(PublicKey)
+			SecretKey = Generators().Secret_Key().SecretKey
+			PlainData = str(bounce_address)+str(SecretKey)
 
 			encoded_bouncedata = self.AsymmetricEncryption(PlainText = PlainData, PublicKey = PublicKey)
 			metadata.append(encoded_bouncedata)
 
+#		for i in range (int(Index), -1, -1):
+#			self.Password = Generators().Secret_Key().SecretKey
+#			self.PlainText = needle
+#			self.PubKey = ""
+#			needle = self.Encrypt().CipherText
+#			if i == int(self.bounce)-1:
+#				bounce_address = '0'*81
+#			else:
+#				bounce_address = Trajectory[i+1]
+#
+#			self.PubKey = TrajKeys[i]
+#			self.PlainText = str(bounce_address) + str(self.Password)
+#			encoded_bouncedata = self.Encrypt().CipherText
+#			metadata.append(encoded_bouncedata)
 
+#		random.shuffle(metadata)
+#		message_data = ''
+#		for i in range(0, len(metadata)):
+#			message_data = str(message_data) + str(metadata[i]) + '##:##'
+#		self.MessageLocked = str(needle) + '##Begin#Metadata##' + str(message_data)
+#		self.FirstAddress = Trajectory[0]
+#		return self
 
 
 
@@ -371,7 +408,7 @@ if function == "Build" or "Build and Tx":
 if function == "Tx" or "Build and Tx":
 	Dynamic_Ledger().UpdateLedger()
 
-function = "0PrepareMessage"
+function = "PrepareMessage"
 
 
 if function == "PrepareMessage":
@@ -402,4 +439,3 @@ if function == "Encrypt and print":
 	print 'encrypted length:', len(str(encrypted))
 	decrypted = Decryption().SymmetricDecryption(CipherText = str(encrypted), SecretKey = SecretKey)
 	print 'message:', decrypted
-
