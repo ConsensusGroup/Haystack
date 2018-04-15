@@ -48,6 +48,7 @@
 				text: "Settings"
 			Button:
 				text: "Contacts"
+				on_press: app.root.current = 'Contacts'
 			Button:
 				text: "Edit"
 			Button:
@@ -85,6 +86,7 @@
 					focus: True
 					multiline: False 
 					size_hint_x: 1-To.size_hint_x
+					hint_text: "		search contracts"
 					on_text: 
 						if root.ReadInput(Text = UserInput.text, Function = "Contact").Found != []: MessageField.size_hint= (1, 0.1); SearchField.size_hint= (1, 0.04); Contact.size_hint_y= 1-0.34; root.On_Type()
 						else: MessageField.size_hint= (1, 1-0.2-0.00001-0.04); Contact.size_hint_y= 0.00001; SearchField.size_hint= (1, 0.04); root.On_Type()
@@ -108,17 +110,18 @@
 				multiline: True
 
 			BoxLayout:
+				size_hint: (1, 0.05)
+				padding: 5
+				Label:
+					text: ''
+					size_hint_x: 0.90
 
 				Button:
 					id: Send
 					text: "Send"
-					size_hint: (0.02, 0.04)
+					size_hint_x: 0.10
 					on_press: root.btn_pressed(instance = Send)
 
-				Label:
-					id: UAD
-					text: "Address"
-					font_size: 10
 
 
 		BoxLayout:
@@ -133,6 +136,7 @@
 				text: "Settings"
 			Button:
 				text: "Contacts"
+				on_press: app.root.current = "Contacts"
 			Button:
 				text: "Cancel"
 				on_press: app.root.current = "Messanger"
