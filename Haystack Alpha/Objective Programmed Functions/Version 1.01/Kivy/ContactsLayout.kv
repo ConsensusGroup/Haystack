@@ -110,7 +110,7 @@
 					size_hint_x: 0.2
 					text: "Finish"
 					on_press: 
-						if root.Add_Contact(FirstName = FirstName.text, LastName = LastName.text, Address = IOTAAddress.text).Pass == True: app.root.current = "Contacts";
+						if root.Add_Contact(FirstName = FirstName.text, LastName = LastName.text, Address = IOTAAddress.text).Pass == True: IOTAAddress.text = ""; LastName.text = ""; FirstName.text = ""; app.root.current = "Contacts";
 						elif root.Add_Contact(FirstName = FirstName.text, LastName = LastName.text, Address = IOTAAddress.text).Pass == "LabelAddresss": IOTAAddress.hint_text = "Missing Address"; IOTAAddress.hint_text_color = (1,0,0,0); 
 
 	BoxLayout:
