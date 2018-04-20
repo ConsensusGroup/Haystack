@@ -99,7 +99,7 @@ class LogicCommands(Configuration):
 		try:
 			User_Profile().PrivateKey
 			self.Result = True
-		except ValueError:
+		except:
 			self.Result = False
 		return self
 	def ShutDown(self):
@@ -144,6 +144,7 @@ class LogicCommands(Configuration):
 	    print(instance.text)
 
 	def All_Contacts(self, *args):
+		Instance.Read()
 		for i in Instance.DataBase:
 			Entries = Instance.DataBase.get(i)
 			FirstName = Entries.get("FirstName")
@@ -197,7 +198,7 @@ class LogicCommands(Configuration):
 			CurrentBlock = Dynamics.CalculateBlock().Block
 			ChangeBlock = Dynamics.CalculateBlock().NewBlock
 			self.ids.StatusLabel.text = str("Block: "+str(CurrentBlock))
-		except ValueError:
+		except:
 			pass
 
 		try:
@@ -264,13 +265,14 @@ class ContactWindow(Screen):
 		self.History = []
 		self.add_widget(self.Contact)
 
+
 class ContactsLayout(BoxLayout, LogicCommands):
 	def __init__(self):
 		BoxLayout.__init__(self)
 		LogicCommands.__init__(self)
 		self.History = []
+		self.All_Contacts()
 		Clock.schedule_interval(self.BlockUpdate, refresh_rate)
-		Clock.schedule_interval(self.All_Contacts, refresh_rate)
 
 class NewContactWindow(Screen):
 	def __init__(self, **kwargs):
