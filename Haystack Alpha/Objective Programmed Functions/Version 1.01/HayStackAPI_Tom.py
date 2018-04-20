@@ -47,8 +47,8 @@ class Configuration:
 		self.PublicKeyFile = "PublicKeyFile.pem"
 		self.Identifier = "////"
 		self.GenesisTime = 1520726570370
-		self.BlockTime = 1000000
-		self.UserBlockScale = 100
+		self.BlockTime = 100000
+		self.UserBlockScale = 1
 
 		##### Directories #####
 		self.PrivateKeyDir = str(self.Root+"/"+self.RSA+"/"+self.PrivateKeyFile)
@@ -322,7 +322,7 @@ class Dynamic_Ledger(Configuration, User_Profile):
 			Authentic = Decryption().SignatureVerification(ToVerify = Entry[0], PublicKey = AddressAndKeys[1].decode("hex"), Signature = Signature).Verified
 
 			#Make into a list for output
-			Combine = [AddressAndKeys[0], AddressAndKeys[1],Authentic]
+			Combine = [AddressAndKeys[0], AddressAndKeys[1]]
 			if Authentic == True:
 				self.PublicLedger.append(Combine)
 		return self
