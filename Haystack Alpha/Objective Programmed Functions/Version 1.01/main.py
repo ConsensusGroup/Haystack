@@ -19,7 +19,7 @@ from os import listdir
 from time import sleep
 import json
 
-refresh_rate = 5
+refresh_rate = 1
 
 ##### Other Classes ########
 class Contacts(object):
@@ -37,6 +37,7 @@ class DataBaseManager:
 		self.DataBaseDir = str(self.Root+"/"+self.ContactJson)
 		self.DataBase = {}
 		self.Results = []
+		self.Indexing = []
 
 	def Read(self):
 		try:
@@ -60,24 +61,12 @@ class DataBaseManager:
 			for z in self.DataBase[i].keys():
 				if Keyword in self.DataBase[i].get(z):
 					self.Results.append(self.DataBase[i])
+					self.Indexing.append(i)
 		return self
 
 	def AddToDataBase(self):
 		Index = len(self.DataBase)
 		self.DataBase[Index] = self.Dictionary
-		self.Write()
-		return self
-
-	def RemoveFromDataBase(self, Dictionary):
-		Temp = {}
-		x = 0
-		for i in self.DataBase:
-			if Dictionary in i:
-				pass
-			else:
-				Temp[x] = i
-				x = x+1
-		self.DataBase = Temp
 		self.Write()
 		return self
 
@@ -93,6 +82,7 @@ Instance.Read()
 class LogicCommands(Configuration):
 	def __init__(self):
 		Configuration.__init__(self)
+		self.Bin = []
 
 	def ReadLogin(self, UserName, Password):
 		Start(Password = Password)
@@ -144,7 +134,11 @@ class LogicCommands(Configuration):
 	    print(instance.text)
 
 	def All_Contacts(self, *args):
-		Instance.Read()
+		for i in self.Bin:
+			self.ids.UserContacts.remove_widget(i)
+
+		self.History = []
+		self.Bin = []
 		for i in Instance.DataBase:
 			Entries = Instance.DataBase.get(i)
 			FirstName = Entries.get("FirstName")
@@ -152,10 +146,13 @@ class LogicCommands(Configuration):
 			Address = Entries.get("Address")
 			string = str(FirstName+" "+LastName+" ("+Address+")")
 			if string not in self.History:
-				self.btn = Button(text = string, size_hint_y = None, height=10, font_size = 20, valign = "middle")
+				self.btn = Button(text = string, size_hint_y = None, height=10, font_size = 12, valign = "middle")
 				self.btn.bind(on_press = self.btn_pressed)
 				self.ids.UserContacts.add_widget(self.btn)
 				self.History.append(string)
+				self.Bin.append(self.btn)
+
+
 		return self
 
 	def Add_Contact(self, FirstName, LastName, Address):
@@ -191,6 +188,26 @@ class LogicCommands(Configuration):
 			self.History.append(self.btn)	
 		return self
 
+	def UpdateContact(self, OnLedger):
+		for i in OnLedger:
+			Address = i[0]
+			PublicKey = i[1]
+			if str(PublicKey) == str(User_Profile().ClientPublicKey.encode("hex")):
+				Instance.Read()
+				Inclusion = Instance.SearchDatabase(Keyword = str(User_Profile().ClientPublicKey.encode("hex")))
+				if Inclusion.Results != []:
+					Instance.DataBase[Inclusion.Indexing[0]]["Address"] = Address
+					Instance.DataBase[Inclusion.Indexing[0]]["PublicKey"] = User_Profile().ClientPublicKey.encode("hex")
+					Instance.Write()
+					print("here")
+				else:
+					Instance.ObjectToDictionary(ObjectInstance = Contacts(FirstName = "You", Address = Address, PublicKey = PublicKey))
+					Instance.AddToDataBase()
+					Instance.Read()
+
+
+		return self
+
 	def BlockUpdate(self, *args):
 		ChangeBlock = False
 		try:
@@ -204,8 +221,9 @@ class LogicCommands(Configuration):
 		try:
 			if ChangeBlock == True:
 				PublicLedger = Dynamics.UpdateLedger()
+				self.UpdateContact(OnLedger = PublicLedger.PublicLedger)
 		except:
-			pass
+			self.OnLedger = []
 
 		return self
 
@@ -258,21 +276,23 @@ class NewMessageWidget(Widget, LogicCommands):
 		Clock.schedule_interval(self.BlockUpdate, refresh_rate)
 
 #------- Contacts Window ------------#
-class ContactWindow(Screen):
+class ContactWindow(Screen, LogicCommands):
 	def __init__(self, **kwargs):
 		super(ContactWindow, self).__init__(**kwargs)
 		self.Contact = ContactsLayout()
-		self.History = []
+		self.Buttons = []
 		self.add_widget(self.Contact)
 
+	def on_enter(self):
+		Instance.Read()
 
 class ContactsLayout(BoxLayout, LogicCommands):
 	def __init__(self):
 		BoxLayout.__init__(self)
 		LogicCommands.__init__(self)
 		self.History = []
-		self.All_Contacts()
 		Clock.schedule_interval(self.BlockUpdate, refresh_rate)
+		Clock.schedule_interval(self.All_Contacts, 10)
 
 class NewContactWindow(Screen):
 	def __init__(self, **kwargs):
@@ -287,7 +307,6 @@ class AddContactLayout(BoxLayout, LogicCommands):
 		Clock.schedule_interval(self.BlockUpdate, refresh_rate)
 
 ##################################
-
 
 class KivyConfig:
 	def __init__(self):
