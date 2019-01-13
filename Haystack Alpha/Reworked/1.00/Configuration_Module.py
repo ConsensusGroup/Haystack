@@ -1,0 +1,15 @@
+##############################################################
+##################### Configuration file #####################
+##############################################################
+
+class Configuration:
+	def __init__(self):
+		self.Node = "https://tuna.iotasalad.org:14265"
+		self.PublicSeed = "PJKEJOSPR99CK9TVRJUUDYRWZX9IPIQBRUCWOQMQSKOGEWXYOIFGKXSCSAUTKLDQYNZWMSTVRIUXCGZZQ"
+		self.Default_Size = 256
+		self.Identifier = "////"
+		self.Password = "Hello world"  #This can be removed later. This is used password protect the key.
+		self.UserFolder = "UserData"
+		self.KeysFolder = "Keys"
+		self.SeedFolder = "PrivateSeed"
+
