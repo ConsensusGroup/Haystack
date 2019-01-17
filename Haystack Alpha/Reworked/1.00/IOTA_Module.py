@@ -48,7 +48,7 @@ class IOTA_Module(Configuration):
 		else:
 			pass
 	
-	def Receive(self, Start = 0, Stop = ""):
+	def Receive(self, Start = 0, Stop = "", JSON = False):
 		#This chunck of code is used to choose a segment of Tx history to be retrieved 
 		if Stop == "":
 			mess = self.IOTA_Api.get_account_data(start = Start)
@@ -58,12 +58,13 @@ class IOTA_Module(Configuration):
 		#Decompose the Bundle into components
 		bundle = mess.get('bundles')
 		Message = []
-		self.JsonEntries = []
+		self.Message = []
 		for i in bundle:
 			message = str(i.get_messages()).strip("[u'").strip("']")
-			Json = str(i.as_json_compatible()[0])
-			combine = [Json,message]
-			self.JsonEntries.append(combine)
+			if JSON == True:
+				Json = str(i.as_json_compatible()[0])
+				message = [Json,message]
+			self.Message.append(message)
 		return self
 
 	def LatestTangleTime(self):
