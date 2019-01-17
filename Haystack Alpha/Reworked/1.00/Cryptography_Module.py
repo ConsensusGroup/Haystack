@@ -15,6 +15,7 @@ from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA256
 from Crypto.Signature import PKCS1_v1_5
 
+
 class Key_Generation(Configuration):
 	def __init__(self):
 		Configuration.__init__(self)
