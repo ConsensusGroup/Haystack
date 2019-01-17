@@ -12,4 +12,10 @@ class Configuration:
 		self.UserFolder = "UserData"
 		self.KeysFolder = "Keys"
 		self.SeedFolder = "PrivateSeed"
+		self.PrivateSeed = "PrivateSeed.txt"
+		self.PrivateKey = "PrivateKey.pem"
+		self.PublicKey = "PublicKey.pem"
+		self.GenesisTime = 1520726570370
+		self.BlockTime = 1000000
+
 
