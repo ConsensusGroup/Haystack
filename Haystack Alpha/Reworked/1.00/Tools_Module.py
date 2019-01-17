@@ -32,6 +32,14 @@ class Tools(Configuration):
 		if not os.path.exists(directory):
 			try:
 				os.makedirs(directory)
-				return False
+				return True
 			except OSError:
 				return False
+		if os.path.exists(directory) == True:
+			return None
+
+	def Check_File(self, File):
+		if not os.path.exists(File):
+			return False
+		else:
+			return True
