@@ -4,7 +4,7 @@
 
 from Configuration_Module import Configuration
 from Tools_Module import Tools 
-from Cryptography_Module import Key_Generation, os, Encryption
+from Cryptography_Module import Key_Generation, os, Encryption, Decryption
 from IOTA_Module import Seed_Generator
 
 
@@ -36,9 +36,16 @@ class Initialization(Configuration, Tools):
 			self.Write(directory = str(self.UserFolder+"/"+self.SeedFolder+"/"+self.PrivateSeed), data = Cipher_PrivateSeed)
 		return self
 
-Start = Initialization()
-Continue = Start.Build_Application()
-if Continue == True:
-	Start.Account()
-else:
-	print("Permission Error")
+class User_Profile(Initialization):
+	def __init__(self):
+		Start = Initialization()
+		Continue = Start.Build_Application()
+		if Continue == True:
+			Start.Account()
+			Keys = Key_Generation().PrivateKey_Import()
+			Private_Seed_Encrypted = Tools().List_To_String(List = Tools().ReadLine(directory = str(self.UserFolder+"/"+self.SeedFolder+"/"+self.PrivateSeed)))
+			self.PrivateKey = Keys.PrivateKey
+			self.PublicKey = Keys.PublicKey
+			self.Private_Seed = Decryption().AsymmetricDecryption(CipherText = Private_Seed_Encrypted, PrivateKey = self.PrivateKey)
+		else:
+			print("Permission Error")
