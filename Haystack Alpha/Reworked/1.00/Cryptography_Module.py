@@ -2,12 +2,18 @@
 ############ This script handles encryption and decryption interactions ############
 ####################################################################################
 
-from Configuration_Module import Configuration
+
 import os
+
+# Imprt some modules 
+from Configuration_Module import Configuration
+from Tools_Module import Tools
 
 #Cryptography Library
 from Crypto.PublicKey import RSA
-
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Hash import SHA256
+from Crypto.Signature import PKCS1_v1_5
 
 class Key_Generation(Configuration):
 	def __init__(self):
@@ -19,10 +25,19 @@ class Key_Generation(Configuration):
 		self.PublicKey = pair.publickey().exportKey(format = 'PEM')
 		return self
 
+	def PrivateKey_Import(self):
+		PrivateCipher = Tools().ReadLine(directory = str(self.UserFolder+"/"+self.KeysFolder+"/"+self.PrivateKey))
+		Keys = RSA.importKey(PrivateCipher, passphrase = self.Password)
+		self.PublicKey = Keys.publickey().exportKey(format = 'PEM')
+		self.PrivateKey = Keys ###See if this works for decryption
+		return self
+
 	def Secret_Key(self):
 		return os.urandom(64)
 
 class Encryption(Configuration):
+	def __init__(self):
+		pass
 
 	def AsymmetricEncryption(self, PlainText, PublicKey):
 		cipher = PKCS1_OAEP.new(RSA.importKey(PublicKey))
@@ -35,7 +50,7 @@ class Encryption(Configuration):
 	def MessageSignature(self, ToSign):
 		digest = SHA256.new()
 		digest.update(ToSign)
-		Signer = PKCS1_v1_5.new(User_Profile().PrivateKey)
+		Signer = PKCS1_v1_5.new(Key_Generation().PrivateKey_Import().PrivateKey)
 		self.Signature = Signer.sign(digest)
 		return self
 
@@ -59,5 +74,3 @@ class Decryption(Configuration):
 		Verifier = PKCS1_v1_5.new(RSA.importKey(PublicKey))
 		self.Verified = Verifier.verify(digest, Signature)
 		return self
-
-
