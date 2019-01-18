@@ -14,6 +14,8 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA256
 from Crypto.Signature import PKCS1_v1_5
+import pyffx
+from base64 import b64encode, b64decode
 
 
 class Key_Generation(Configuration):
@@ -48,6 +50,16 @@ class Encryption(Configuration):
 		string = pyffx.String(str(SecretKey), alphabet = str(self.Charlib) , length=len(str(PlainText))).encrypt(str(PlainText))
 		return str(string)
 
+	def Layering_Encrpytion(self, string, PublicKey, Address):
+		#Here we generate the secret key which will be asymmetrically encrypted. The secret key is used to symmetrically decrypt the packet layer
+		SymKey = self.Secret_Key()
+		string = str(string + self.Identifier + Address)
+		CypherText = self.SymmetricEncryption(PlainText = string, SecretKey = SymKey)
+		#Packet composition <XXXX> (Symmetric), [[Asymmetric]]	<string>///[[SymmetricKey]]
+		CypherText = b64encode(CypherText+self.Identifier+self.AsymmetricEncryption(PlainText = SymKey, PublicKey = PublicKey))
+		return CypherText
+
+
 	def MessageSignature(self, ToSign):
 		digest = SHA256.new()
 		digest.update(ToSign)
@@ -58,7 +70,6 @@ class Encryption(Configuration):
 class Decryption(Configuration):
 
 	def AsymmetricDecryption(self, CipherText, PrivateKey):
-
 		cipher = PKCS1_OAEP.new(PrivateKey)
 		try:
 			DecryptedText = cipher.decrypt(str(CipherText))

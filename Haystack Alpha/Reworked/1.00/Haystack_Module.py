@@ -43,6 +43,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 			pass
 
 	def Submit_User(self):
+		self.Calculate_Block()
 		PublicAddress = self.PrivateIOTA.Generate_Address(Index = self.Block)
 		ToSubmit = str(PublicAddress+self.Identifier+self.PublicKey)
 		Signed_ToSubmit = str(ToSubmit+self.Identifier+Encryption().MessageSignature(ToSign = ToSubmit).Signature).encode("hex")
@@ -77,50 +78,86 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 				self.Ledger_Accounts = []
 		return self 
 
-class Relay_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Module):
-	def __init__(self):
+class Relay_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Module, Encryption, Key_Generation):
+	def __init__(self, Delete_Input):
 		Dynamic_Public_Ledger.__init__(self)
 		Decryption.__init__(self)
+		Encryption.__init__(self)
 		User_Profile.__init__(self)
+		Key_Generation.__init__(self)
+		self.Ledger_Accounts = Delete_Input
 
 	def Relay_Function(self):
 		Messages = self.PrivateIOTA.Receive(Start = int(self.Calculate_Block().Block-1), Stop = int(self.Calculate_Block().Block+1)).Message
 		print(Messages)
 
-	def Sender_Function(self):
-		pass
+	def Sender_Function(self, ReceiverAddress ="", PublicKey = "", Message = "", PingFunction = False):
+
+		#Generate the trajectory of the message 
+		Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction)
+		while  Trajectory == None:
+			Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction)
+
+		#Reverse the Trajectory list
+		for i in range(len(Trajectory)):
+			if i == 0:
+				Sending_To = Trajectory[0][0]
+				if len(Trajectory) > i+1:
+					Relayer_After = Trajectory[i+1][0] 
+				else:
+					Relayer_After = '0' * 81
+				PublicKey_To = Trajectory[0][1]
+				if Sending_To == ReceiverAddress:
+					string = self.Layering_Encrpytion(string = Message, PublicKey = PublicKey_To, Address = Relayer_After)
+					#string = str(Sending_To+"<<<"+PublicKey_To+"|"+Message+"||||||||"+Relayer_After+"|>>> ")
+				else:
+					string = self.Layering_Encrpytion(string = "", PublicKey = PublicKey_To, Address = Relayer_After)
+					#string = str(Sending_To+"<"+PublicKey_To+"|"+Relayer_After+"|> ")
+			else:
+				Relayer = Trajectory[i][0]
+				PublicKey_of_Relayer = Trajectory[i][1]
+				if len(Trajectory) > i+1:
+					Relayer_After = Trajectory[i+1][0]
+					if Relayer == ReceiverAddress:
+						string = self.Layering_Encrpytion(string = str(Message+self.Identifier + string), PublicKey = PublicKey_of_Relayer, Address = Relayer_After)
+						#string = string + str(Relayer+"<<<"+PublicKey_of_Relayer+"|"+Message+"||||||||"+Relayer_After+"|>>>")
+					else:
+						string = self.Layering_Encrpytion(string = string , PublicKey = PublicKey_of_Relayer, Address = Relayer_After)
+						#string = string + str(Relayer + "<" + PublicKey_of_Relayer + "|" + Relayer_After + "|> ")
+				else:
+					Relayer_After = '0' * 81
+					string = self.Layering_Encrpytion(string = string, PublicKey = PublicKey_of_Relayer, Address = Relayer_After)
+					#string = string + str(Relayer + "<" + PublicKey_of_Relayer + "|" + Relayer_After + "|> ")
+		return string
 
 	def Shrapnell_Function(self):
 		pass
 
 	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False):
 		self.Calculate_Block().Block
-		self.Check_User_In_Ledger()
-		Bouncers = random.randrange(0, len(self.Ledger_Accounts))
-		Addresses = self.Ledger_Accounts
+		#self.Check_User_In_Ledger()
+		Bouncers = int(round(random.uniform(0, self.MaxBounce)))
 		Trajectory = []
 		for i in range(Bouncers):
-			index = random.randrange(0, len(Addresses))
-			Relayer = Addresses.pop(index)
+			index = int(round(random.uniform(0, len(self.Ledger_Accounts)-1)))
+			Relayer = self.Ledger_Accounts[index]
 			Trajectory.append(Relayer)
-			print(Bouncers)
-		
+
 		if PingFunction == True:
-			Ran_Index = int(len(Trajectory))
 			ReceiverAddress = self.PrivateIOTA.Generate_Address(Index = self.Block)
 			PublicKey = self.PublicKey
+			if len(Trajectory) == 0:
+				Relayer = self.Ledger_Accounts[random.randrange(0, len(self.Ledger_Accounts))]
+				Trajectory.append(Relayer)
+			Ran_Index = len(Trajectory)
+
+		elif len(Trajectory) > 0 and PingFunction == False: 
+			Ran_Index = int(round(random.uniform(0, len(Trajectory))))
 		else: 
-			Ran_Index = random.randrange(0, len(Trajectory))
-		
-		if ReceiverAddress != "" and PublicKey != "":
+			pass
+
+		if ReceiverAddress != "" and PublicKey != "" and len(Trajectory) > 0:
 			SendTo = [ReceiverAddress,PublicKey]
 			Trajectory.insert(Ran_Index, SendTo)
-
-			print(Trajectory)
-		return Trajectory
-
-
-
-
-#y = Dynamic_Public_Ledger().Start_Ledger()
-x = Relay_Client().Path_Finder()
+		if len(Trajectory) > 0:
+			return Trajectory

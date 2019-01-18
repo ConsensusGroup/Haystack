@@ -38,10 +38,10 @@ class Initialization(Configuration, Tools):
 
 class User_Profile(Initialization):
 	def __init__(self):
-		Start = Initialization()
-		Continue = Start.Build_Application()
+		Initialization.__init__(self)
+		Continue = self.Build_Application()
 		if Continue == True:
-			Start.Account()
+			self.Account()
 			Keys = Key_Generation().PrivateKey_Import()
 			Private_Seed_Encrypted = Tools().List_To_String(List = Tools().ReadLine(directory = str(self.UserFolder+"/"+self.SeedFolder+"/"+self.PrivateSeed)))
 			self.PrivateKey = Keys.PrivateKey
