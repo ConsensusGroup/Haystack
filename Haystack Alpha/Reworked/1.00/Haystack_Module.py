@@ -78,21 +78,28 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 				self.Ledger_Accounts = []
 		return self 
 
-class Relay_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Module, Encryption, Key_Generation):
+class Receiver_Client():
+	
+	def __init__(self):
+		pass
+
+
+class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Module, Encryption, Key_Generation, Tools):
 	def __init__(self, Delete_Input):
 		Dynamic_Public_Ledger.__init__(self)
 		Decryption.__init__(self)
 		Encryption.__init__(self)
 		User_Profile.__init__(self)
 		Key_Generation.__init__(self)
+		Tools.__init__(self)
 		self.Ledger_Accounts = Delete_Input
-		
-	
+
 	def Shrapnell_Function(self, Message_PlainText = ""):
 		Message_Signed = Message_PlainText + self.MessageSignature(ToSign = Message_PlainText).Signature
 		Symmetric_Message_Key = self.Secret_Key()
 		Symmetrically_Encrypted = self.SymmetricEncryption(PlainText = Message_Signed.encode('hex'), SecretKey = Symmetric_Message_Key)
-		Fragments = self.Split(string = Symmetrically_Encrypted, length = 248)
+	#	Fragments = self.Split(string = Symmetrically_Encrypted, length = 248)
+		Fragments = self.Split(string = Message_PlainText, length = 248)
 		Fragment_Tags = []
 		if len(Fragments) > 1:
 			while len(Fragments)-1 != len(Fragment_Tags):
@@ -105,54 +112,36 @@ class Relay_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Module,
 		for i in range(len(Fragments)):
 			Fragments[i] = str(Fragment_Tags[i]+Fragments[i]+Fragment_Tags[i+1])
 		return [Fragments, Symmetric_Message_Key]
-	
-	def Relay_Function(self):
-		Messages = self.PrivateIOTA.Receive(Start = int(self.Calculate_Block().Block-1), Stop = int(self.Calculate_Block().Block+1)).Message
-		print(Messages)
 
-	def Sender_Function(self, ReceiverAddress ="", PublicKey = "", Message = "", PingFunction = False):
+	def Sending_Message(self, Message_PlainText = "", PingFunction = False, ReceiverAddress = "", PublicKey = ""):
+		Shraps = self.Shrapnell_Function(Message_PlainText = Message_PlainText)
+		Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][0], Message_Symmetric_Key = Shraps[1])
+		return Output 
 
+	def Trajectory_Function(self, ReceiverAddress ="", PublicKey = "", Message = "", Message_Symmetric_Key = "", PingFunction = False):
 		#Generate the trajectory of the message 
 		Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction)
 		while  Trajectory == None:
 			Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction)
 
-		#Reverse the Trajectory list
+		#Trajectory = self.Ledger_Accounts
+		Trajectory.append(["0"*81, "####"])
+		print(Trajectory)
+		print("")
 		for i in range(len(Trajectory)):
-			if i == 0:
-				Sending_To = Trajectory[0][0]
-				if len(Trajectory) > i+1:
-					Relayer_After = Trajectory[i+1][0] 
-				else:
-					Relayer_After = '0' * 81
-				PublicKey_To = Trajectory[0][1]
-				if Sending_To == ReceiverAddress:
-					string = self.Layering_Encrpytion(string = Message, PublicKey = PublicKey_To, Address = Relayer_After)
-					#string = str(Sending_To+"<<<"+PublicKey_To+"|"+Message+"||||||||"+Relayer_After+"|>>> ")
-				else:
-					string = self.Layering_Encrpytion(string = "", PublicKey = PublicKey_To, Address = Relayer_After)
-					#string = str(Sending_To+"<"+PublicKey_To+"|"+Relayer_After+"|> ")
-			else:
-				Relayer = Trajectory[i][0]
-				PublicKey_of_Relayer = Trajectory[i][1]
-				if len(Trajectory) > i+1:
-					Relayer_After = Trajectory[i+1][0]
-					if Relayer == ReceiverAddress:
-						string = self.Layering_Encrpytion(string = str(Message+self.Identifier + string), PublicKey = PublicKey_of_Relayer, Address = Relayer_After)
-						#string = string + str(Relayer+"<<<"+PublicKey_of_Relayer+"|"+Message+"||||||||"+Relayer_After+"|>>>")
-					else:
-						string = self.Layering_Encrpytion(string = string , PublicKey = PublicKey_of_Relayer, Address = Relayer_After)
-						#string = string + str(Relayer + "<" + PublicKey_of_Relayer + "|" + Relayer_After + "|> ")
-				else:
-					Relayer_After = '0' * 81
-					string = self.Layering_Encrpytion(string = string, PublicKey = PublicKey_of_Relayer, Address = Relayer_After)
-					#string = string + str(Relayer + "<" + PublicKey_of_Relayer + "|" + Relayer_After + "|> ")
-		return string
+			
+			if ReceiverAddress == Trajectory[i][0]:
+				Address = Trajectory[i+1][0]
+				PublicKey = Trajectory[i][1]
+				Cipher = self.Layering_Encrpytion(PlainText = str(Message + self.Identifier+ Message_Symmetric_Key), PublicKey = PublicKey, Address = Address)
+		
+		return Cipher
+
 
 	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False):
 		self.Calculate_Block().Block
 		#self.Check_User_In_Ledger()
-		Bouncers = int(round(random.uniform(0, self.MaxBounce)))
+		Bouncers = int(round(random.uniform(0, len(self.Ledger_Accounts)-1)))
 		Trajectory = []
 		for i in range(Bouncers):
 			index = int(round(random.uniform(0, len(self.Ledger_Accounts)-1)))
@@ -177,3 +166,11 @@ class Relay_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Module,
 			Trajectory.insert(Ran_Index, SendTo)
 		if len(Trajectory) > 0:
 			return Trajectory
+
+
+class Relay_Client():
+
+	def Relay_Function(self):
+		Messages = self.PrivateIOTA.Receive(Start = int(self.Calculate_Block().Block-1), Stop = int(self.Calculate_Block().Block+1)).Message
+		print(Messages)
+
