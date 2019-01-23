@@ -86,7 +86,26 @@ class Relay_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Module,
 		User_Profile.__init__(self)
 		Key_Generation.__init__(self)
 		self.Ledger_Accounts = Delete_Input
+		
+	
+	def Shrapnell_Function(self, Message_PlainText = ""):
+		Message_Signed = Message_PlainText + self.MessageSignature(ToSign = Message_PlainText).Signature
+		Symmetric_Message_Key = self.Secret_Key()
+		Symmetrically_Encrypted = self.SymmetricEncryption(PlainText = Message_Signed.encode('hex'), SecretKey = Symmetric_Message_Key)
+		Fragments = self.Split(string = Symmetrically_Encrypted, length = 248)
+		Fragment_Tags = []
+		if len(Fragments) > 1:
+			while len(Fragments)-1 != len(Fragment_Tags):
+				Fragment = str(self.Secret_Key(length = 2).encode('hex'))
+				if Fragment not in Fragments:
+					Fragment_Tags.append(Fragment)
 
+		Fragment_Tags.append(self.Identifier)
+		Fragment_Tags.insert(0, self.Identifier)
+		for i in range(len(Fragments)):
+			Fragments[i] = str(Fragment_Tags[i]+Fragments[i]+Fragment_Tags[i+1])
+		return [Fragments, Symmetric_Message_Key]
+	
 	def Relay_Function(self):
 		Messages = self.PrivateIOTA.Receive(Start = int(self.Calculate_Block().Block-1), Stop = int(self.Calculate_Block().Block+1)).Message
 		print(Messages)
@@ -129,9 +148,6 @@ class Relay_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Module,
 					string = self.Layering_Encrpytion(string = string, PublicKey = PublicKey_of_Relayer, Address = Relayer_After)
 					#string = string + str(Relayer + "<" + PublicKey_of_Relayer + "|" + Relayer_After + "|> ")
 		return string
-
-	def Shrapnell_Function(self):
-		pass
 
 	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False):
 		self.Calculate_Block().Block
