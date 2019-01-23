@@ -1,5 +1,5 @@
-#**THE HAYSTACK PROTOCOL**
-##**COOPER DOYLE & THOMAS NOMMENSEN**
+# **THE HAYSTACK PROTOCOL**
+## **COOPER DOYLE & THOMAS NOMMENSEN**
 
 **__Abstract:__**
 The IOTA Tangle is a distributed ledger which allows for decentralised storage and transfer of data. The Directed Acyclic Graph (DAG) architecture underlying the Tangle creates the potential for feeless transactions between users and statistically indefinite network scalability. These features and the inherent decentralised nature of the Tanlge make IOTA an extremely attractive candidate for a anonymous and cryptographically secure communications protocol. The degree of anonymity of most tools available today is limited by the presence of communications metadata, which can be exploited by eavesdroppers to undermine the security of a network and gather information on users. Despite these issues, the idea of metadata resistance, or that of concealing not only the content, but also the context of communications, is scarcely addressed. In what follows we outline the requirements for a communications system to be anonymous, and present the Haystack Protocol over the IOTA Tangle as a solution.
