@@ -177,9 +177,19 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 			return Trajectory
 
 	def Receiving_Message(self, CipherText):
-		for i in self.Split(string = CipherText, length = 256):
-			Unencrypted = self.AsymmetricDecryption(CipherText = i, PrivateKey = Key_Generation().PrivateKey_Import().PrivateKey)
-			print(Unencrypted)
+		Blocks = self.Split(string = CipherText, length = 344)
+		for i in Blocks:
+			if "=" in i[len(i)-2:]:
+				Unencrypted = self.AsymmetricDecryption(CipherText = b64decode(i), PrivateKey = Key_Generation().PrivateKey_Import().PrivateKey)
+				if Unencrypted != False:
+					Relay_Address = Unencrypted[len(Unencrypted)-81:]
+					Sym_Key = Unencrypted[0:len(Unencrypted)-81]
+					for z in Blocks:
+						if "=" not in z[len(z)-2:]:
+			 				Plain = self.SymmetricDecryption(CipherText = z, SecretKey = Sym_Key)
+							print(b64decode(Plain), len(Plain))
+							print("#########")
+
 
 class Relay_Client():
 
