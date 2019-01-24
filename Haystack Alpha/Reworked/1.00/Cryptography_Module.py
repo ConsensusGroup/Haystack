@@ -60,7 +60,7 @@ class Encryption(Configuration):
 	def Layering_Encrpytion(self, PlainText, PublicKey, Address):
 		SymKey = self.Secret_Key()
 		To_Encrypt = str(SymKey + Address)
-		Cypher_Asym = self.AsymmetricEncryption(PlainText = To_Encrypt, PublicKey = PublicKey)
+		Cypher_Asym = b64encode(self.AsymmetricEncryption(PlainText = To_Encrypt, PublicKey = PublicKey))
 		if PlainText != "":
 			Cypher_Sym = self.SymmetricEncryption(PlainText = b64encode(PlainText), SecretKey = SymKey)
 		else:
@@ -74,11 +74,16 @@ class Decryption(Configuration):
 		try:
 			DecryptedText = cipher.decrypt(str(CipherText))
 		except ValueError:
-			DecryptedText = "Failed"
+			DecryptedText = False
 		return DecryptedText
 
 	def SymmetricDecryption(self, CipherText, SecretKey):
-		return pyffx.String(str(SecretKey), alphabet=str(self.Charlib), length=len(str(CipherText))).decrypt(str(CipherText))
+		try:
+			outcome = pyffx.String(str(SecretKey), alphabet=str(self.Charlib), length=len(str(CipherText))).decrypt(str(CipherText))
+		except ValueError:
+			outcome = False
+		return outcome	
+
 
 	def SignatureVerification(self, ToVerify, PublicKey, Signature):
 		digest = SHA256.new()
