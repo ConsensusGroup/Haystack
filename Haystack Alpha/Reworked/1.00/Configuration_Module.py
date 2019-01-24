@@ -4,10 +4,10 @@
 
 class Configuration:
 	def __init__(self):
-		self.Node = "https://tuna.iotasalad.org:14265"
+		self.Node = "https://nodes.thetangle.org:443"
 		self.PublicSeed = "MKHYA9FZ9STCQGNUIHFVXAAKTP9LSDNEUDSBSBXVQFRTYEMBEMKFIPMHKULCMIIWVGDWWGXTQAKOYGDOW"
 		self.Charlib = '.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/-=% '
-		self.Default_Size = 168
+		self.Default_Size = 234
 		self.Identifier = "////"
 		self.Password = "Hello world"  #This can be removed later. This is used password protect the key.
 		self.UserFolder = "a/UserData"
@@ -20,3 +20,4 @@ class Configuration:
 		self.BlockTime = 1000000000000000000
 		self.LowerBound = 0.9 #Percentage of block cycle completion. 
 		self.RefreshRate = 4 #This is in seconds.
+
