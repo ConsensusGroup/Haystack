@@ -5,6 +5,8 @@ import d
 import e
 from time import sleep
 import pyffx
+from base64 import b64encode, b64decode
+
 
 Nodes = [a, b, c, d, e]
 #First we initialize all the users 
@@ -33,14 +35,15 @@ PrivC = c.User_Modules.User_Profile().PrivateKey
 PrivD = d.User_Modules.User_Profile().PrivateKey
 PrivE = e.User_Modules.User_Profile().PrivateKey
 
-PersonA = a.Haystack_Module.Messaging_Client(Delete_Input = DLP)
-Output = PersonA.Sending_Message(Message_PlainText = str("l"*100000), ReceiverAddress = DLP[0][0], PublicKey = PrivA.PublicKey)
-print(Output)
-print("################################################################################################")
-print(len(Output))
-print("################################################################################################")
-PersonA = a.Haystack_Module.Messaging_Client(Delete_Input = DLP)
-Output = PersonA.Receiving_Message(CipherText = Output)
+for i in range(1000):
+	PersonA = a.Haystack_Module.Messaging_Client(Delete_Input = DLP)
+	Output = PersonA.Sending_Message(Message_PlainText = str("l"*100000), ReceiverAddress = DLP[0][0], PublicKey = PrivA.PublicKey)
+	#a.IOTA_Module.IOTA_Module(Seed = PrivA.Private_Seed).Send(ReceiverAddress = [DLP[0][0]], Message = [b64encode(Output)])
+	print("################################################################################################")
+	print("################################################################################################")
+	PersonA = a.Haystack_Module.Messaging_Client(Delete_Input = DLP)
+	#b64decode(Output)
+	Output = PersonA.Receiving_Message(CipherText = Output)
 
 #PersonB = b.Haystack_Module.Messaging_Client(Delete_Input = DLP)
 #Output = PersonB.Receiving_Message(CipherText = Output)
