@@ -32,11 +32,11 @@ class Key_Generation(Configuration):
 		PrivateCipher = Tools().ReadLine(directory = str(self.UserFolder+"/"+self.KeysFolder+"/"+self.PrivateKey))
 		Keys = RSA.importKey(PrivateCipher, passphrase = self.Password)
 		self.PublicKey = Keys.publickey().exportKey(format = 'PEM')
-		self.PrivateKey = Keys ###See if this works for decryption
+		self.PrivateKey = Keys 
 		return self
 
-	def Secret_Key(self):
-		return os.urandom(64)
+	def Secret_Key(self, length = 16):
+		return os.urandom(length)
 
 class Encryption(Configuration):
 	def __init__(self):
@@ -47,18 +47,8 @@ class Encryption(Configuration):
 		return cipher.encrypt(str(PlainText))
 
 	def SymmetricEncryption(self, PlainText, SecretKey):
-		string = pyffx.String(str(SecretKey), alphabet = str(self.Charlib) , length=len(str(PlainText))).encrypt(str(PlainText))
-		return str(string)
-
-	def Layering_Encrpytion(self, string, PublicKey, Address):
-		#Here we generate the secret key which will be asymmetrically encrypted. The secret key is used to symmetrically decrypt the packet layer
-		SymKey = self.Secret_Key()
-		string = str(string + self.Identifier + Address)
-		CypherText = self.SymmetricEncryption(PlainText = string, SecretKey = SymKey)
-		#Packet composition <XXXX> (Symmetric), [[Asymmetric]]	<string>///[[SymmetricKey]]
-		CypherText = b64encode(CypherText+self.Identifier+self.AsymmetricEncryption(PlainText = SymKey, PublicKey = PublicKey))
-		return CypherText
-
+		Cypher = pyffx.String(str(SecretKey), alphabet = str(self.Charlib) , length=len(PlainText)).encrypt(str(PlainText))
+		return str(Cypher)
 
 	def MessageSignature(self, ToSign):
 		digest = SHA256.new()
@@ -67,6 +57,16 @@ class Encryption(Configuration):
 		self.Signature = Signer.sign(digest)
 		return self
 
+	def Layering_Encrpytion(self, PlainText, PublicKey, Address):
+		SymKey = self.Secret_Key()
+		To_Encrypt = str(SymKey + Address)
+		Cypher_Asym = b64encode(self.AsymmetricEncryption(PlainText = To_Encrypt, PublicKey = PublicKey))
+		if PlainText != "":
+			Cypher_Sym = self.SymmetricEncryption(PlainText = b64encode(PlainText), SecretKey = SymKey)
+		else:
+			Cypher_Sym = PlainText
+		return str(Cypher_Sym + self.Identifier + Cypher_Asym)
+
 class Decryption(Configuration):
 
 	def AsymmetricDecryption(self, CipherText, PrivateKey):
@@ -74,11 +74,16 @@ class Decryption(Configuration):
 		try:
 			DecryptedText = cipher.decrypt(str(CipherText))
 		except ValueError:
-			DecryptedText = "Failed"
+			DecryptedText = False
 		return DecryptedText
 
 	def SymmetricDecryption(self, CipherText, SecretKey):
-		return pyffx.String(str(SecretKey), alphabet=str(self.Charlib), length=len(str(CipherText))).decrypt(str(CipherText))
+		try:
+			outcome = pyffx.String(str(SecretKey), alphabet=str(self.Charlib), length=len(str(CipherText))).decrypt(str(CipherText))
+		except ValueError:
+			outcome = False
+		return outcome	
+
 
 	def SignatureVerification(self, ToVerify, PublicKey, Signature):
 		digest = SHA256.new()
@@ -86,3 +91,4 @@ class Decryption(Configuration):
 		Verifier = PKCS1_v1_5.new(RSA.importKey(PublicKey))
 		self.Verified = Verifier.verify(digest, Signature)
 		return self
+
