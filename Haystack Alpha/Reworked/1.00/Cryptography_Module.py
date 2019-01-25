@@ -65,7 +65,7 @@ class Encryption(Configuration):
 			Cypher_Sym = self.SymmetricEncryption(PlainText = b64encode(PlainText), SecretKey = SymKey)
 		else:
 			Cypher_Sym = PlainText
-		return [Cypher_Sym , Cypher_Asym]
+		return str(Cypher_Sym + self.Identifier + Cypher_Asym)
 
 class Decryption(Configuration):
 
