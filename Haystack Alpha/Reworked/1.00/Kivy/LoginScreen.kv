@@ -1,0 +1,132 @@
+<Label>:
+	font_size: 20 
+
+<Button>:
+	font_size: 20
+	size: 120,30
+	color: 0,0,0,1
+	background_normal: ''
+	background_color: (1, 1, 1, 1)
+
+<LoginWidget>:
+	canvas.before:
+		Color:
+			rgba: 0,0,0,0
+		Rectangle:
+			pos: self.pos
+			size: self.size
+
+	Label:
+		id: UN1
+		text: 'User Name:'
+		pos: 125, 200
+
+	Label:
+		id: P
+		text: 'Password:'
+		pos: 125, 160
+	
+	Label:
+		id: Outcome
+		text: ""
+		pos: Login.pos[0]+150, Login.pos[1]-100
+
+	TextInput:
+		id: UserName
+		text: ""
+		pos: Login.pos[0] ,UN1.pos[1]+35
+		size: Login.size
+		focus: True
+		multiline: False
+
+	TextInput:
+		id: Password
+		text: ""
+		pos: Login.pos[0] ,P.pos[1]+35
+		size: Login.size
+		multiline: False
+		password: True
+		focus: True
+
+	Button:
+		id: Register
+		pos: 450, 150
+		text: "Register"
+		on_press: app.root.current = 'Register'
+
+	Button:
+		pos: 5*self.width, self.height
+		text: "Quit"
+		on_press: root.ShutDown()
+
+	Button:
+		id: Login
+		pos: 250, 150
+		text: "Login"
+		on_press: 
+			if root.ReadLogin(UserName = UserName.text, Password = Password.text).Result == True: app.root.current = "Messanger"
+			else: Outcome.text = "Wrong password or username"
+
+<RegisterWidget>:
+	canvas.before:
+		Color:
+			rgba: 0,0,0,0
+		Rectangle:
+			pos: self.pos
+			size: self.size
+
+	Label:
+		id: UN
+		text: "User Name:"
+		pos: Register.pos[0]-100 ,Register.pos[1]+350
+		size: Back.size
+
+	Label:
+		id: P
+		text: "Password:"
+		pos: Register.pos[0]-100 ,Register.pos[1]+250
+		size: Back.size
+
+	Label:
+		id: P2
+		text: "Confirm Password:"
+		pos: Register.pos[0]-100 ,Register.pos[1]+150
+		size: Back.size
+
+	Button:
+		id: Back
+		text: "Back to login"
+		pos: 450, 150
+		on_press: app.root.current = "Login"
+
+	Button:
+		id: Register
+		pos: 250, 150
+		text: "Register"
+		on_press: 
+			if root.ReadRegister(UserName = UserName.text, Password = Password.text, Password2 = Password2.text).data == True: app.root.current = "Messanger" 
+			elif root.ReadRegister(UserName = UserName.text, Password = Password.text, Password2 = Password2.text).data == "PassError": self.text = "Non matching passwords"; self.size = 0.55*len(self.text)*self.font_size, Back.size[1]; Back.pos = self.pos[0]+300, self.pos[1]
+			elif root.ReadRegister(UserName = UserName.text, Password = Password.text, Password2 = Password2.text).data == "UserError": self.text = "Enter a User Name"; self.size = 0.53*len(self.text)*self.font_size, Back.size[1]; Back.pos = self.pos[0]+200, self.pos[1]
+
+	TextInput:
+		id: UserName
+		pos: UN.pos[0]+200, UN.pos[1]
+		size: UN.size
+		focus: True
+		multiline: False
+
+	TextInput:
+		id: Password
+		pos: P.pos[0]+200 ,P.pos[1]
+		size: P.size
+		multiline: False
+		password: True
+		focus: True
+
+	TextInput:
+		id: Password2
+		pos: P2.pos[0]+200, P2.pos[1]
+		size: P2.size
+		multiline: False
+		password: True
+		focus: True
