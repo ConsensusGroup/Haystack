@@ -9,6 +9,8 @@ from User_Modules import User_Profile
 from Tools_Module import *
 from time import sleep
 import math, random
+from base64 import b64encode, b64decode
+from iota import TryteString
 
 class Dynamic_Public_Ledger(Configuration, User_Profile):
 	def __init__(self):
@@ -33,7 +35,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		return self
 
 	def Validate_User(self, Ledger_Entry):
-		Submited = Ledger_Entry.decode("hex").split(self.Identifier)
+		Submited = b64decode(Ledger_Entry).split(self.Identifier)
 		ToVerify = str(Submited[0]+self.Identifier+Submited[1])
 		Signature = Submited[2]
 		PublicKey = Submited[1]
@@ -46,7 +48,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		self.Calculate_Block()
 		PublicAddress = self.PrivateIOTA.Generate_Address(Index = self.Block)
 		ToSubmit = str(PublicAddress+self.Identifier+self.PublicKey)
-		Signed_ToSubmit = str(ToSubmit+self.Identifier+Encryption().MessageSignature(ToSign = ToSubmit).Signature).encode("hex")
+		Signed_ToSubmit = b64encode(str(ToSubmit+self.Identifier+Encryption().MessageSignature(ToSign = ToSubmit).Signature))
 		return Signed_ToSubmit
 
 	def Check_User_In_Ledger(self):
@@ -54,7 +56,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		Entries = self.PublicIOTA.Receive(Start = self.Block).Message
 		for i in Entries:
 			try: 
-				Address = i.decode("hex").split(self.Identifier)[0]
+				Address = b64decode(i).split(self.Identifier)[0]
 				if Address == self.PrivateIOTA.Generate_Address(Index = self.Block):
 					self.Present = True 
 				self.Validate_User(Ledger_Entry = i)
@@ -64,35 +66,28 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 
 	def Start_Ledger(self):
 		hashed = None
-		for i in range(1000):
+		for i in range(1):
 			Block = self.Calculate_Block().Block
 			try:
 				if self.Check_User_In_Ledger().Present == False and hashed == None:
 					hashed = self.PrivateIOTA.Send(ReceiverAddress = [self.PublicIOTA.Generate_Address(Index = self.Block)], Message = [self.Submit_User()])
 			except TypeError:
 				hashed = None
-
 			#This block prevents duplicate Tx 
 			if self.ChangeBlock == True:
 				hashed = None
 				self.Ledger_Accounts = []
 		return self 
 
-class Receiver_Client():
-	
-	def __init__(self):
-		pass
-
-
 class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Module, Encryption, Key_Generation, Tools):
-	def __init__(self, Delete_Input):
+	def __init__(self):
 		Dynamic_Public_Ledger.__init__(self)
 		Decryption.__init__(self)
 		Encryption.__init__(self)
 		User_Profile.__init__(self)
 		Key_Generation.__init__(self)
 		Tools.__init__(self)
-		self.Ledger_Accounts = Delete_Input
+		#self.Ledger_Accounts = Delete_Input
 		self.MessageShrapnells = []
 		self.ToRelay = []
 
@@ -121,17 +116,18 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 		MessageList = []
 		for i in range(len(Shraps[0])):
 			Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][i], Message_Symmetric_Key = Shraps[1])
-			SenderList.append(Output[1])
-			MessageList.append(Output[0])
-		hashed = self.PrivateIOTA.Send(ReceiverAddress = SenderList, Message = MessageList)
-		print(hashed)
+			print(Output)
+			#SenderList.append(Output[1])
+			#MessageList.append(Output[0])
+		#return Output
+		#hashed = self.PrivateIOTA.Send(ReceiverAddress = SenderList, Message = MessageList)
+		#print(hashed)
 
 	def Trajectory_Function(self, ReceiverAddress ="", PublicKey = "", Message = "", Message_Symmetric_Key = "", PingFunction = False):
 		#Generate the trajectory of the message 
-		Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction)
-		while  Trajectory == None:
-			Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction)
-
+		#Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction)
+		#while  Trajectory == None:
+		#	Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction)
 		Trajectory = self.Ledger_Accounts
 		Trajectory.append(["0"*81, "####"])
 		Trajectory.reverse()
