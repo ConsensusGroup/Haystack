@@ -80,23 +80,23 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		return self 
 
 class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Module, Encryption, Key_Generation, Tools):
-	def __init__(self):
+	def __init__(self, Delete_Input = ""):
 		Dynamic_Public_Ledger.__init__(self)
 		Decryption.__init__(self)
 		Encryption.__init__(self)
 		User_Profile.__init__(self)
 		Key_Generation.__init__(self)
 		Tools.__init__(self)
-		#self.Ledger_Accounts = Delete_Input
+		self.Ledger_Accounts = Delete_Input
 		self.MessageShrapnells = []
 		self.ToRelay = []
 
 	def Shrapnell_Function(self, Message_PlainText = ""):
-		Message_Signed = Message_PlainText + self.MessageSignature(ToSign = Message_PlainText).Signature
+		Message_Signed = Message_PlainText + self.MessageIdentifier + self.MessageSignature(ToSign = Message_PlainText).Signature
 		Symmetric_Message_Key = self.Secret_Key()
-		Symmetrically_Encrypted = self.SymmetricEncryption(PlainText = Message_Signed.encode('hex'), SecretKey = Symmetric_Message_Key)
-		#Fragments = self.Split(string = Symmetrically_Encrypted, length = self.Default_Size)
-		Fragments = self.Split(string = Message_PlainText, length = self.Default_Size)
+		Symmetrically_Encrypted = self.SymmetricEncryption(PlainText = b64encode(Message_Signed), SecretKey = Symmetric_Message_Key)
+		Fragments = self.Split(string = Symmetrically_Encrypted, length = self.Default_Size)
+		#Fragments = self.Split(string = Message_PlainText, length = self.Default_Size)
 		Fragment_Tags = []
 		if len(Fragments) > 1:
 			while len(Fragments)-1 != len(Fragment_Tags):
@@ -204,8 +204,38 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 								self.MessageShrapnells.append(i)
 		return self 
 
-	def Rebuild_Shrapnells(self):
-		pass
+	def Rebuild_Shrapnells(self, String):
+		Shrapnells = String[0]
+		Symmetric_Key = String[1]
+		Intermediate = []
+		Start = ""
+		End = ""
+		Temp = Shrapnells
+		CipherText = ""
+		for i in range(len(Shrapnells)):
+			if i == 0:
+				Piece = Shrapnells[i]
+			else:
+				Piece = CipherText
+			StartTag = Piece[0:len(self.MessageIdentifier)]
+			EndTag = Piece[len(Piece)-len(self.MessageIdentifier):]
+			cipher = Piece[4:len(Piece)-len(self.MessageIdentifier)]
+			for j in Temp:
+				StartTag2 = j[0:len(self.MessageIdentifier)]
+				cipher2 = j[len(self.MessageIdentifier):len(j)-len(self.MessageIdentifier)]
+				EndTag2 = j[len(j)-4:]
+				if StartTag2 == EndTag and EndTag!=self.MessageIdentifier:
+					CipherText = str(StartTag + cipher + cipher2 + EndTag2)
+				elif StartTag == EndTag2 and StartTag != self.MessageIdentifier:
+					CipherText = str(StartTag2 + cipher2 + cipher + EndTag)
+		
+		CipherText = CipherText[len(self.MessageIdentifier):len(CipherText)-len(self.MessageIdentifier)]
+		Message = self.SymmetricDecryption(CipherText = CipherText, SecretKey = Symmetric_Key)
+		Message = b64decode(Message).split(self.MessageIdentifier)
+		for i in self.Ledger_Accounts:
+			Verification = self.SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
+			if Verification == True:
+				print("You have received a message from: "+i[0] + "\n" + Message[0])
 
 class Relay_Client():
 
