@@ -110,26 +110,23 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 			Fragments[i] = str(Fragment_Tags[i]+Fragments[i]+Fragment_Tags[i+1])
 		return [Fragments, Symmetric_Message_Key]
 
-	def Sending_Message(self, Message_PlainText = "", PingFunction = False, ReceiverAddress = "", PublicKey = ""):
+	def Sending_Message(self, Message_PlainText, ReceiverAddress, PublicKey, PingFunction = False):
 		Shraps = self.Shrapnell_Function(Message_PlainText = Message_PlainText)
 		SenderList = []
 		MessageList = []
 		for i in range(len(Shraps[0])):
-			Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][i], Message_Symmetric_Key = Shraps[1])
-			print(Output)
-			#SenderList.append(Output[1])
-			#MessageList.append(Output[0])
-		#return Output
-		#hashed = self.PrivateIOTA.Send(ReceiverAddress = SenderList, Message = MessageList)
-		#print(hashed)
+			Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][i], Message_Symmetric_Key = Shraps[1], index = i)
+			SenderList.append(Output[1])
+			MessageList.append(Output[0])
+		hashed = self.PrivateIOTA.Send(ReceiverAddress = SenderList, Message = MessageList)
+		print(hashed)
+		return Output
 
-	def Trajectory_Function(self, ReceiverAddress ="", PublicKey = "", Message = "", Message_Symmetric_Key = "", PingFunction = False):
+	def Trajectory_Function(self, ReceiverAddress ="", PublicKey = "", Message = "", Message_Symmetric_Key = "", PingFunction = False, index = 0):
 		#Generate the trajectory of the message 
-		#Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction)
-		#while  Trajectory == None:
-		#	Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction)
-		Trajectory = self.Ledger_Accounts
-		Trajectory.append(["0"*81, "####"])
+		Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction, index = index)
+		while  Trajectory == None:
+			Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction, index = index)
 		Trajectory.reverse()
 		Cipher = ""
 		for i in range(len(Trajectory)):
@@ -137,21 +134,20 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 			if i != int(len(Trajectory)-1):
 				if ReceiverAddress == Trajectory[i+1][0]:
 					PublicKey = Trajectory[i+1][1]
-					Cipher = self.Layering_Encrpytion(PlainText = str(Cipher + Message + Message_Symmetric_Key), PublicKey = PublicKey, Address = Address)
+					Cipher = self.Layering_Encryption(PlainText = str(Cipher + Message), PublicKey = PublicKey, Address = Address, SymKey = Message_Symmetric_Key).Cipher
 				else:
 					PublicKey = Trajectory[i+1][1]
-					Cipher = self.Layering_Encrpytion(PlainText = Cipher, PublicKey = PublicKey, Address = Address)
+					Cipher = self.Layering_Encryption(PlainText = Cipher, PublicKey = PublicKey, Address = Address).Cipher
 			else:
 				Receiving_Address = Address
 		return [Cipher, Receiving_Address]
 
-
-	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False):
-		self.Calculate_Block().Block
-		self.Check_User_In_Ledger()
-		Bouncers = int(round(random.uniform(0, len(self.Ledger_Accounts)-1)))
+	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False, index = 0):
+		self.Calculate_Block().Block 
+		if index == 0:
+			self.Check_User_In_Ledger() 
 		Trajectory = []
-		for i in range(Bouncers):
+		while len(Trajectory) != self.MaxBounce:
 			Relayer = random.choice(self.Ledger_Accounts)
 			if Relayer[0] != ReceiverAddress:
 				Trajectory.append(Relayer)
@@ -193,7 +189,7 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 
 			for cipher in CipherPart:
 				for key in Relay_Key:
-					Plain = b64decode(self.SymmetricDecryption(CipherText = cipher, SecretKey = key[1]))		
+					Plain = b64decode(self.SymmetricDecryption(CipherText = cipher, SecretKey = key[1]))	
 					if self.Identifier in Plain and not self.MessageIdentifier in Plain:
 						self.ToRelay.append([key[0], Plain])
 					elif self.MessageIdentifier in Plain:
@@ -201,7 +197,7 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 							if self.Identifier in i:
 								self.ToRelay.append([key[0], i])
 							else:
-								self.MessageShrapnells.append(i)
+								self.MessageShrapnells.append([i, key[1]])
 		return self 
 
 	def Rebuild_Shrapnells(self, String):
@@ -236,6 +232,7 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 			Verification = self.SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
 			if Verification == True:
 				print("You have received a message from: "+i[0] + "\n" + Message[0])
+		
 
 class Relay_Client():
 
