@@ -35,7 +35,7 @@ class Key_Generation(Configuration):
 		self.PrivateKey = Keys 
 		return self
 
-	def Secret_Key(self, length = 16):
+	def Secret_Key(self, length = 64):
 		return os.urandom(length)
 
 class Encryption(Configuration):
@@ -46,7 +46,7 @@ class Encryption(Configuration):
 		cipher = PKCS1_OAEP.new(RSA.importKey(PublicKey))
 		return cipher.encrypt(str(PlainText))
 
-	def SymmetricEncryption(self, PlainText, SecretKey):
+	def SymmetricEncryption(self, PlainText, SecretKey = ""):
 		Cypher = pyffx.String(str(SecretKey), alphabet = str(self.Charlib) , length=len(PlainText)).encrypt(str(PlainText))
 		return str(Cypher)
 
@@ -57,15 +57,14 @@ class Encryption(Configuration):
 		self.Signature = Signer.sign(digest)
 		return self
 
-	def Layering_Encrpytion(self, PlainText, PublicKey, Address):
-		SymKey = self.Secret_Key()
+	def Layering_Encryption(self, PlainText, PublicKey, Address, SymKey = ""):
+		if SymKey == "":
+			SymKey = self.Secret_Key()
 		To_Encrypt = str(SymKey + Address)
 		Cypher_Asym = b64encode(self.AsymmetricEncryption(PlainText = To_Encrypt, PublicKey = PublicKey))
-		if PlainText != "":
-			Cypher_Sym = self.SymmetricEncryption(PlainText = b64encode(PlainText), SecretKey = SymKey)
-		else:
-			Cypher_Sym = PlainText
-		return str(Cypher_Sym + self.Identifier + Cypher_Asym)
+		Cypher_Sym = self.SymmetricEncryption(PlainText = b64encode(PlainText), SecretKey = SymKey)
+		self.Cipher = str(Cypher_Sym + self.Identifier + Cypher_Asym)
+		return self
 
 class Decryption(Configuration):
 
@@ -83,7 +82,6 @@ class Decryption(Configuration):
 		except ValueError:
 			outcome = False
 		return outcome	
-
 
 	def SignatureVerification(self, ToVerify, PublicKey, Signature):
 		digest = SHA256.new()
