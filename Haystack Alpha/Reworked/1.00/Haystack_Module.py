@@ -66,7 +66,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 
 	def Start_Ledger(self):
 		hashed = None
-		for i in range(1):
+		for i in range(2):
 			Block = self.Calculate_Block().Block
 			try:
 				if self.Check_User_In_Ledger().Present == False and hashed == None:
@@ -87,7 +87,7 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 		User_Profile.__init__(self)
 		Key_Generation.__init__(self)
 		Tools.__init__(self)
-		self.Ledger_Accounts = Delete_Input
+		self.Ledger_Accounts = []
 		self.MessageShrapnells = []
 		self.ToRelay = []
 
@@ -95,8 +95,8 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 		Message_Signed = Message_PlainText + self.MessageIdentifier + self.MessageSignature(ToSign = Message_PlainText).Signature
 		Symmetric_Message_Key = self.Secret_Key()
 		Symmetrically_Encrypted = self.SymmetricEncryption(PlainText = b64encode(Message_Signed), SecretKey = Symmetric_Message_Key)
-		Fragments = self.Split(string = Symmetrically_Encrypted, length = self.Default_Size)
-		#Fragments = self.Split(string = Message_PlainText, length = self.Default_Size)
+		#Fragments = self.Split(string = Symmetrically_Encrypted, length = self.Default_Size)
+		Fragments = self.Split(string = Message_PlainText, length = self.Default_Size)
 		Fragment_Tags = []
 		if len(Fragments) > 1:
 			while len(Fragments)-1 != len(Fragment_Tags):
@@ -119,14 +119,21 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 			SenderList.append(Output[1])
 			MessageList.append(Output[0])
 		hashed = self.PrivateIOTA.Send(ReceiverAddress = SenderList, Message = MessageList)
-		print(hashed)
-		return Output
+		return self
 
 	def Trajectory_Function(self, ReceiverAddress ="", PublicKey = "", Message = "", Message_Symmetric_Key = "", PingFunction = False, index = 0):
 		#Generate the trajectory of the message 
 		Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction, index = index)
 		while  Trajectory == None:
 			Trajectory = self.Path_Finder(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, PingFunction = PingFunction, index = index)
+		
+		if len(Trajectory) == 1: 	
+			Trajectory.append(["0"*81, "#####"])
+
+		#####Delete!!!!!######
+		Trajectory = [['E9GZOINQMEOOOYIK9EYIPWBTYIQAIZRSODQZCGKRLBZAPRNOMIJDBPOVHWPJNRKQGNGSEEFXTRJPLMVG9', '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAm9s8YLJpBvxlrgDWens6\n05V5bOPe4LXm/dLWRBD8p/axYGH6fBUexGKhGsY662FDJYqtWw+uQFFqmbo/3HLF\nceoEJEvUAu2g3FHcDv8Dir63BzsZATgwSlC+iwTZHj/PnrJhhPmzFj8+e/OgQ+Eq\npLY5CtafhZBg2Mg/TKdGRw9eJilmPrEF3i/9XZqnBwlszs8EUOmM2NTrZ/+gargf\nwjbIyzbFcdyPfEugNf1O/rXxaLiNCvC8cxD+NC41OEKEYA3mBT5bYx6J0Clz/any\nrZ/RAGJe4AqHd4A9AF0q54YDw4sg8w0+4FlJzYl7siyOudx2faJ6ie+EqpV9305t\nOQIDAQAB\n-----END PUBLIC KEY-----'], ['VCKDPWYVAHVZGNUIBFZAU9NDCTRQRDWASZQXHNKMRBD9ZYOCCD9WMELOTNJJBPCETXPMGH9LT9CZISH9C', '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApxEpt0Sclfw+Z4R+IqMW\nndwu7OyWimrEJLJEphR8SDQBItNx2uSWhXgI6ySwGyh7EztntYCip/SWs0LE5Hth\nIBZPzjQTaY5Bi8AS+YdiJB7oUlzqiIscrJ8eP+bHLkHfy5Jvi/VMboJSxLL6ryLF\nIKhdQBdFG60JZQmCMjtj4AbyrHcocJx/XDxMtC6AItMwf4b3sApR/ViZqd1YLC44\nSdRLF2tgHRBa7Ev2SCAKmU4Fk6RgpGIGfQ8hsdyMYSEOYh3ZCUGGWcfX5przm7Ge\nOjVkH10Aeb6siYBQFE9btoC2hKANXEfT2YQJa5+7Rfd2/8ocrHnlYaeBEtDBes+L\nkQIDAQAB\n-----END PUBLIC KEY-----']] 
+		######################
+
 		Trajectory.reverse()
 		Cipher = ""
 		for i in range(len(Trajectory)):
@@ -160,44 +167,63 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 				Trajectory.append(Relayer)
 			Ran_Index = len(Trajectory)
 
-		elif len(Trajectory) > 0 and PingFunction == False: 
+		elif len(Trajectory) >= 0 and PingFunction == False: 
 			Ran_Index = int(round(random.uniform(0, len(Trajectory))))
 		else: 
 			pass
 
-		if ReceiverAddress != "" and PublicKey != "" and len(Trajectory) > 0:
+		if ReceiverAddress != "" and PublicKey != "" and len(Trajectory) >= 0:
 			SendTo = [ReceiverAddress,PublicKey]
 			Trajectory.insert(Ran_Index, SendTo)
 		if len(Trajectory) > 0:
 			return Trajectory
 
+	#####################################################
+	####################Receiver Side####################
+	#####################################################
+	def Check_Inbox(self):
+		Messages = self.PrivateIOTA.Receive(Start = int(self.Calculate_Block().Block-1), Stop = int(self.Calculate_Block().Block+1)).Message
+		for i in Messages:
+			Message = self.Receiving_Message(CipherText = i)
+			print("#################")
+		return self
+
 	def Receiving_Message(self, CipherText):
 		Relay_Key = []
 		CipherPart = []
-		if "==" in CipherText[len(CipherText)-2:]:
-			for i in CipherText.split(self.Identifier):
+		if len(CipherText) >= 10:
+			if '"' == CipherText[0] and '"' == CipherText[len(CipherText)-1:len(CipherText)]:
+				CipherText = CipherText[1:len(CipherText)-1]
+			if "==" in CipherText[len(CipherText)-2:]:
+				for i in CipherText.split(self.Identifier):
+					try:
+						Unencrypted = self.AsymmetricDecryption(CipherText = b64decode(i), PrivateKey = Key_Generation().PrivateKey_Import().PrivateKey)
+					except TypeError:
+						Unencrypted = False
+					if Unencrypted != False:
+						Address = Unencrypted[len(Unencrypted)-81:]
+						Key = Unencrypted[:len(Unencrypted)-81]
+						Relay_Key.append([Address, Key])
+					else:
+						CipherPart.append(i)
 				try:
-					Unencrypted = self.AsymmetricDecryption(CipherText = b64decode(i), PrivateKey = Key_Generation().PrivateKey_Import().PrivateKey)
+					print(CipherPart)
+					for cipher in CipherPart:
+						for key in Relay_Key:
+							Plain = b64decode(self.SymmetricDecryption(CipherText = cipher, SecretKey = key[1]))	
+							if self.Identifier in Plain and not self.MessageIdentifier in Plain:
+								self.ToRelay.append([key[0], Plain])
+							elif self.MessageIdentifier in Plain:
+								for i in Plain.split(self.MessageIdentifier):
+									if self.Identifier in i:
+										self.ToRelay.append([i, key[0]])
+									else:
+										self.MessageShrapnells.append([i, key[1]])
 				except TypeError:
-					Unencrypted = False
-				if Unencrypted != False:
-					Address = Unencrypted[len(Unencrypted)-81:]
-					Key = Unencrypted[:len(Unencrypted)-81]
-					Relay_Key.append([Address, Key])
-				else:
-					CipherPart.append(i)
-
-			for cipher in CipherPart:
-				for key in Relay_Key:
-					Plain = b64decode(self.SymmetricDecryption(CipherText = cipher, SecretKey = key[1]))	
-					if self.Identifier in Plain and not self.MessageIdentifier in Plain:
-						self.ToRelay.append([key[0], Plain])
-					elif self.MessageIdentifier in Plain:
-						for i in Plain.split(self.MessageIdentifier):
-							if self.Identifier in i:
-								self.ToRelay.append([key[0], i])
-							else:
-								self.MessageShrapnells.append([i, key[1]])
+					pass
+			if len(self.ToRelay) > 0:
+				#Relay_Client().Relay_Function(ToRelay = self.ToRelay)
+				self.ToRelay = []
 		return self 
 
 	def Rebuild_Shrapnells(self, String):
@@ -233,10 +259,4 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 			if Verification == True:
 				print("You have received a message from: "+i[0] + "\n" + Message[0])
 		
-
-class Relay_Client():
-
-	def Relay_Function(self):
-		Messages = self.PrivateIOTA.Receive(Start = int(self.Calculate_Block().Block-1), Stop = int(self.Calculate_Block().Block+1)).Message
-		print(Messages)
 
