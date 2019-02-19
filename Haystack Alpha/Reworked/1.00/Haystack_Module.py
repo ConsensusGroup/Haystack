@@ -90,6 +90,7 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 		self.Ledger_Accounts = []
 		self.MessageShrapnells = []
 		self.ToRelay = []
+		self.Ledger_Accounts = Delete_Input
 
 	def Shrapnell_Function(self, Message_PlainText = ""):
 		Message_Signed = Message_PlainText + self.MessageIdentifier + self.MessageSignature(ToSign = Message_PlainText).Signature
@@ -114,12 +115,14 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 		Shraps = self.Shrapnell_Function(Message_PlainText = Message_PlainText)
 		SenderList = []
 		MessageList = []
-		for i in range(len(Shraps[0])):
-			Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][i], Message_Symmetric_Key = Shraps[1], index = i)
-			SenderList.append(Output[1])
-			MessageList.append(Output[0])
-		hashed = self.PrivateIOTA.Send(ReceiverAddress = SenderList, Message = MessageList)
-		return self
+		#for i in range(len(Shraps[0])):
+		#Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][i], Message_Symmetric_Key = Shraps[1], index = i)
+		Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][0], Message_Symmetric_Key = Shraps[1], index = 1)
+		#	SenderList.append(Output[1])
+		print(Output[1])
+		#	MessageList.append(Output[0])
+		#hashed = self.PrivateIOTA.Send(ReceiverAddress = SenderList, Message = MessageList)
+		return Output
 
 	def Trajectory_Function(self, ReceiverAddress ="", PublicKey = "", Message = "", Message_Symmetric_Key = "", PingFunction = False, index = 0):
 		#Generate the trajectory of the message 
@@ -129,10 +132,6 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 		
 		if len(Trajectory) == 1: 	
 			Trajectory.append(["0"*81, "#####"])
-
-		#####Delete!!!!!######
-		Trajectory = [['E9GZOINQMEOOOYIK9EYIPWBTYIQAIZRSODQZCGKRLBZAPRNOMIJDBPOVHWPJNRKQGNGSEEFXTRJPLMVG9', '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAm9s8YLJpBvxlrgDWens6\n05V5bOPe4LXm/dLWRBD8p/axYGH6fBUexGKhGsY662FDJYqtWw+uQFFqmbo/3HLF\nceoEJEvUAu2g3FHcDv8Dir63BzsZATgwSlC+iwTZHj/PnrJhhPmzFj8+e/OgQ+Eq\npLY5CtafhZBg2Mg/TKdGRw9eJilmPrEF3i/9XZqnBwlszs8EUOmM2NTrZ/+gargf\nwjbIyzbFcdyPfEugNf1O/rXxaLiNCvC8cxD+NC41OEKEYA3mBT5bYx6J0Clz/any\nrZ/RAGJe4AqHd4A9AF0q54YDw4sg8w0+4FlJzYl7siyOudx2faJ6ie+EqpV9305t\nOQIDAQAB\n-----END PUBLIC KEY-----'], ['VCKDPWYVAHVZGNUIBFZAU9NDCTRQRDWASZQXHNKMRBD9ZYOCCD9WMELOTNJJBPCETXPMGH9LT9CZISH9C', '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApxEpt0Sclfw+Z4R+IqMW\nndwu7OyWimrEJLJEphR8SDQBItNx2uSWhXgI6ySwGyh7EztntYCip/SWs0LE5Hth\nIBZPzjQTaY5Bi8AS+YdiJB7oUlzqiIscrJ8eP+bHLkHfy5Jvi/VMboJSxLL6ryLF\nIKhdQBdFG60JZQmCMjtj4AbyrHcocJx/XDxMtC6AItMwf4b3sApR/ViZqd1YLC44\nSdRLF2tgHRBa7Ev2SCAKmU4Fk6RgpGIGfQ8hsdyMYSEOYh3ZCUGGWcfX5przm7Ge\nOjVkH10Aeb6siYBQFE9btoC2hKANXEfT2YQJa5+7Rfd2/8ocrHnlYaeBEtDBes+L\nkQIDAQAB\n-----END PUBLIC KEY-----']] 
-		######################
 
 		Trajectory.reverse()
 		Cipher = ""
@@ -184,6 +183,7 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 	def Check_Inbox(self):
 		Messages = self.PrivateIOTA.Receive(Start = int(self.Calculate_Block().Block-1), Stop = int(self.Calculate_Block().Block+1)).Message
 		for i in Messages:
+			print(i)
 			Message = self.Receiving_Message(CipherText = i)
 			print("#################")
 		return self
@@ -191,40 +191,68 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 	def Receiving_Message(self, CipherText):
 		Relay_Key = []
 		CipherPart = []
+		relay = 0
 		if len(CipherText) >= 10:
 			if '"' == CipherText[0] and '"' == CipherText[len(CipherText)-1:len(CipherText)]:
 				CipherText = CipherText[1:len(CipherText)-1]
 			if "==" in CipherText[len(CipherText)-2:]:
-				for i in CipherText.split(self.Identifier):
-					try:
-						Unencrypted = self.AsymmetricDecryption(CipherText = b64decode(i), PrivateKey = Key_Generation().PrivateKey_Import().PrivateKey)
-					except TypeError:
-						Unencrypted = False
-					if Unencrypted != False:
-						Address = Unencrypted[len(Unencrypted)-81:]
-						Key = Unencrypted[:len(Unencrypted)-81]
-						Relay_Key.append([Address, Key])
-					else:
-						CipherPart.append(i)
-				try:
-					print(CipherPart)
+				RunTime = True 
+				while RunTime == True:
+					for i in CipherText.split(self.Identifier):
+						try:
+							Unencrypted = self.AsymmetricDecryption(CipherText = b64decode(i), PrivateKey = Key_Generation().PrivateKey_Import().PrivateKey)
+							if Unencrypted == False:
+								RunTime = False
+						except TypeError:
+							Unencrypted = False
+						if Unencrypted != False:
+							Address = Unencrypted[len(Unencrypted)-81:]
+							print(Address)
+							if Address == "0"*81:
+								relay = relay + 1
+							else:
+								Address = Unencrypted[len(Unencrypted)-81:]
+								Key = Unencrypted[:len(Unencrypted)-81]
+								Relay_Key.append([Address, Key])
+								RunTime = False
+						else:
+							CipherPart.append(i)
 					for cipher in CipherPart:
 						for key in Relay_Key:
 							Plain = b64decode(self.SymmetricDecryption(CipherText = cipher, SecretKey = key[1]))	
 							if self.Identifier in Plain and not self.MessageIdentifier in Plain:
-								self.ToRelay.append([key[0], Plain])
+								self.ToRelay.append([Plain, Address, False])
 							elif self.MessageIdentifier in Plain:
 								for i in Plain.split(self.MessageIdentifier):
 									if self.Identifier in i:
-										self.ToRelay.append([i, key[0]])
-									else:
+										self.ToRelay.append([i, Address, True])
+									else:								
 										self.MessageShrapnells.append([i, key[1]])
-				except TypeError:
-					pass
+										print(i)
+										self.ToRelay = []
+					CipherPart = []
+
 			if len(self.ToRelay) > 0:
-				#Relay_Client().Relay_Function(ToRelay = self.ToRelay)
-				self.ToRelay = []
+				DeleteMeAfter = self.Relay_Function(ToRelay = self.ToRelay[0], Relayed = relay) #######################'!#####################'
+				self.ToRelay = DeleteMeAfter
+			else:
+				self.ToRelay = CipherText
 		return self 
+
+	def Relay_Function(self, ToRelay, Relayed):
+		Replacing_Message_Text = ToRelay[2]
+		RelayCipherTo = ToRelay[1]
+		Cipher = ToRelay[0]
+		
+		for i in range(Relayed):
+			Fake_Address = "0"*81
+			for a in self.Ledger_Accounts:
+				if a[0] == RelayCipherTo:
+					Cipher = self.Layering_Encryption(PlainText = Cipher, PublicKey = a[1], Address = Fake_Address).Cipher
+		print(Cipher, Relayed)
+		return Cipher
+
+
 
 	def Rebuild_Shrapnells(self, String):
 		Shrapnells = String[0]
