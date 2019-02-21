@@ -66,7 +66,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 
 	def Start_Ledger(self):
 		hashed = None
-		for i in range(2):
+		for i in range(1):
 			Block = self.Calculate_Block().Block
 			try:
 				if self.Check_User_In_Ledger().Present == False and hashed == None:
@@ -107,21 +107,23 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 
 		Fragment_Tags.append(self.MessageIdentifier)
 		Fragment_Tags.insert(0, self.MessageIdentifier)
+		Shrapnells = []
 		for i in range(len(Fragments)):
-			Fragments[i] = str(Fragment_Tags[i]+Fragments[i]+Fragment_Tags[i+1])
-		return [Fragments, Symmetric_Message_Key]
+			Fragment = str(Fragment_Tags[i]+Fragments[i]+Fragment_Tags[i+1])
+			Shrapnells.append(Fragment)
+
+		return [Shrapnells, Symmetric_Message_Key]
 
 	def Sending_Message(self, Message_PlainText, ReceiverAddress, PublicKey, PingFunction = False):
 		Shraps = self.Shrapnell_Function(Message_PlainText = Message_PlainText)
 		SenderList = []
 		MessageList = []
-		#for i in range(len(Shraps[0])):
-		#Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][i], Message_Symmetric_Key = Shraps[1], index = i)
-		Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][0], Message_Symmetric_Key = Shraps[1], index = 1)
-		#	SenderList.append(Output[1])
-		print(Output[1])
-		#	MessageList.append(Output[0])
-		#hashed = self.PrivateIOTA.Send(ReceiverAddress = SenderList, Message = MessageList)
+		for i in range(len(Shraps[0])):
+			Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][i], Message_Symmetric_Key = Shraps[1], index = i)
+		#Output = self.Trajectory_Function(ReceiverAddress = ReceiverAddress, PublicKey = PublicKey, Message = Shraps[0][0], Message_Symmetric_Key = Shraps[1], index = 1)
+			SenderList.append(Output[1])
+			MessageList.append(Output[0])
+		hashed = self.PrivateIOTA.Send(ReceiverAddress = SenderList, Message = MessageList)
 		return Output
 
 	def Trajectory_Function(self, ReceiverAddress ="", PublicKey = "", Message = "", Message_Symmetric_Key = "", PingFunction = False, index = 0):
@@ -182,16 +184,17 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 	#####################################################
 	def Check_Inbox(self):
 		Messages = self.PrivateIOTA.Receive(Start = int(self.Calculate_Block().Block-1), Stop = int(self.Calculate_Block().Block+1)).Message
+		print(Messages)
 		for i in Messages:
 			print(i)
-			Message = self.Receiving_Message(CipherText = i)
+			self.Receiving_Message(CipherText = i)
 			print("#################")
 		return self
 
 	def Receiving_Message(self, CipherText):
 		Relay_Key = []
 		CipherPart = []
-		relay = 0
+		relay = 1
 		if len(CipherText) >= 10:
 			if '"' == CipherText[0] and '"' == CipherText[len(CipherText)-1:len(CipherText)]:
 				CipherText = CipherText[1:len(CipherText)-1]
@@ -233,8 +236,8 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 					CipherPart = []
 
 			if len(self.ToRelay) > 0:
-				DeleteMeAfter = self.Relay_Function(ToRelay = self.ToRelay[0], Relayed = relay) #######################'!#####################'
-				self.ToRelay = DeleteMeAfter
+				self.Relay_Function(ToRelay = self.ToRelay, Relayed = relay)
+				self.ToRelay = []
 			else:
 				self.ToRelay = CipherText
 		return self 
@@ -249,10 +252,8 @@ class Messaging_Client(Dynamic_Public_Ledger, Decryption, User_Profile, IOTA_Mod
 			for a in self.Ledger_Accounts:
 				if a[0] == RelayCipherTo:
 					Cipher = self.Layering_Encryption(PlainText = Cipher, PublicKey = a[1], Address = Fake_Address).Cipher
-		print(Cipher, Relayed)
-		return Cipher
-
-
+		self.PrivateIOTA.IOTA_Module().Send(ReceiverAddress = RelayCipherTo, Message = Cipher)
+		return self
 
 	def Rebuild_Shrapnells(self, String):
 		Shrapnells = String[0]
