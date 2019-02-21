@@ -44,6 +44,7 @@ class IOTA_Module(Configuration):
 			coded = bundle.as_tryte_strings()
 			hashed = bundle.hash
 			send = self.IOTA_Api.send_trytes(trytes = coded, depth = 4)
+			print(hashed)
 			return hashed
 		else:
 			pass
