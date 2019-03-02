@@ -1,8 +1,6 @@
 ####################################################################################
 ############ This script handles encryption and decryption interactions ############
 ####################################################################################
-
-
 import os
 
 # Imprt some modules 
@@ -40,7 +38,7 @@ class Key_Generation(Configuration):
 
 class Encryption(Configuration):
 	def __init__(self):
-		pass
+		Configuration.__init__(self)
 
 	def AsymmetricEncryption(self, PlainText, PublicKey):
 		cipher = PKCS1_OAEP.new(RSA.importKey(PublicKey))
@@ -89,4 +87,25 @@ class Decryption(Configuration):
 		Verifier = PKCS1_v1_5.new(RSA.importKey(PublicKey))
 		self.Verified = Verifier.verify(digest, Signature)
 		return self
+
+	def Message_Delayering(self, Cipher):
+		Cipher_Pieces = str(Cipher).split(self.Identifier)
+		Message = False
+		RelayAddress = False
+		if len(Cipher_Pieces) == 2:
+			SymmetricPart = Cipher_Pieces[0]
+			AsymmetricPart = b64decode(Cipher_Pieces[1])
+
+			#Decrypt the Asymmetric part first
+			Decrypted = self.AsymmetricDecryption(AsymmetricPart, Key_Generation().PrivateKey_Import().PrivateKey)
+			if Decrypted != False:
+				RelayAddress = Decrypted[len(Decrypted)-81:]
+				SymKey = Decrypted[:len(Decrypted)-81]
+				Message = b64decode(self.SymmetricDecryption(SymmetricPart, SymKey))
+				if self.MessageIdentifier in Message:
+					Extract = Message.split(self.MessageIdentifier)
+					PlainTextMessage = Extract[1]
+					print(PlainTextMessage)
+					Message = Extract[0]
+		return [Message, RelayAddress]
 
