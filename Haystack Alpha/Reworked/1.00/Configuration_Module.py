@@ -5,8 +5,8 @@
 class Configuration:
 	def __init__(self, BlockTime = 100000000):
 		self.Node = "http://192.168.0.6:14265"
-		self.PublicSeed = "JUACRYVST9DDAQIJBVXLVETXUADMZMRXVBIOCFIKVP9EFXFWRSFOQZNVNLQHHWQQWLHWEYXEMRPE9TSFN"
-		self.Charlib = "0123456789qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM^!$%&/\()=?+*~'#-_.:;,<>|@{[]} "
+		self.PublicSeed = "QTKBTVTEWBSNBYYFSJTHWZIKOVPHDVNPJAO9BPEOIPFAT9FQNHWDHWSZBNLMLCCT9GLWMYCYWKBIKQART"
+		self.Charlib = "0123456789qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM^!$%&/()=?+*~'#-_.:;,<>|@{[] }"
 		self.Default_Size = 128
 		self.Identifier = "////"
 		self.MessageIdentifier = ">>>>"
@@ -17,13 +17,10 @@ class Configuration:
 		self.PrivateSeed = "PrivateSeed.txt"
 		self.PrivateKey = "PrivateKey.pem"
 		self.PublicKey = "PublicKey.pem"
-		self.GenesisTime = 1500000000000
+		self.GenesisTime = 100000000
 		self.BlockTime = BlockTime
 		self.LowerBound = 0.9999 #Percentage of block cycle completion. 
 		self.RefreshRate = 4 #This is in seconds.
-		self.MaxBounce = 3
+		self.MaxBounce = 2
 		self.Replay = 10
-
-
-
 
