@@ -37,16 +37,18 @@ class IOTA_Module(Configuration):
 			bundle.add_transaction(txn_2)
 
 		bundle = ProposedBundle()
-		if (len(ReceiverAddress) == len(Message)):
+		if type(ReceiverAddress) == list and type(Message) == list and (len(ReceiverAddress) == len(Message)):	
 			for i in range(len(ReceiverAddress)):
 				Bundle_Generation(ReceiverAddress[i], Message[i])
-			bundle.finalize()		
-			coded = bundle.as_tryte_strings()
-			hashed = bundle.hash
-			send = self.IOTA_Api.send_trytes(trytes = coded, depth = 4)
-			return hashed
-		else:
-			pass
+		elif type(ReceiverAddress) == str and type(Message) == str:
+			Bundle_Generation(ReceiverAddress, Message)
+
+		bundle.finalize()		
+		coded = bundle.as_tryte_strings()
+		hashed = bundle.hash
+		send = self.IOTA_Api.send_trytes(trytes = coded, depth = 4)
+		return hashed
+			
 	
 	def Receive(self, Start = 0, Stop = "", JSON = False):
 		#This chunck of code is used to choose a segment of Tx history to be retrieved 

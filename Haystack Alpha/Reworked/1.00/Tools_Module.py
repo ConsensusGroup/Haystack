@@ -18,12 +18,8 @@ class Tools(Configuration):
 			data.append(i)
 		return data
 
-	def Normalize(self, string):
-		normaltext = str(string) + (self.Default_Size - len(string) - len(self.Identifier)) * str(' ') + str(self.Identifier)
-		return normaltext
-
-	def Split(self, string):
-		return [string[start:start+self.Default_Size] for start in range(0, len(string), self.Default_Size)]
+	def Split(self, string, length = Configuration().Default_Size):
+		return [string[start:start+length] for start in range(0, len(string), length)]
 
 	def List_To_String(self, List):
 		return ''.join(List)
@@ -43,3 +39,11 @@ class Tools(Configuration):
 			return False
 		else:
 			return True
+
+	def NonAsciiEncode(self, string):
+		converted = unicode(string, "utf-8").encode('unicode_escape')
+		return converted
+		
+	def ToNonAsciiDecode(self, string):
+		converted = unicode(string, "utf-8").decode('unicode_escape')
+		return converted
