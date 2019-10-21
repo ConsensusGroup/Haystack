@@ -4,7 +4,7 @@
 
 class Configuration:
 	def __init__(self, BlockTime = 100000000):
-		self.Node = "https://trinity.iota-tangle.io:14265"
+		self.Node = "https://192.168.0.182:14267"
 		self.PublicSeed = "QTKBTVTEWBSNBYYFSJTHWZIKOVPHDVNPJAO9BPEOIPFAT9FQNHWDHWSZBNLMLCCT9GLWMYCYWKBIKQART"
 		self.Charlib = "0123456789qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM^!$%&/()=?+*~'#-_.:;,<>|@{[] }"
 		self.Default_Size = 128

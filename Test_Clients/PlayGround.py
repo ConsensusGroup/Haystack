@@ -52,7 +52,7 @@ def Test_Inbox_Manager(Nodes, BlockTime, Message, DLP, Send_Message = False):
 		print("Length of the message without tryte:" + str(len(Message_To_Send[0])))
 		print("Message should be received by: " + Message_To_Send[1])
 
-	for i in range(5):
+	for i in range(50):
 		for j in Nodes:
 			print("Client: "+j)
 			eval(j).Inbox_Module.Inbox_Manager().Create_DB()
