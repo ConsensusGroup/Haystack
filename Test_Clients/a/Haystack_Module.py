@@ -23,8 +23,9 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 		MessageShrapnells = Dynamic_Public_Ledger(self.BlockTime).Shrapnell_Function(Message)
 		Symmetric_Key = MessageShrapnells[1]
 		for i in MessageShrapnells[0]:
-			ToSend = self.Prepare_Message(Message, ReceiverAddress, PublicKey, Symmetric_Key)
+			ToSend = self.Prepare_Message(i, ReceiverAddress, PublicKey, Symmetric_Key)
 			hashed = self.PrivateIOTA.Send(ReceiverAddress = ToSend[1], Message = ToSend[0])
+			print(hashed)
 		return ToSend
 
 	def Prepare_Message(self, Message = "", ReceiverAddress = "", PublicKey = "", Symmetric_Key = ""):
@@ -60,13 +61,14 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 	def Check_Inbox(self):
 		self.Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Block)
 		for BundleHash, Message in self.Read_From_Json(directory = self.NotRelayed_Dir).items():
-			Output = self.Message_Decrypter(Cipher = str(Message), BundleHash = BundleHash)
-			self.Postprocessing_Packet(ToSend = Output, Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
-		#	except:
-		#		self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
+			try:
+				Output = self.Message_Decrypter(Cipher = str(Message))
+				self.Postprocessing_Packet(ToSend = Output, Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
+			except:
+				self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
 		return self
 
-	def Message_Decrypter(self, Cipher, BundleHash = ""):
+	def Message_Decrypter(self, Cipher):
 		#Break the message cipher into two parts:
 		if Cipher[0] == Cipher[len(Cipher)-1] == "'":
 			Pieces = Cipher[1:len(Cipher)-1].split(self.Identifier)
@@ -95,9 +97,10 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 					if self.MessageIdentifier in To_Relay:
 						counter = counter +1
 						Message_PlainText = To_Relay.split(self.MessageIdentifier)
+						Message_PlainText_Temp  = To_Relay
 						To_Relay = Message_PlainText[0]
-						Message_PlainText = Message_PlainText[1]
-						self.Addressed_To_Client(Message_PlainText, BundleHash)
+						Message_PlainText = Message_PlainText_Temp[len(To_Relay):]
+						self.Addressed_To_Client(Message_PlainText, SymKey)
 
 					for i in Dynamic_Public_Ledger(self.BlockTime).Check_User_In_Ledger(ScanAll = True).All_Accounts:
 						if i[0] == Next_Address:
@@ -116,5 +119,4 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 					return [To_Relay, Next_Address]
 			else:
 				Runtime = False
-				print(Cipher, Decrypted)
 				return [Cipher, Next_Address]

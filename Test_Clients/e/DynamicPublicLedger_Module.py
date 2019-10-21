@@ -108,7 +108,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 			Shrapnells.append(Fragment)
 		return [Shrapnells, Symmetric_Message_Key]
 
-	def Rebuild_Shrapnells(self, String):
+	def Rebuild_Shrapnells(self, String, Verify):
 		Shrapnells = String[0]
 		Symmetric_Key = String[1]
 		Intermediate = []
@@ -133,13 +133,21 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 				elif StartTag == EndTag2 and StartTag != self.MessageIdentifier:
 					CipherText = str(StartTag2 + cipher2 + cipher + EndTag)
 
-		CipherText = CipherText[len(self.MessageIdentifier):len(CipherText)-len(self.MessageIdentifier)]
-		Message = self.SymmetricDecryption(CipherText = CipherText, SecretKey = Symmetric_Key)
-		Message = b64decode(Message).split(self.MessageIdentifier)
-		for i in self.Ledger_Accounts:
-			Verification = self.SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
-			if Verification == True:
-				print("You have received a message from: "+i[0] + "\n" + Message[0])
+		Message = Decryption().SymmetricDecryption(CipherText = CipherText, SecretKey = Symmetric_Key)
+		if Message[len(Message)-1] == "=":
+			print(Message)
+			Message = b64decode(Message).split(self.MessageIdentifier)
+			print(Message)
+			if Verify == True:
+				self.Check_User_In_Ledger(ScanAll = True)
+				for i in self.All_Accounts:
+					Verification = Decryption().SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
+					if Verification == True:
+						return [i[0], Message[0], Verification] # --> Output is [Address, Message, Verification_Of_Signature]
+			elif Verify == False:
+				return ["UNKNOWN", Message[0], False] # --> Output is [Address, Message, Verification_Of_Signature]
+		else:
+			return [False]
 
 	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False, index = 0):
 		self.Calculate_Block().Block

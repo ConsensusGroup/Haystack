@@ -5,6 +5,7 @@
 from Configuration_Module import Configuration
 import os
 import json
+from base64 import b64encode, b64decode
 
 class Tools(Configuration):
 
@@ -78,3 +79,9 @@ class Tools(Configuration):
 	def ToNonAsciiDecode(self, string):
 		converted = unicode(string, "utf-8").decode('unicode_escape')
 		return converted
+
+	def String_To_Base64(self, String):
+		return b64encode(String)
+
+	def Base64_To_String(self, Encoded):
+		return b64decode(Encoded)

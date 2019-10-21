@@ -5,6 +5,7 @@
 from User_Modules import Initialization
 from Tools_Module import Tools
 from Configuration_Module import Configuration
+from DynamicPublicLedger_Module import Dynamic_Public_Ledger
 
 class Inbox_Manager(Initialization, Tools):
     def __init__(self):
@@ -52,7 +53,6 @@ class Inbox_Manager(Initialization, Tools):
             Relayed_Dictionary = self.Add_To_Dictionary(Input_Dictionary = Relayed_Dictionary, Entry_Label = Hash_Of_Incoming_Tx, Entry_Value = str(Relayed_Bundle_Hash))
             NotRelayed_Dictionary = self.Remove_From_Dictionary(Input_Dictionary = NotRelayed_Dictionary, Label = Hash_Of_Incoming_Tx)
         elif Next_Address == '0'*81:
-            print("Zero:" + Cipher)
             Relayed_Dictionary = self.Add_To_Dictionary(Input_Dictionary = Relayed_Dictionary, Entry_Label = Hash_Of_Incoming_Tx, Entry_Value = str('0'*81))
             NotRelayed_Dictionary = self.Remove_From_Dictionary(Input_Dictionary = NotRelayed_Dictionary, Label = Hash_Of_Incoming_Tx)
 
@@ -60,8 +60,39 @@ class Inbox_Manager(Initialization, Tools):
         self.Write_To_Json(directory = self.NotRelayed_Dir, Dictionary = NotRelayed_Dictionary)
         return self
 
-    def Addressed_To_Client(self, Message_PlainText, BundleHash):
+    def Addressed_To_Client(self, Message_PlainText, Symmetric_Message_Key):
         Client_Dictionary = self.Read_From_Json(directory = self.Received_Dir)
-        self.Add_To_Dictionary(Input_Dictionary = Client_Dictionary, Entry_Label = Message_PlainText, Entry_Value = BundleHash)
-        print("Message: "+Message_PlainText)
+        self.Add_To_Dictionary(Input_Dictionary = Client_Dictionary, Entry_Label = Message_PlainText, Entry_Value = self.String_To_Base64(Symmetric_Message_Key))
+        self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
         return self
+
+    def Reconstruction_Of_Message(self, BlockTime, Verify):
+        Client_Dictionary = self.Read_From_Json(directory = self.Received_Dir)
+        Unique_SymKeys = []
+        for i in Client_Dictionary.values():
+            Unique_SymKeys.append(i)
+        Unique_SymKeys = set(Unique_SymKeys)
+
+        Message = []
+        for i in Unique_SymKeys:
+            Pieces_From_SymKey = []
+            Unmodified_Labels = []
+            for Cipher, Symkey in Client_Dictionary.items():
+                if i == Symkey:
+                    Pieces_From_SymKey.append(str(Cipher).replace(Configuration(BlockTime = BlockTime).MessageIdentifier,''))
+                    Unmodified_Labels.append(str(Cipher))
+            Sym_Key = self.Base64_To_String(str(i))
+            Format_To_Digest = [Pieces_From_SymKey, Sym_Key]
+
+            try:
+                Output = Dynamic_Public_Ledger(BlockTime = BlockTime).Rebuild_Shrapnells(String = Format_To_Digest, Verify = Verify)
+                if Output[0] != False:
+                    Message.append(Output) # ----> Later on save this locally. Need to further think about the storage structure.
+                    for z in Unmodified_Labels:
+                        Client_Dictionary = self.Remove_From_Dictionary(Input_Dictionary = Client_Dictionary, Label = z)
+                    self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
+            except:
+                pass
+            self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
+
+        return Message

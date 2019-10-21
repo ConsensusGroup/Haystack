@@ -3,7 +3,7 @@
 ####################################################################################
 import os
 
-# Imprt some modules 
+# Imprt some modules
 from Configuration_Module import Configuration
 from Tools_Module import Tools
 
@@ -14,7 +14,6 @@ from Crypto.Hash import SHA256
 from Crypto.Signature import PKCS1_v1_5
 import pyffx
 from base64 import b64encode, b64decode
-
 
 class Key_Generation(Configuration):
 	def __init__(self):
@@ -30,7 +29,7 @@ class Key_Generation(Configuration):
 		PrivateCipher = Tools().ReadLine(directory = str(self.UserFolder+"/"+self.KeysFolder+"/"+self.PrivateKey))
 		Keys = RSA.importKey(PrivateCipher, passphrase = self.Password)
 		self.PublicKey = Keys.publickey().exportKey(format = 'PEM')
-		self.PrivateKey = Keys 
+		self.PrivateKey = Keys
 		return self
 
 	def Secret_Key(self, length = 64):
@@ -79,7 +78,7 @@ class Decryption(Configuration):
 			outcome = pyffx.String(str(SecretKey), alphabet=str(self.Charlib), length=len(str(CipherText))).decrypt(str(CipherText))
 		except ValueError:
 			outcome = False
-		return outcome	
+		return outcome
 
 	def SignatureVerification(self, ToVerify, PublicKey, Signature):
 		digest = SHA256.new()

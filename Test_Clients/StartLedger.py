@@ -10,7 +10,7 @@ from d import DynamicPublicLedger_Module
 from e import DynamicPublicLedger_Module
 from time import sleep
 
-BlockTime = 200001000
+BlockTime = 300005000
 #Starting the user profiles
 UserA = a.User_Modules.User_Profile()
 UserB = b.User_Modules.User_Profile()
