@@ -11,6 +11,7 @@ class Inbox_Manager(Initialization, Tools):
     def __init__(self):
         Initialization.__init__(self)
         Tools.__init__(self)
+        Configuration.__init__(self)
         self.Received_Dir = str(self.InboxGenerator(Output_Directory = True).ReceivedMessages+"/"+Configuration().ReceivedMessages+".txt")
         self.Relayed_Dir = str(self.InboxGenerator(Output_Directory = True).RelayedMessages+"/"+Configuration().RelayedMessage+".txt")
         self.NotRelayed_Dir = str(self.InboxGenerator(Output_Directory = True).OutstandingRelay+"/"+Configuration().NotRelayedMessage+".txt")
@@ -66,7 +67,7 @@ class Inbox_Manager(Initialization, Tools):
         self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
         return self
 
-    def Reconstruction_Of_Message(self, BlockTime, Verify):
+    def Reconstruction_Of_Message(self, Verify):
         #Make sure there is a file:
         self.Create_DB()
 
@@ -83,18 +84,18 @@ class Inbox_Manager(Initialization, Tools):
             Unmodified_Labels = []
             for Cipher, Symkey in Client_Dictionary.items():
                 if i == Symkey:
-                    Pieces_From_SymKey.append(str(Cipher).replace(Configuration(BlockTime = BlockTime).MessageIdentifier,''))
+                    Pieces_From_SymKey.append(str(Cipher).replace(Configuration().MessageIdentifier,''))
                     Unmodified_Labels.append(str(Cipher))
             Sym_Key = self.Base64_To_String(str(i))
             Format_To_Digest = [Pieces_From_SymKey, Sym_Key]
-            Output = Dynamic_Public_Ledger(BlockTime = BlockTime).Rebuild_Shrapnells(String = Format_To_Digest, Verify = Verify)
+            Output = Dynamic_Public_Ledger().Rebuild_Shrapnells(String = Format_To_Digest, Verify = Verify)
             if len(Output) == 3:
                 Message.append(Output) # ----> Later on save this locally. Need to further think about the storage structure.
                 for z in Unmodified_Labels:
                     Client_Dictionary = self.Remove_From_Dictionary(Input_Dictionary = Client_Dictionary, Label = z)
 
         if len(Message) == 0:
-            return [[False, False, False]]
+            return [False, False, False]
         else:
             self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
             return Message

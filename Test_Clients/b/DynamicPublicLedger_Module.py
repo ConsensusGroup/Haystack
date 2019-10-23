@@ -12,14 +12,13 @@ from iota import TryteString
 from Tools_Module import *
 
 class Dynamic_Public_Ledger(Configuration, User_Profile):
-	def __init__(self, BlockTime):
+	def __init__(self):
 		Configuration.__init__(self)
 		User_Profile.__init__(self)
 		self.PublicIOTA = IOTA_Module(Seed = self.PublicSeed)
 		self.PrivateIOTA = IOTA_Module(Seed = self.Private_Seed)
 		self.Ledger_Accounts = []
 		self.All_Accounts = []
-		self.BlockTime = BlockTime
 
 	def Calculate_Block(self):
 		#Check the current time of the Tangle
@@ -74,25 +73,27 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 
 	def Start_Ledger(self):
 		hashed = None
-		for i in range(1):
-			Block = self.Calculate_Block().Block
-			try:
-				if self.Check_User_In_Ledger().Present == False and hashed == None:
-					hashed = self.PrivateIOTA.Send(ReceiverAddress = [self.PublicIOTA.Generate_Address(Index = self.Block)], Message = [self.Submit_User()])
-			except TypeError:
-				hashed = None
-			#This block prevents duplicate Tx
-			if self.ChangeBlock == True:
-				hashed = None
-				self.Ledger_Accounts = []
+		Block = self.Calculate_Block().Block
+		try:
+			if self.Check_User_In_Ledger().Present == False and hashed == None:
+				hashed = self.PrivateIOTA.Send(ReceiverAddress = [self.PublicIOTA.Generate_Address(Index = self.Block)], Message = [self.Submit_User()])
+		except TypeError:
+			hashed = None
+
+		#This block prevents duplicate Tx
+		if self.ChangeBlock == True:
+			hashed = None
+			self.Ledger_Accounts = []
 		return self
 
-	def Shrapnell_Function(self, Message_PlainText = ""):
+	def Shrapnell_Function(self, Message_PlainText = "", Encrypted_Shrapnell = True):
 		Message_Signed = Message_PlainText + self.MessageIdentifier + Encryption().MessageSignature(ToSign = Message_PlainText).Signature
 		Symmetric_Message_Key = Key_Generation().Secret_Key()
 		Symmetrically_Encrypted = Encryption().SymmetricEncryption(PlainText = b64encode(Message_Signed), SecretKey = Symmetric_Message_Key)
-		Fragments = Tools().Split(string = Symmetrically_Encrypted, length = self.Default_Size) ###Encrypted Communication
-		#Fragments = Tools().Split(string = Message_PlainText, length = self.Default_Size) ###Plain Communication
+		if Encrypted_Shrapnell == True:
+			Fragments = Tools().Split(string = Symmetrically_Encrypted, length = self.Default_Size) ###Encrypted Communication
+		else:
+			Fragments = Tools().Split(string = Message_PlainText, length = self.Default_Size) ###Plain Communication
 		Fragment_Tags = []
 		if len(Fragments) > 1:
 			while len(Fragments)-1 != len(Fragment_Tags):

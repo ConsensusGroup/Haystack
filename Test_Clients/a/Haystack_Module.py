@@ -9,27 +9,32 @@ from User_Modules import User_Profile
 from base64 import b64encode, b64decode
 from DynamicPublicLedger_Module import *
 from Inbox_Module import Inbox_Manager
+from time import sleep
 
 class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 
-	def __init__(self, BlockTime):
+	def __init__(self):
 		Configuration.__init__(self)
 		Encryption.__init__(self)
 		User_Profile.__init__(self)
-		self.BlockTime = BlockTime
 		self.PrivateIOTA = IOTA_Module(Seed = self.Private_Seed)
 
-	def Send_Message(self, Message, ReceiverAddress, PublicKey):
-		MessageShrapnells = Dynamic_Public_Ledger(self.BlockTime).Shrapnell_Function(Message)
+	def Send_Message(self, Message, ReceiverAddress, PublicKey, DifferentPaths = False):
+		Sent_And_Confirmed = []
+		if isinstance(DifferentPaths, int):
+			self.DifferentPaths = DifferentPaths
+		MessageShrapnells = Dynamic_Public_Ledger().Shrapnell_Function(Message)
 		Symmetric_Key = MessageShrapnells[1]
 		for i in MessageShrapnells[0]:
-			ToSend = self.Prepare_Message(i, ReceiverAddress, PublicKey, Symmetric_Key)
-			hashed = self.PrivateIOTA.Send(ReceiverAddress = ToSend[1], Message = ToSend[0])
-		return ToSend
+			for x in range(self.DifferentPaths):
+				ToSend = self.Prepare_Message(i, ReceiverAddress, PublicKey, Symmetric_Key)
+				hashed = self.PrivateIOTA.Send(ReceiverAddress = ToSend[1], Message = ToSend[0])
+				Sent_And_Confirmed.append([ReceiverAddress, hashed, ToSend[1]])  #[Receiver, Hash, Relayer]
+		return Sent_And_Confirmed
 
 	def Prepare_Message(self, Message = "", ReceiverAddress = "", PublicKey = "", Symmetric_Key = ""):
 		#Here we generate the Trajectory of the message
-		Trajectory = Dynamic_Public_Ledger(BlockTime = self.BlockTime).Path_Finder(ReceiverAddress, PublicKey)
+		Trajectory = Dynamic_Public_Ledger().Path_Finder(ReceiverAddress, PublicKey)
 		Trajectory.append(["0"*81, "######"])
 		Trajectory.reverse()
 		CipherText = ""
@@ -49,20 +54,21 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 
 class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, User_Profile, Dynamic_Public_Ledger, Inbox_Manager):
 
-	def __init__(self, BlockTime):
+	def __init__(self):
 		Configuration.__init__(self)
 		User_Profile.__init__(self)
 		Inbox_Manager.__init__(self)
-		self.BlockTime = BlockTime
 		self.PrivateIOTA = IOTA_Module(Seed = self.Private_Seed)
-		self.Block = Dynamic_Public_Ledger(BlockTime).Calculate_Block().Block
+		self.Block = Dynamic_Public_Ledger().Calculate_Block().Block
 
 	def Check_Inbox(self):
 		self.Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Block)
+		self.Incoming_Message = [False, False, False]
 		for BundleHash, Message in self.Read_From_Json(directory = self.NotRelayed_Dir).items():
 			try:
 				Output = self.Message_Decrypter(Cipher = str(Message))
 				self.Postprocessing_Packet(ToSend = Output, Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
+				self.Incoming_Message = self.Reconstruction_Of_Message(True)
 			except:
 				print("Failed Incoming TX")
 				self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
@@ -92,6 +98,7 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 				#Now we try to decrypt the symmetric part
 				To_Relay = b64decode(self.SymmetricDecryption(CipherText = Pieces[0], SecretKey = SymKey))
 
+				print(To_Relay)
 				#Enforce that this has been decrypted properly
 				if self.Identifier in To_Relay and Next_Address != '0'*81:
 					if self.MessageIdentifier in To_Relay:
@@ -102,7 +109,7 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 						Message_PlainText = Message_PlainText_Temp[len(To_Relay):]
 						self.Addressed_To_Client(Message_PlainText, SymKey)
 
-					for i in Dynamic_Public_Ledger(self.BlockTime).Check_User_In_Ledger(ScanAll = True).All_Accounts:
+					for i in Dynamic_Public_Ledger().Check_User_In_Ledger(ScanAll = True).All_Accounts:
 						if i[0] == Next_Address:
 							NextAddress_PublicKey = i[1]
 						#Terminate the while condition once a non dummy address was found.
@@ -122,3 +129,18 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 			else:
 				Runtime = False
 				return [Cipher, Next_Address]
+
+#This will simply run the client in non interactive mode.
+if __name__ == "__main__":
+	RunTime = True
+	while RunTime == True:
+		Dynamic_Public_Ledger().Start_Ledger()
+		Message = Receiver_Client().Check_Inbox()
+		Message = Message.Incoming_Message
+		print(len(Message))
+		print(Message)
+		if Message[0] != False:
+			print("Passed!"+ "\n Message From:	 " + str(Message[0]) + "\n Message:	 "+ str(Message[1]))
+		elif Message[0] == False:
+			print("No New Message for you.")
+		sleep(Configuration().RefreshRate)

@@ -8,7 +8,7 @@ for i in ${FilesInPushFrom[@]}
 do
 	for z in ${PushTo[@]}
 	do
-		if [[ $i == *"Config"* ]] || [[ $i == *"UserData"* ]];
+		if [[ $i == *"UserData"* ]]; #[[ $i == *"Config"* ]] || [[ $i == *"UserData"* ]];
 		then
 			:
 		else
