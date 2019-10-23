@@ -7,7 +7,6 @@ from Tools_Module import Tools
 from Cryptography_Module import Key_Generation, os, Encryption, Decryption
 from IOTA_Module import Seed_Generator
 
-
 class Initialization(Configuration, Tools):
 	def __init__(self):
 		Configuration.__init__(self)

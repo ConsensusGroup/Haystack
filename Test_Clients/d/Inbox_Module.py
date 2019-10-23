@@ -67,6 +67,10 @@ class Inbox_Manager(Initialization, Tools):
         return self
 
     def Reconstruction_Of_Message(self, BlockTime, Verify):
+        #Make sure there is a file:
+        self.Create_DB()
+
+        #Read the file
         Client_Dictionary = self.Read_From_Json(directory = self.Received_Dir)
         Unique_SymKeys = []
         for i in Client_Dictionary.values():
@@ -83,16 +87,14 @@ class Inbox_Manager(Initialization, Tools):
                     Unmodified_Labels.append(str(Cipher))
             Sym_Key = self.Base64_To_String(str(i))
             Format_To_Digest = [Pieces_From_SymKey, Sym_Key]
+            Output = Dynamic_Public_Ledger(BlockTime = BlockTime).Rebuild_Shrapnells(String = Format_To_Digest, Verify = Verify)
+            if len(Output) == 3:
+                Message.append(Output) # ----> Later on save this locally. Need to further think about the storage structure.
+                for z in Unmodified_Labels:
+                    Client_Dictionary = self.Remove_From_Dictionary(Input_Dictionary = Client_Dictionary, Label = z)
 
-            try:
-                Output = Dynamic_Public_Ledger(BlockTime = BlockTime).Rebuild_Shrapnells(String = Format_To_Digest, Verify = Verify)
-                if Output[0] != False:
-                    Message.append(Output) # ----> Later on save this locally. Need to further think about the storage structure.
-                    for z in Unmodified_Labels:
-                        Client_Dictionary = self.Remove_From_Dictionary(Input_Dictionary = Client_Dictionary, Label = z)
-                    self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
-            except:
-                pass
+        if len(Message) == 0:
+            return [[False, False, False]]
+        else:
             self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
-
-        return Message
+            return Message

@@ -134,20 +134,17 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 					CipherText = str(StartTag2 + cipher2 + cipher + EndTag)
 
 		Message = Decryption().SymmetricDecryption(CipherText = CipherText, SecretKey = Symmetric_Key)
-		if Message[len(Message)-1] == "=":
-			print(Message)
-			Message = b64decode(Message).split(self.MessageIdentifier)
-			print(Message)
-			if Verify == True:
-				self.Check_User_In_Ledger(ScanAll = True)
-				for i in self.All_Accounts:
-					Verification = Decryption().SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
-					if Verification == True:
-						return [i[0], Message[0], Verification] # --> Output is [Address, Message, Verification_Of_Signature]
-			elif Verify == False:
-				return ["UNKNOWN", Message[0], False] # --> Output is [Address, Message, Verification_Of_Signature]
+		Message = b64decode(Message).split(self.MessageIdentifier)
+		if Verify == True and len(Message) == 2:
+			self.Check_User_In_Ledger(ScanAll = True)
+			for i in self.All_Accounts:
+				Verification = Decryption().SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
+				if Verification == True:
+					return [i[0], Message[0], Verification] # --> Output is [Address, Message, Verification_Of_Signature]
+		elif Verify == False:
+			return ["UNKNOWN", Message[0], False] # --> Output is [Address, Message, Verification_Of_Signature]
 		else:
-			return [False]
+			return []
 
 	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False, index = 0):
 		self.Calculate_Block().Block

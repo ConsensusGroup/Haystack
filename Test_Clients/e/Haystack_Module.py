@@ -23,9 +23,10 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 		MessageShrapnells = Dynamic_Public_Ledger(self.BlockTime).Shrapnell_Function(Message)
 		Symmetric_Key = MessageShrapnells[1]
 		for i in MessageShrapnells[0]:
+			print(i)
 			ToSend = self.Prepare_Message(i, ReceiverAddress, PublicKey, Symmetric_Key)
 			hashed = self.PrivateIOTA.Send(ReceiverAddress = ToSend[1], Message = ToSend[0])
-			print(hashed)
+		#	print(hashed)
 		return ToSend
 
 	def Prepare_Message(self, Message = "", ReceiverAddress = "", PublicKey = "", Symmetric_Key = ""):
@@ -65,6 +66,7 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 				Output = self.Message_Decrypter(Cipher = str(Message))
 				self.Postprocessing_Packet(ToSend = Output, Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
 			except:
+				print("Failed Incoming TX")
 				self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
 		return self
 
@@ -109,6 +111,8 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 						Runtime = False
 
 				elif '0'*81 == Next_Address:
+					if self.MessageIdentifier in To_Relay:
+						self.Addressed_To_Client(To_Relay, SymKey)
 					counter = counter +1
 					Pieces = To_Relay.split(self.Identifier)
 
