@@ -26,3 +26,4 @@ class Configuration:
 		self.LowerBound = 0.9999 #Percentage of block cycle completion.
 		self.MaxBounce = 4
 		self.Replay = 10
+		self.DifferentPaths = 3 #This variable allows for the same message to be sent to different paths (increases reliability)

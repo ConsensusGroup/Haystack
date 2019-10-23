@@ -69,5 +69,15 @@ def Test_Inbox_Manager(Nodes, BlockTime, Message, DLP, Send_Message = False):
 	Test_Shrapnelling(BlockTime)
 
 if __name__ == "__main__":
-	Test_Inbox_Manager(Nodes, BlockTime, Message = Message, DLP = DLP, Send_Message = True)
+	#Test_Inbox_Manager(Nodes, BlockTime, Message = Message, DLP = DLP, Send_Message = True)
 	#Test_Shrapnelling(BlockTime)
+
+
+
+## TODO:
+# - Adding a method to monitor at which block the client was last online so they can catch up to latest ledger time
+# - Add the ability to choose a full encryption (Shrapnells) or simply have that in PlainText
+# - Add the ping function and build "Trusted Paths" (Next major milestone)
+# - Work on storing entries in the public ledger locally and pruge after XXX blocks
+# - Build a message purger i.e. remove incomplete messages after some time
+# - Figure out the UI at some later stage
