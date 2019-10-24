@@ -63,8 +63,9 @@ class Inbox_Manager(Initialization, Tools):
 
     def Addressed_To_Client(self, Message_PlainText, Symmetric_Message_Key):
         Client_Dictionary = self.Read_From_Json(directory = self.Received_Dir)
-        self.Add_To_Dictionary(Input_Dictionary = Client_Dictionary, Entry_Label = Message_PlainText, Entry_Value = self.String_To_Base64(Symmetric_Message_Key))
-        self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
+        if self.Label_In_Dictionary(Input_Dictionary = Client_Dictionary, Label = Message_PlainText) == False:
+            self.Add_To_Dictionary(Input_Dictionary = Client_Dictionary, Entry_Label = Message_PlainText, Entry_Value = self.String_To_Base64(Symmetric_Message_Key))
+            self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
         return self
 
     def Reconstruction_Of_Message(self, Verify):
@@ -89,13 +90,13 @@ class Inbox_Manager(Initialization, Tools):
             Sym_Key = self.Base64_To_String(str(i))
             Format_To_Digest = [Pieces_From_SymKey, Sym_Key]
             Output = Dynamic_Public_Ledger().Rebuild_Shrapnells(String = Format_To_Digest, Verify = Verify)
-            if len(Output) == 3:
+            if isinstance(Output, list):
                 Message.append(Output) # ----> Later on save this locally. Need to further think about the storage structure.
                 for z in Unmodified_Labels:
                     Client_Dictionary = self.Remove_From_Dictionary(Input_Dictionary = Client_Dictionary, Label = z)
+                self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
 
         if len(Message) == 0:
-            return [False, False, False]
+            return [[False, False, False]]
         else:
-            self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
             return Message

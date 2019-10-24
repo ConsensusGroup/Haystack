@@ -5,11 +5,12 @@
 from Configuration_Module import Configuration
 from Cryptography_Module import *
 from IOTA_Module import *
-from User_Modules import User_Profile
+from User_Modules import User_Profile, Initialization
 from base64 import b64encode, b64decode
 from DynamicPublicLedger_Module import *
 from Inbox_Module import Inbox_Manager
 from time import sleep
+from Tools_Module import Tools
 
 class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 
@@ -26,6 +27,7 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 		MessageShrapnells = Dynamic_Public_Ledger().Shrapnell_Function(Message)
 		Symmetric_Key = MessageShrapnells[1]
 		for i in MessageShrapnells[0]:
+			print(i)
 			for x in range(self.DifferentPaths):
 				ToSend = self.Prepare_Message(i, ReceiverAddress, PublicKey, Symmetric_Key)
 				hashed = self.PrivateIOTA.Send(ReceiverAddress = ToSend[1], Message = ToSend[0])
@@ -65,13 +67,13 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 		self.Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Block)
 		self.Incoming_Message = [False, False, False]
 		for BundleHash, Message in self.Read_From_Json(directory = self.NotRelayed_Dir).items():
-			try:
-				Output = self.Message_Decrypter(Cipher = str(Message))
-				self.Postprocessing_Packet(ToSend = Output, Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
-				self.Incoming_Message = self.Reconstruction_Of_Message(True)
-			except:
-				print("Failed Incoming TX")
-				self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
+			#try:
+			Output = self.Message_Decrypter(Cipher = str(Message))
+			self.Postprocessing_Packet(ToSend = Output, Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
+			self.Incoming_Message = self.Reconstruction_Of_Message(True)
+			#except:
+			#	print("Failed Incoming TX")
+			#	self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
 		return self
 
 	def Message_Decrypter(self, Cipher):
@@ -98,17 +100,17 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 				#Now we try to decrypt the symmetric part
 				To_Relay = b64decode(self.SymmetricDecryption(CipherText = Pieces[0], SecretKey = SymKey))
 
-				print(To_Relay)
+				if self.MessageIdentifier in To_Relay:
+					Contains_Message = To_Relay.split(self.MessageIdentifier)
+					To_Relay = Contains_Message[0]
+					Message_Fragment = Contains_Message[1:]
+					if isinstance(Message_Fragment, list) == True:
+						Message_As_String = str(self.MessageIdentifier + Tools().List_To_String(List = Message_Fragment) + self.MessageIdentifier)
+						self.Addressed_To_Client(Message_As_String, SymKey)
+
 				#Enforce that this has been decrypted properly
 				if self.Identifier in To_Relay and Next_Address != '0'*81:
-					if self.MessageIdentifier in To_Relay:
-						counter = counter +1
-						Message_PlainText = To_Relay.split(self.MessageIdentifier)
-						Message_PlainText_Temp  = To_Relay
-						To_Relay = Message_PlainText[0]
-						Message_PlainText = Message_PlainText_Temp[len(To_Relay):]
-						self.Addressed_To_Client(Message_PlainText, SymKey)
-
+					counter = counter +1
 					for i in Dynamic_Public_Ledger().Check_User_In_Ledger(ScanAll = True).All_Accounts:
 						if i[0] == Next_Address:
 							NextAddress_PublicKey = i[1]
@@ -116,8 +118,6 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 						Runtime = False
 
 				elif '0'*81 == Next_Address:
-					if self.MessageIdentifier in To_Relay:
-						self.Addressed_To_Client(To_Relay, SymKey)
 					counter = counter +1
 					Pieces = To_Relay.split(self.Identifier)
 
@@ -133,14 +133,17 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 #This will simply run the client in non interactive mode.
 if __name__ == "__main__":
 	RunTime = True
+	Initialization().InboxGenerator()
+	Inbox_Manager().Create_DB()
 	while RunTime == True:
 		Dynamic_Public_Ledger().Start_Ledger()
 		Message = Receiver_Client().Check_Inbox()
 		Message = Message.Incoming_Message
-		print(len(Message))
-		print(Message)
-		if Message[0] != False:
-			print("Passed!"+ "\n Message From:	 " + str(Message[0]) + "\n Message:	 "+ str(Message[1]))
-		elif Message[0] == False:
-			print("No New Message for you.")
+		for i in Message:
+			try:
+				Message = i[0]
+				print(Message)
+				print("Passed!"+ "\n Message From:	 " + str(i[0]) + "\n Message:	 "+ str(i[1]))
+			except:
+				print("No New Message for you.")
 		sleep(Configuration().RefreshRate)

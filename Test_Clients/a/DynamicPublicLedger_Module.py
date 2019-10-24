@@ -94,15 +94,16 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 			Fragments = Tools().Split(string = Symmetrically_Encrypted, length = self.Default_Size) ###Encrypted Communication
 		else:
 			Fragments = Tools().Split(string = Message_PlainText, length = self.Default_Size) ###Plain Communication
+
 		Fragment_Tags = []
 		if len(Fragments) > 1:
 			while len(Fragments)-1 != len(Fragment_Tags):
 				Fragment = str(Key_Generation().Secret_Key(length = 2).encode('hex'))
-				if Fragment not in Fragments:
+				if Fragment not in Fragment_Tags:
 					Fragment_Tags.append(Fragment)
 
 		Fragment_Tags.append(self.MessageIdentifier)
-		Fragment_Tags.insert(0, self.MessageIdentifier)
+		Fragment_Tags.insert(0, str(self.MessageIdentifier))
 		Shrapnells = []
 		for i in range(len(Fragments)):
 			Fragment = str(Fragment_Tags[i]+Fragments[i]+Fragment_Tags[i+1])
@@ -124,28 +125,31 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 				Piece = CipherText
 			StartTag = Piece[0:len(self.MessageIdentifier)]
 			EndTag = Piece[len(Piece)-len(self.MessageIdentifier):]
-			cipher = Piece[4:len(Piece)-len(self.MessageIdentifier)]
+			cipher = Piece[len(self.MessageIdentifier):len(Piece)-len(self.MessageIdentifier)]
 			for j in Temp:
 				StartTag2 = j[0:len(self.MessageIdentifier)]
 				cipher2 = j[len(self.MessageIdentifier):len(j)-len(self.MessageIdentifier)]
-				EndTag2 = j[len(j)-4:]
+				EndTag2 = j[len(j)-len(self.MessageIdentifier):]
 				if StartTag2 == EndTag and EndTag!=self.MessageIdentifier:
 					CipherText = str(StartTag + cipher + cipher2 + EndTag2)
 				elif StartTag == EndTag2 and StartTag != self.MessageIdentifier:
 					CipherText = str(StartTag2 + cipher2 + cipher + EndTag)
 
-		Message = Decryption().SymmetricDecryption(CipherText = CipherText, SecretKey = Symmetric_Key)
-		Message = b64decode(Message).split(self.MessageIdentifier)
-		if Verify == True and len(Message) == 2:
-			self.Check_User_In_Ledger(ScanAll = True)
-			for i in self.All_Accounts:
-				Verification = Decryption().SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
-				if Verification == True:
-					return [i[0], Message[0], Verification] # --> Output is [Address, Message, Verification_Of_Signature]
-		elif Verify == False:
-			return ["UNKNOWN", Message[0], False] # --> Output is [Address, Message, Verification_Of_Signature]
-		else:
-			return []
+		Message = str(Decryption().SymmetricDecryption(CipherText = CipherText, SecretKey = Symmetric_Key))
+		print(Message)
+		try:
+			Message = b64decode(Message).split(self.MessageIdentifier)
+			print(Message)
+			if Verify == True:
+				self.Check_User_In_Ledger(ScanAll = True)
+				for i in self.All_Accounts:
+					Verification = Decryption().SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
+					if Verification == True:
+						return [i[0], Message[0], Verification] # --> Output is [Address, Message, Verification_Of_Signature]
+					else:
+						return ["UNKNOWN", Message[0], False] # --> Output is [Address, Message, Verification_Of_Signature]
+		except:
+			return False
 
 	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False, index = 0):
 		self.Calculate_Block().Block
