@@ -40,6 +40,11 @@ class Tools(Configuration):
 		elif Return_Dir == True:
 			return directory
 
+	def Build_DB(self, File):
+		Empty_Dictionary = {}
+		if self.Check_File(File = File) == False:
+			self.Write_To_Json(directory = File, Dictionary = Empty_Dictionary, setting = "w+")
+
 	def Split(self, string, length = Configuration().Default_Size):
 		return [string[start:start+length] for start in range(0, len(string), length)]
 

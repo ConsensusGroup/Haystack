@@ -22,6 +22,7 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 
 	def Send_Message(self, Message, ReceiverAddress, PublicKey, DifferentPaths = False):
 		Sent_And_Confirmed = []
+		Message = b64encode(Message)
 		if isinstance(DifferentPaths, int):
 			self.DifferentPaths = DifferentPaths
 		MessageShrapnells = Dynamic_Public_Ledger().Shrapnell_Function(Message)
@@ -65,7 +66,7 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 
 	def Check_Inbox(self):
 		self.Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Block)
-		self.Incoming_Message = [False, False, False]
+		self.Incoming_Message = []
 		for BundleHash, Message in self.Read_From_Json(directory = self.NotRelayed_Dir).items():
 			#try:
 			Output = self.Message_Decrypter(Cipher = str(Message))
@@ -141,9 +142,10 @@ if __name__ == "__main__":
 		Message = Message.Incoming_Message
 		for i in Message:
 			try:
-				Message = i[0]
-				print(Message)
-				print("Passed!"+ "\n Message From:	 " + str(i[0]) + "\n Message:	 "+ str(i[1]))
+				if i[0] != False:
+					print("Passed!"+ "\n Message From:	 " + str(i[0]) + "\n Message:	 "+ str(i[1]))
+				else:
+					print("No New Message for you.....")
 			except:
 				print("No New Message for you.")
 		sleep(Configuration().RefreshRate)

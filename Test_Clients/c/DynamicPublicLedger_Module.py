@@ -55,8 +55,8 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 
 	def Check_User_In_Ledger(self, ScanAll = False):
 		self.Present = False
+		self.Calculate_Block()
 		if ScanAll == True:
-			self.Calculate_Block()
 			Entries = self.PublicIOTA.Receive(Start = int(self.Block-self.Replay), Stop = self.Block+1).Message
 		else:
 			Entries = self.PublicIOTA.Receive(Start = self.Block, Stop = self.Block +1).Message
@@ -138,15 +138,14 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		Message = str(Decryption().SymmetricDecryption(CipherText = CipherText, SecretKey = Symmetric_Key))
 		try:
 			Message = b64decode(Message).split(self.MessageIdentifier)
-			print(Message)
 			if Verify == True:
 				self.Check_User_In_Ledger(ScanAll = True)
 				for i in self.All_Accounts:
 					Verification = Decryption().SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
 					if Verification == True:
-						return [i[0], Message[0], Verification] # --> Output is [Address, Message, Verification_Of_Signature]
-					else:
-						return ["UNKNOWN", Message[0], False] # --> Output is [Address, Message, Verification_Of_Signature]
+						return [i[0], b64decode(Message[0]), Verification] # --> Output is [Address, Message, Verification_Of_Signature]
+				if Verification == False:
+					return ["UNKNOWN", b64decode(Message[0]), False] # --> Output is [Address, Message, Verification_Of_Signature]
 		except:
 			return False
 
@@ -178,3 +177,11 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 			Trajectory.insert(Ran_Index, SendTo)
 		if len(Trajectory) > 0:
 			return Trajectory
+
+class Trusted_Paths():
+	def __init__(self):
+		pass
+
+	def Build_LedgerDB(self):
+		pass
+		return self

@@ -55,8 +55,8 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 
 	def Check_User_In_Ledger(self, ScanAll = False):
 		self.Present = False
+		self.Calculate_Block()
 		if ScanAll == True:
-			self.Calculate_Block()
 			Entries = self.PublicIOTA.Receive(Start = int(self.Block-self.Replay), Stop = self.Block+1).Message
 		else:
 			Entries = self.PublicIOTA.Receive(Start = self.Block, Stop = self.Block +1).Message
@@ -136,18 +136,16 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 					CipherText = str(StartTag2 + cipher2 + cipher + EndTag)
 
 		Message = str(Decryption().SymmetricDecryption(CipherText = CipherText, SecretKey = Symmetric_Key))
-		print(Message)
 		try:
 			Message = b64decode(Message).split(self.MessageIdentifier)
-			print(Message)
 			if Verify == True:
 				self.Check_User_In_Ledger(ScanAll = True)
 				for i in self.All_Accounts:
 					Verification = Decryption().SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
 					if Verification == True:
-						return [i[0], Message[0], Verification] # --> Output is [Address, Message, Verification_Of_Signature]
-					else:
-						return ["UNKNOWN", Message[0], False] # --> Output is [Address, Message, Verification_Of_Signature]
+						return [i[0], b64decode(Message[0]), Verification] # --> Output is [Address, Message, Verification_Of_Signature]
+				if Verification == False:
+					return ["UNKNOWN", b64decode(Message[0]), False] # --> Output is [Address, Message, Verification_Of_Signature]
 		except:
 			return False
 
@@ -179,3 +177,33 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 			Trajectory.insert(Ran_Index, SendTo)
 		if len(Trajectory) > 0:
 			return Trajectory
+
+class Trusted_Paths(Tools, Configuration):
+	def __init__(self):
+		Tools.__init__(self)
+		Configuration.__init__(self)
+		self.Ledger_Accounts_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Ledger_Accounts_File)
+		self.Last_Block_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Last_Block)
+		self.Current_Block = Dynamic_Public_Ledger().Calculate_Block().Block
+
+	def Build_LedgerDB(self):
+		self.Build_Directory(directory = str(self.UserFolder+"/"+self.PathFolder))
+		self.Build_DB(File = self.Ledger_Accounts_Dir)
+		self.Build_DB(File = self.Last_Block_Dir)
+
+		#Read the file when the user was last online
+		Block_Number = self.Read_From_Json(directory = self.Last_Block_Dir)
+
+		#If the dictionary is empty
+		if Block_Number == {}:
+			Block_Number = self.Add_To_Dictionary(Input_Dictionary = Block_Number, Entry_Label = "Block", Entry_Value = self.Current_Block)
+			self.Write_To_Json(directory = self.Last_Block_Dir, Dictionary = Block_Number)
+			self.Last_Block_Online = self.Current_Block
+		else:
+			self.Last_Block_Online = self.Block_Number
+		return self
+
+	def Gather_Ledger_Accounts(self):
+		self.Build_LedgerDB()
+		self.Replay = int(self.Current_Block - self.Last_Block_Online)
+		return self

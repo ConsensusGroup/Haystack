@@ -17,15 +17,10 @@ class Inbox_Manager(Initialization, Tools):
         self.NotRelayed_Dir = str(self.InboxGenerator(Output_Directory = True).OutstandingRelay+"/"+Configuration().NotRelayedMessage+".txt")
 
     def Create_DB(self):
-        def Build_DB(File):
-            Empty_Dictionary = {}
-            if self.Check_File(File = File) == False:
-                self.Write_To_Json(directory = File, Dictionary = Empty_Dictionary, setting = "w+")
-
         #Here we check if the DB files are already written.
-        Build_DB(File = self.Received_Dir)
-        Build_DB(File = self.Relayed_Dir)
-        Build_DB(File = self.NotRelayed_Dir)
+        self.Build_DB(File = self.Received_Dir)
+        self.Build_DB(File = self.Relayed_Dir)
+        self.Build_DB(File = self.NotRelayed_Dir)
         return self
 
     def Read_Tangle(self, IOTA_Instance, Block):

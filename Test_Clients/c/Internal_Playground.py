@@ -7,6 +7,6 @@ DLP_Accounts = [['ARYZVRYDAURNVNJ9APJOQPUYDBIAAHOSMGHECSOXZSZQHWPEBOBZIPIDOMVBWT
 #print(DLP.Ledger_Accounts)
 
 
-Message = "This test has the path set to 4. This means the message will take different topological paths"
+Message = "This test has the path set to 4.>>>>"
 
 print(Sender_Client().Send_Message(Message = Message, ReceiverAddress = DLP_Accounts[0][0], PublicKey = DLP_Accounts[0][1], DifferentPaths = 1))
