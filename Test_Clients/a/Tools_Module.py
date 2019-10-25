@@ -77,6 +77,12 @@ class Tools(Configuration):
 		Input_Dictionary.pop(Label)
 		return Input_Dictionary
 
+	def Dictionary_To_List(self, Dictionary):
+		Output_List = []
+		for label, value in Dictionary.items():
+			Output_List.append([label, value])
+		return Output_List
+
 	def NonAsciiEncode(self, string):
 		converted = unicode(string, "utf-8").encode('unicode_escape')
 		return converted

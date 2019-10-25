@@ -8,7 +8,7 @@ from IOTA_Module import *
 from User_Modules import User_Profile, Initialization
 from base64 import b64encode, b64decode
 from DynamicPublicLedger_Module import *
-from Inbox_Module import Inbox_Manager
+from Inbox_Module import Inbox_Manager, Trusted_Paths
 from time import sleep
 from Tools_Module import Tools
 
@@ -28,7 +28,6 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 		MessageShrapnells = Dynamic_Public_Ledger().Shrapnell_Function(Message)
 		Symmetric_Key = MessageShrapnells[1]
 		for i in MessageShrapnells[0]:
-			print(i)
 			for x in range(self.DifferentPaths):
 				ToSend = self.Prepare_Message(i, ReceiverAddress, PublicKey, Symmetric_Key)
 				hashed = self.PrivateIOTA.Send(ReceiverAddress = ToSend[1], Message = ToSend[0])
@@ -65,10 +64,8 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 		self.Block = Dynamic_Public_Ledger().Calculate_Block().Block
 
 	def Check_Inbox(self):
-		self.Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Block)
 		self.Incoming_Message = []
 		for BundleHash, Message in self.Read_From_Json(directory = self.NotRelayed_Dir).items():
-			#try:
 			Output = self.Message_Decrypter(Cipher = str(Message))
 			self.Postprocessing_Packet(ToSend = Output, Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
 			self.Incoming_Message = self.Reconstruction_Of_Message(True)
@@ -138,8 +135,10 @@ if __name__ == "__main__":
 	Inbox_Manager().Create_DB()
 	while RunTime == True:
 		Dynamic_Public_Ledger().Start_Ledger()
+		Trusted_Paths().Catch_Up()
 		Message = Receiver_Client().Check_Inbox()
 		Message = Message.Incoming_Message
+		print("Here")
 		for i in Message:
 			try:
 				if i[0] != False:

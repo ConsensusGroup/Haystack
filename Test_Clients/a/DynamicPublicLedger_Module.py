@@ -10,6 +10,7 @@ import math, random
 from base64 import b64encode, b64decode
 from iota import TryteString
 from Tools_Module import *
+#from Inbox_Module import Inbox_Manager
 
 class Dynamic_Public_Ledger(Configuration, User_Profile):
 	def __init__(self):
@@ -53,11 +54,16 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		Signed_ToSubmit = b64encode(str(ToSubmit+self.Identifier+Encryption().MessageSignature(ToSign = ToSubmit).Signature))
 		return Signed_ToSubmit
 
-	def Check_User_In_Ledger(self, ScanAll = False):
+	def Check_User_In_Ledger(self, ScanAll = False, From = "", To = ""):
 		self.Present = False
 		self.Calculate_Block()
 		if ScanAll == True:
-			Entries = self.PublicIOTA.Receive(Start = int(self.Block-self.Replay), Stop = self.Block+1).Message
+			if From != "" and To != "":
+				Entries = self.PublicIOTA.Receive(Start = int(From), Stop = int(To)).Message
+			else:
+				Entries = []
+				All_Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Ledger_Accounts_File))
+				self.All_Accounts = Tools().Dictionary_To_List(Dictionary = All_Accounts)
 		else:
 			Entries = self.PublicIOTA.Receive(Start = self.Block, Stop = self.Block +1).Message
 		for i in Entries:
@@ -177,33 +183,3 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 			Trajectory.insert(Ran_Index, SendTo)
 		if len(Trajectory) > 0:
 			return Trajectory
-
-class Trusted_Paths(Tools, Configuration):
-	def __init__(self):
-		Tools.__init__(self)
-		Configuration.__init__(self)
-		self.Ledger_Accounts_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Ledger_Accounts_File)
-		self.Last_Block_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Last_Block)
-		self.Current_Block = Dynamic_Public_Ledger().Calculate_Block().Block
-
-	def Build_LedgerDB(self):
-		self.Build_Directory(directory = str(self.UserFolder+"/"+self.PathFolder))
-		self.Build_DB(File = self.Ledger_Accounts_Dir)
-		self.Build_DB(File = self.Last_Block_Dir)
-
-		#Read the file when the user was last online
-		Block_Number = self.Read_From_Json(directory = self.Last_Block_Dir)
-
-		#If the dictionary is empty
-		if Block_Number == {}:
-			Block_Number = self.Add_To_Dictionary(Input_Dictionary = Block_Number, Entry_Label = "Block", Entry_Value = self.Current_Block)
-			self.Write_To_Json(directory = self.Last_Block_Dir, Dictionary = Block_Number)
-			self.Last_Block_Online = self.Current_Block
-		else:
-			self.Last_Block_Online = self.Block_Number
-		return self
-
-	def Gather_Ledger_Accounts(self):
-		self.Build_LedgerDB()
-		self.Replay = int(self.Current_Block - self.Last_Block_Online)
-		return self

@@ -10,6 +10,7 @@ import math, random
 from base64 import b64encode, b64decode
 from iota import TryteString
 from Tools_Module import *
+#from Inbox_Module import Inbox_Manager
 
 class Dynamic_Public_Ledger(Configuration, User_Profile):
 	def __init__(self):
@@ -53,11 +54,16 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		Signed_ToSubmit = b64encode(str(ToSubmit+self.Identifier+Encryption().MessageSignature(ToSign = ToSubmit).Signature))
 		return Signed_ToSubmit
 
-	def Check_User_In_Ledger(self, ScanAll = False):
+	def Check_User_In_Ledger(self, ScanAll = False, From = "", To = ""):
 		self.Present = False
 		self.Calculate_Block()
 		if ScanAll == True:
-			Entries = self.PublicIOTA.Receive(Start = int(self.Block-self.Replay), Stop = self.Block+1).Message
+			if From != "" and To != "":
+				Entries = self.PublicIOTA.Receive(Start = int(From), Stop = int(To)).Message
+			else:
+				Entries = []
+				All_Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Ledger_Accounts_File))
+				self.All_Accounts = Tools().Dictionary_To_List(Dictionary = All_Accounts)
 		else:
 			Entries = self.PublicIOTA.Receive(Start = self.Block, Stop = self.Block +1).Message
 		for i in Entries:
@@ -177,11 +183,3 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 			Trajectory.insert(Ran_Index, SendTo)
 		if len(Trajectory) > 0:
 			return Trajectory
-
-class Trusted_Paths():
-	def __init__(self):
-		pass
-
-	def Build_LedgerDB(self):
-		pass
-		return self
