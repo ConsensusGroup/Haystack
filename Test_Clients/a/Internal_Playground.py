@@ -15,7 +15,12 @@ def Test_Paths():
     x = Trusted_Paths()
     x.Catch_Up()
 
+def Test_Trajectory():
+    x = Trusted_Paths()
+    x.Ping_Function()
+
 if __name__ == "__main__":
     #Test_Paths()
     #Test_DPL()
-    Test_Sender(Message = "This is seems to work very well but I want to test this again. The update has local storage of the addresses being uplaoded to the ledger!", DLP_Accounts = DLP_Accounts)
+    Test_Sender(Message = "The update has local storage of the addresses being uplaoded to the ledger123234423545!", DLP_Accounts = DLP_Accounts)
+    #Test_Trajectory()

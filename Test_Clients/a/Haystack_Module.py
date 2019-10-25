@@ -41,10 +41,12 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 		Trajectory.reverse()
 		CipherText = ""
 		Cipher = ""
+		Repeat = True
 		for i in range(len(Trajectory)):
 			Address = Trajectory[i][0]
 			if i != int(len(Trajectory)-1):
-				if ReceiverAddress == Trajectory[i+1][0]:
+				if ReceiverAddress == Trajectory[i+1][0] and Repeat == True:
+					Repeat = False
 					PublicKey = Trajectory[i+1][1]
 					Cipher = self.Layering_Encryption(PlainText = str(Cipher + self.MessageIdentifier + Message), PublicKey = PublicKey, Address = Address, SymKey = Symmetric_Key)
 				else:
@@ -138,7 +140,6 @@ if __name__ == "__main__":
 		Trusted_Paths().Catch_Up()
 		Message = Receiver_Client().Check_Inbox()
 		Message = Message.Incoming_Message
-		print("Here")
 		for i in Message:
 			try:
 				if i[0] != False:

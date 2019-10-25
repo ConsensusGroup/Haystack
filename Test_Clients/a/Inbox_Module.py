@@ -158,3 +158,8 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 			self.Write_To_Json(directory = self.Ledger_Accounts_Dir, Dictionary = Accounts)
 			Inbox_Manager().Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Current_Block)
 		return self
+
+	def Ping_Function(self):
+		Client_Public_Address = self.PrivateIOTA.Generate_Address(Index = self.Current_Block)
+		Client_Public_Key = self.PublicKey
+		return self

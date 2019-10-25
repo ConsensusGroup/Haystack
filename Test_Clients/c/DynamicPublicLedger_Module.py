@@ -155,31 +155,22 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		except:
 			return False
 
-	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False, index = 0):
+	def Path_Finder(self, ReceiverAddress= "", PublicKey = ""):
 		self.Calculate_Block().Block
-		if index == 0:
-			self.Check_User_In_Ledger()
+		self.Check_User_In_Ledger()
+
 		Trajectory = []
 		while len(Trajectory) != self.MaxBounce:
 			Relayer = random.choice(self.Ledger_Accounts)
-			if Relayer[0] != ReceiverAddress:
-				Trajectory.append(Relayer)
+			Trajectory.append(Relayer)
 
-		if PingFunction == True:
-			ReceiverAddress = self.PrivateIOTA.Generate_Address(Index = self.Block)
-			PublicKey = self.PublicKey
-			if len(Trajectory) == 0:
-				Relayer = self.Ledger_Accounts[random.randrange(0, len(self.Ledger_Accounts))]
-				Trajectory.append(Relayer)
-			Ran_Index = len(Trajectory)
-
-		elif len(Trajectory) >= 0 and PingFunction == False:
-			Ran_Index = int(round(random.uniform(0, len(Trajectory))))
-		else:
-			pass
-
-		if ReceiverAddress != "" and PublicKey != "" and len(Trajectory) >= 0:
+		#This condition is there to exclude DUMMY messages
+		if ReceiverAddress != "" and PublicKey != "":
 			SendTo = [ReceiverAddress,PublicKey]
+			Ran_Index = int(round(random.uniform(0, len(Trajectory))))
 			Trajectory.insert(Ran_Index, SendTo)
-		if len(Trajectory) > 0:
-			return Trajectory
+		else:
+			Relayer = random.choice(self.Ledger_Accounts)
+			Trajectory.append(Relayer)
+
+		return Trajectory
