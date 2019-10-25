@@ -40,6 +40,11 @@ class Tools(Configuration):
 		elif Return_Dir == True:
 			return directory
 
+	def Build_DB(self, File):
+		Empty_Dictionary = {}
+		if self.Check_File(File = File) == False:
+			self.Write_To_Json(directory = File, Dictionary = Empty_Dictionary, setting = "w+")
+
 	def Split(self, string, length = Configuration().Default_Size):
 		return [string[start:start+length] for start in range(0, len(string), length)]
 
@@ -71,6 +76,12 @@ class Tools(Configuration):
 	def Remove_From_Dictionary(self, Input_Dictionary, Label):
 		Input_Dictionary.pop(Label)
 		return Input_Dictionary
+
+	def Dictionary_To_List(self, Dictionary):
+		Output_List = []
+		for label, value in Dictionary.items():
+			Output_List.append([label, value])
+		return Output_List
 
 	def NonAsciiEncode(self, string):
 		converted = unicode(string, "utf-8").encode('unicode_escape')

@@ -10,16 +10,16 @@ import math, random
 from base64 import b64encode, b64decode
 from iota import TryteString
 from Tools_Module import *
+#from Inbox_Module import Inbox_Manager
 
 class Dynamic_Public_Ledger(Configuration, User_Profile):
-	def __init__(self, BlockTime):
+	def __init__(self):
 		Configuration.__init__(self)
 		User_Profile.__init__(self)
 		self.PublicIOTA = IOTA_Module(Seed = self.PublicSeed)
 		self.PrivateIOTA = IOTA_Module(Seed = self.Private_Seed)
 		self.Ledger_Accounts = []
 		self.All_Accounts = []
-		self.BlockTime = BlockTime
 
 	def Calculate_Block(self):
 		#Check the current time of the Tangle
@@ -54,11 +54,16 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		Signed_ToSubmit = b64encode(str(ToSubmit+self.Identifier+Encryption().MessageSignature(ToSign = ToSubmit).Signature))
 		return Signed_ToSubmit
 
-	def Check_User_In_Ledger(self, ScanAll = False):
+	def Check_User_In_Ledger(self, ScanAll = False, From = "", To = ""):
 		self.Present = False
+		self.Calculate_Block()
 		if ScanAll == True:
-			self.Calculate_Block()
-			Entries = self.PublicIOTA.Receive(Start = int(self.Block-self.Replay), Stop = self.Block+1).Message
+			if From != "" and To != "":
+				Entries = self.PublicIOTA.Receive(Start = int(From), Stop = int(To)).Message
+			else:
+				Entries = []
+				All_Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Ledger_Accounts_File))
+				self.All_Accounts = Tools().Dictionary_To_List(Dictionary = All_Accounts)
 		else:
 			Entries = self.PublicIOTA.Receive(Start = self.Block, Stop = self.Block +1).Message
 		for i in Entries:
@@ -74,34 +79,37 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 
 	def Start_Ledger(self):
 		hashed = None
-		for i in range(1):
-			Block = self.Calculate_Block().Block
-			try:
-				if self.Check_User_In_Ledger().Present == False and hashed == None:
-					hashed = self.PrivateIOTA.Send(ReceiverAddress = [self.PublicIOTA.Generate_Address(Index = self.Block)], Message = [self.Submit_User()])
-			except TypeError:
-				hashed = None
-			#This block prevents duplicate Tx
-			if self.ChangeBlock == True:
-				hashed = None
-				self.Ledger_Accounts = []
+		Block = self.Calculate_Block().Block
+		try:
+			if self.Check_User_In_Ledger().Present == False and hashed == None:
+				hashed = self.PrivateIOTA.Send(ReceiverAddress = [self.PublicIOTA.Generate_Address(Index = self.Block)], Message = [self.Submit_User()])
+		except TypeError:
+			hashed = None
+
+		#This block prevents duplicate Tx
+		if self.ChangeBlock == True:
+			hashed = None
+			self.Ledger_Accounts = []
 		return self
 
-	def Shrapnell_Function(self, Message_PlainText = ""):
+	def Shrapnell_Function(self, Message_PlainText = "", Encrypted_Shrapnell = True):
 		Message_Signed = Message_PlainText + self.MessageIdentifier + Encryption().MessageSignature(ToSign = Message_PlainText).Signature
 		Symmetric_Message_Key = Key_Generation().Secret_Key()
 		Symmetrically_Encrypted = Encryption().SymmetricEncryption(PlainText = b64encode(Message_Signed), SecretKey = Symmetric_Message_Key)
-		Fragments = Tools().Split(string = Symmetrically_Encrypted, length = self.Default_Size) ###Encrypted Communication
-		#Fragments = Tools().Split(string = Message_PlainText, length = self.Default_Size) ###Plain Communication
+		if Encrypted_Shrapnell == True:
+			Fragments = Tools().Split(string = Symmetrically_Encrypted, length = self.Default_Size) ###Encrypted Communication
+		else:
+			Fragments = Tools().Split(string = Message_PlainText, length = self.Default_Size) ###Plain Communication
+
 		Fragment_Tags = []
 		if len(Fragments) > 1:
 			while len(Fragments)-1 != len(Fragment_Tags):
 				Fragment = str(Key_Generation().Secret_Key(length = 2).encode('hex'))
-				if Fragment not in Fragments:
+				if Fragment not in Fragment_Tags:
 					Fragment_Tags.append(Fragment)
 
 		Fragment_Tags.append(self.MessageIdentifier)
-		Fragment_Tags.insert(0, self.MessageIdentifier)
+		Fragment_Tags.insert(0, str(self.MessageIdentifier))
 		Shrapnells = []
 		for i in range(len(Fragments)):
 			Fragment = str(Fragment_Tags[i]+Fragments[i]+Fragment_Tags[i+1])
@@ -123,28 +131,29 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 				Piece = CipherText
 			StartTag = Piece[0:len(self.MessageIdentifier)]
 			EndTag = Piece[len(Piece)-len(self.MessageIdentifier):]
-			cipher = Piece[4:len(Piece)-len(self.MessageIdentifier)]
+			cipher = Piece[len(self.MessageIdentifier):len(Piece)-len(self.MessageIdentifier)]
 			for j in Temp:
 				StartTag2 = j[0:len(self.MessageIdentifier)]
 				cipher2 = j[len(self.MessageIdentifier):len(j)-len(self.MessageIdentifier)]
-				EndTag2 = j[len(j)-4:]
+				EndTag2 = j[len(j)-len(self.MessageIdentifier):]
 				if StartTag2 == EndTag and EndTag!=self.MessageIdentifier:
 					CipherText = str(StartTag + cipher + cipher2 + EndTag2)
 				elif StartTag == EndTag2 and StartTag != self.MessageIdentifier:
 					CipherText = str(StartTag2 + cipher2 + cipher + EndTag)
 
-		Message = Decryption().SymmetricDecryption(CipherText = CipherText, SecretKey = Symmetric_Key)
-		Message = b64decode(Message).split(self.MessageIdentifier)
-		if Verify == True and len(Message) == 2:
-			self.Check_User_In_Ledger(ScanAll = True)
-			for i in self.All_Accounts:
-				Verification = Decryption().SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
-				if Verification == True:
-					return [i[0], Message[0], Verification] # --> Output is [Address, Message, Verification_Of_Signature]
-		elif Verify == False:
-			return ["UNKNOWN", Message[0], False] # --> Output is [Address, Message, Verification_Of_Signature]
-		else:
-			return []
+		Message = str(Decryption().SymmetricDecryption(CipherText = CipherText, SecretKey = Symmetric_Key))
+		try:
+			Message = b64decode(Message).split(self.MessageIdentifier)
+			if Verify == True:
+				self.Check_User_In_Ledger(ScanAll = True)
+				for i in self.All_Accounts:
+					Verification = Decryption().SignatureVerification(ToVerify = Message[0], PublicKey = i[1], Signature = Message[1]).Verified
+					if Verification == True:
+						return [i[0], b64decode(Message[0]), Verification] # --> Output is [Address, Message, Verification_Of_Signature]
+				if Verification == False:
+					return ["UNKNOWN", b64decode(Message[0]), False] # --> Output is [Address, Message, Verification_Of_Signature]
+		except:
+			return False
 
 	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False, index = 0):
 		self.Calculate_Block().Block
