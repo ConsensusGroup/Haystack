@@ -28,8 +28,10 @@ class Configuration:
 		#Trusted Paths variables
 		self.PathFolder = "TrustedPaths"
 		self.Ledger_Accounts_File = "LedgerAccounts.txt"
+		self.Current_Ledger_Accounts = "Current_LedgerAccounts.txt"
 		self.TrustedPaths = "Trajectoies.txt"
 		self.Last_Block = "LastOnline.txt"
+		self.Trajectory_Ping = "Pings.txt"
 
 		self.GenesisTime = 100000000
 		self.BlockTime = 100000000

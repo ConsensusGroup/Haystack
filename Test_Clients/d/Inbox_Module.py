@@ -150,16 +150,12 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 			self.Write_To_Json(directory = self.Last_Block_Dir, Dictionary = self.Add_To_Dictionary(Input_Dictionary = {}, Entry_Label = "Block", Entry_Value = Upperbound_Block-1))
 			self.Last_Block_Online = Upperbound_Block
 
+
 		if self.Current_Block == self.Last_Block_Online:
-			for i in Dynamic_Public_Ledger().Check_User_In_Ledger().All_Accounts:
+			for i in Dynamic_Public_Ledger().Check_User_In_Ledger(Current_Ledger = True).Ledger_Accounts:
 				Accounts = self.Add_To_Dictionary(Input_Dictionary = Accounts, Entry_Label = i[0], Entry_Value = i[1])
 
 			#Here we save the current DB incase there is an abrupt closing of the application
 			self.Write_To_Json(directory = self.Ledger_Accounts_Dir, Dictionary = Accounts)
 			Inbox_Manager().Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Current_Block)
-		return self
-
-	def Ping_Function(self):
-		Client_Public_Address = self.PrivateIOTA.Generate_Address(Index = self.Current_Block)
-		Client_Public_Key = self.PublicKey
 		return self
