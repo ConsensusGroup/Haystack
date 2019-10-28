@@ -169,9 +169,9 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 
 		Trajectory = []
 		while len(Trajectory) != self.MaxBounce:
-			Relayer = random.choice(Ledger_Accounts)
+			Relayer = random.SystemRandom().choice(Ledger_Accounts)
 			Trajectory.append(Relayer)
-
+			
 		#This condition is there to exclude DUMMY messages
 		if ReceiverAddress != "" and PublicKey != "":
 			SendTo = [ReceiverAddress,PublicKey]

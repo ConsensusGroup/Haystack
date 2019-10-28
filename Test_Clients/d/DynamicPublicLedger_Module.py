@@ -165,13 +165,13 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 
 	def Path_Finder(self, ReceiverAddress= "", PublicKey = ""):
 		self.Calculate_Block().Block
-		Ledger_Accounts = self.Check_User_In_Ledger(Current_Ledger = True)
+		Ledger_Accounts = self.Check_User_In_Ledger(Current_Ledger = True).Ledger_Accounts
 
 		Trajectory = []
 		while len(Trajectory) != self.MaxBounce:
-			Relayer = random.choice(Ledger_Accounts)
+			Relayer = random.SystemRandom().choice(Ledger_Accounts)
 			Trajectory.append(Relayer)
-
+			
 		#This condition is there to exclude DUMMY messages
 		if ReceiverAddress != "" and PublicKey != "":
 			SendTo = [ReceiverAddress,PublicKey]

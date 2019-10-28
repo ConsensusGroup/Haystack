@@ -18,12 +18,10 @@ def Test_Paths():
 def Test_Trajectory():
     x = Trusted_Paths()
     y = Sender_Client().Ping_Function()
+    #x.Scan_Paths()
 
 if __name__ == "__main__":
     #Test_Paths()
     #Test_DPL()
     #Test_Sender(Message = "This is another test of the DLP>>>>>", DLP_Accounts = DLP_Accounts)
     Test_Trajectory()
-
-
-    #Note: comment line 34 in Haystack_Module.py

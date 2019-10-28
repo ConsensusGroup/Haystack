@@ -28,8 +28,8 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 
 		MessageShrapnells = Dynamic_Public_Ledger().Shrapnell_Function(Message_PlainText = Message, Encrypted_Shrapnell = Encrypted)
 		Symmetric_Key = MessageShrapnells[1]
-		for i in MessageShrapnells[0]:
-			for x in range(self.DifferentPaths):
+		for x in range(self.DifferentPaths):
+			for i in MessageShrapnells[0]:
 				ToSend = self.Prepare_Message(i, ReceiverAddress, PublicKey, Symmetric_Key)
 				hashed = self.PrivateIOTA.Send(ReceiverAddress = ToSend[1], Message = ToSend[0])
 				if Ping_Function == True:
@@ -81,7 +81,7 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 			Fragment = i[0]
 			Path_Taken = i[1]
 			Path_Taken.reverse()
-			Trajectory_As_String = str(Random + "@:"+str(Current_Block))
+			Trajectory_As_String = str(Current_Block)
 			for x in i[1]:
 				if x[0] == '0'*81:
 					Address = "X"
@@ -177,6 +177,7 @@ if __name__ == "__main__":
 	while RunTime == True:
 		Dynamic_Public_Ledger().Start_Ledger()
 		Trusted_Paths().Catch_Up()
+		Trusted_Paths().Scan_Paths()
 		Message = Receiver_Client().Check_Inbox()
 		Message = Message.Incoming_Message
 		for i in Message:

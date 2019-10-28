@@ -32,6 +32,7 @@ class Configuration:
 		self.TrustedPaths = "Trajectoies.txt"
 		self.Last_Block = "LastOnline.txt"
 		self.Trajectory_Ping = "Pings.txt"
+		self.Trusted_Nodes = "TrustedNodes.txt"
 
 		self.GenesisTime = 100000000
 		self.BlockTime = 100000000
