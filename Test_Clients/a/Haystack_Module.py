@@ -20,31 +20,38 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 		User_Profile.__init__(self)
 		self.PrivateIOTA = IOTA_Module(Seed = self.Private_Seed)
 
-	def Send_Message(self, Message, ReceiverAddress, PublicKey, DifferentPaths = False):
+	def Send_Message(self, Message, ReceiverAddress, PublicKey, DifferentPaths = "", Encrypted = True, Ping_Function = False):
 		Sent_And_Confirmed = []
 		Message = b64encode(Message)
-		if isinstance(DifferentPaths, int):
+		if isinstance(DifferentPaths, int) == True:
 			self.DifferentPaths = DifferentPaths
-		MessageShrapnells = Dynamic_Public_Ledger().Shrapnell_Function(Message)
+
+		MessageShrapnells = Dynamic_Public_Ledger().Shrapnell_Function(Message_PlainText = Message, Encrypted_Shrapnell = Encrypted)
 		Symmetric_Key = MessageShrapnells[1]
-		for i in MessageShrapnells[0]:
-			for x in range(self.DifferentPaths):
+		for x in range(self.DifferentPaths):
+			for i in MessageShrapnells[0]:
 				ToSend = self.Prepare_Message(i, ReceiverAddress, PublicKey, Symmetric_Key)
 				hashed = self.PrivateIOTA.Send(ReceiverAddress = ToSend[1], Message = ToSend[0])
-				Sent_And_Confirmed.append([ReceiverAddress, hashed, ToSend[1]])  #[Receiver, Hash, Relayer]
+				if Ping_Function == True:
+					Sent_And_Confirmed.append([i, ToSend[2]])
+				else:
+					Sent_And_Confirmed.append([ReceiverAddress, hashed, ToSend[1]])  #[Receiver, Hash, Relayer]
 		return Sent_And_Confirmed
 
 	def Prepare_Message(self, Message = "", ReceiverAddress = "", PublicKey = "", Symmetric_Key = ""):
+
 		#Here we generate the Trajectory of the message
 		Trajectory = Dynamic_Public_Ledger().Path_Finder(ReceiverAddress, PublicKey)
 		Trajectory.append(["0"*81, "######"])
 		Trajectory.reverse()
 		CipherText = ""
 		Cipher = ""
+		Repeat = True
 		for i in range(len(Trajectory)):
 			Address = Trajectory[i][0]
 			if i != int(len(Trajectory)-1):
-				if ReceiverAddress == Trajectory[i+1][0]:
+				if ReceiverAddress == Trajectory[i+1][0] and Repeat == True:
+					Repeat = False
 					PublicKey = Trajectory[i+1][1]
 					Cipher = self.Layering_Encryption(PlainText = str(Cipher + self.MessageIdentifier + Message), PublicKey = PublicKey, Address = Address, SymKey = Symmetric_Key)
 				else:
@@ -52,7 +59,41 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 					Cipher = self.Layering_Encryption(PlainText = Cipher, PublicKey = PublicKey, Address = Address)
 			else:
 				Receiving_Address = Address
-		return [Cipher, Receiving_Address]
+		return [Cipher, Receiving_Address, Trajectory]
+
+	def Ping_Function(self):
+		#Define directory and read the file
+		Ping_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Trajectory_Ping)
+		Tools().Build_DB(File = Ping_Dir)
+		Ping_Dictionary = Tools().Read_From_Json(directory = Ping_Dir)
+
+		#Generate information about the client
+		Current_Block = Dynamic_Public_Ledger().Calculate_Block().Block
+		Client_Public_Address = self.PrivateIOTA.Generate_Address(Index = Current_Block)
+		Client_Public_Key = self.PublicKey
+
+		#Here we generate a random number used to identify the ping to a trajectory.
+		Random = str(Key_Generation().Secret_Key).encode("hex")[:self.Default_Size-20]
+		Data = self.Send_Message(Message = Random, ReceiverAddress = Client_Public_Address, PublicKey = Client_Public_Key, Ping_Function = True)
+
+		#Here we record the messaage as plaintext as a label and the trajectory as a string.
+		for i in Data:
+			Fragment = i[0]
+			Path_Taken = i[1]
+			Path_Taken.reverse()
+			Trajectory_As_String = str(Current_Block)
+			for x in i[1]:
+				if x[0] == '0'*81:
+					Address = "X"
+				elif x[0] == Client_Public_Address:
+					Address = "LOCALCLIENT"
+				else:
+					Address = x[0]
+				Trajectory_As_String = str(Trajectory_As_String + "-->" + Address)
+				Ping_Dictionary = Tools().Add_To_Dictionary(Input_Dictionary = Ping_Dictionary, Entry_Label = Fragment, Entry_Value = Trajectory_As_String)
+			Tools().Write_To_Json(directory = Ping_Dir, Dictionary = Ping_Dictionary)
+
+		return self
 
 class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, User_Profile, Dynamic_Public_Ledger, Inbox_Manager):
 
@@ -136,9 +177,9 @@ if __name__ == "__main__":
 	while RunTime == True:
 		Dynamic_Public_Ledger().Start_Ledger()
 		Trusted_Paths().Catch_Up()
+		Trusted_Paths().Scan_Paths()
 		Message = Receiver_Client().Check_Inbox()
 		Message = Message.Incoming_Message
-		print("Here")
 		for i in Message:
 			try:
 				if i[0] != False:

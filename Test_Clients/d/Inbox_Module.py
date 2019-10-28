@@ -83,6 +83,9 @@ class Inbox_Manager(Initialization, Tools):
             Unique_SymKeys.append(i)
         Unique_SymKeys = set(Unique_SymKeys)
 
+        #Check if there are any messages that could be used for the ping function.
+        Trusted_Paths().Scan_Paths()
+
         Message = []
         for i in Unique_SymKeys:
             Pieces_From_SymKey = []
@@ -112,6 +115,9 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 		User_Profile.__init__(self)
 		self.Ledger_Accounts_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Ledger_Accounts_File)
 		self.Last_Block_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Last_Block)
+		self.Ping_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Trajectory_Ping)
+		self.Incoming_Shrapnells = str(self.UserFolder+"/"+self.MessageFolder+"/"+Configuration().ReceivedMessages+"/"+Configuration().ReceivedMessages+".txt")
+		self.TrustedNodes_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Trusted_Nodes)
 		self.Current_Block = Dynamic_Public_Ledger().Calculate_Block().Block +1
 		self.PrivateIOTA = IOTA_Module(Seed = self.Private_Seed)
 
@@ -142,7 +148,6 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 			else:
 				Upperbound_Block = self.Last_Block_Online + BlockDifference
 
-			print("From: " + str(self.Last_Block_Online)+ " To: " +str(Upperbound_Block))
 			for i in Dynamic_Public_Ledger().Check_User_In_Ledger(ScanAll = True, From = self.Last_Block_Online, To = Upperbound_Block).All_Accounts:
 				Accounts = self.Add_To_Dictionary(Input_Dictionary = Accounts, Entry_Label = i[0], Entry_Value = i[1])
 
@@ -151,12 +156,53 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 			self.Write_To_Json(directory = self.Last_Block_Dir, Dictionary = self.Add_To_Dictionary(Input_Dictionary = {}, Entry_Label = "Block", Entry_Value = Upperbound_Block-1))
 			self.Last_Block_Online = Upperbound_Block
 
+
 		if self.Current_Block == self.Last_Block_Online:
-			print("Refreshing HayStack")
-			for i in Dynamic_Public_Ledger().Check_User_In_Ledger().All_Accounts:
+			for i in Dynamic_Public_Ledger().Check_User_In_Ledger(Current_Ledger = True).Ledger_Accounts:
 				Accounts = self.Add_To_Dictionary(Input_Dictionary = Accounts, Entry_Label = i[0], Entry_Value = i[1])
 
 			#Here we save the current DB incase there is an abrupt closing of the application
 			self.Write_To_Json(directory = self.Ledger_Accounts_Dir, Dictionary = Accounts)
 			Inbox_Manager().Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Current_Block)
+		return self
+
+	def Scan_Paths(self):
+		self.Build_DB(File = self.TrustedNodes_Dir)
+		if Dynamic_Public_Ledger().Calculate_Block().ChangeBlock == True:
+			self.Write_To_Json(directory = self.Ping_Dir, Dictionary = {})
+		Pings = self.Read_From_Json(directory = self.Ping_Dir)
+		Shrapnells = self.Read_From_Json(directory = self.Incoming_Shrapnells)
+		Pings_List = self.Dictionary_To_List(Dictionary = Pings)
+		Shrapnells_List = self.Dictionary_To_List(Dictionary = Shrapnells)
+		Found_Pings = []
+
+		#Search for ping fragments in the message bank and record them.
+		for i in Shrapnells_List:
+			for ping in Pings_List:
+				if ping[0] in i[0]:
+					Found_Pings.append(ping[0])
+
+		#Split the ping string to find non lazy addresses
+		Trusted_Nodes = []
+		for entry in Found_Pings:
+			String_split = Pings[entry].split("-->")
+			Block = String_split.pop(0)
+			Temp = []
+			for node in String_split:
+				if node == "LOCALCLIENT":
+					Break = True
+				else:
+					Break = False
+					Temp.append([node, Block])
+				if Break == True:
+					for i in Temp:
+						Trusted_Nodes.append(i)
+
+
+		#Read current DB
+		Nodes_Dictionary = self.Read_From_Json(directory = self.TrustedNodes_Dir)
+		for i in Trusted_Nodes:
+			Nodes_Dictionary = self.Add_To_Dictionary(Input_Dictionary = Nodes_Dictionary, Entry_Label = str(i[0]), Entry_Value = i[1])
+
+		self.Write_To_Json(directory = self.TrustedNodes_Dir, Dictionary = Nodes_Dictionary)
 		return self
