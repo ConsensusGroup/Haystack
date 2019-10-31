@@ -174,14 +174,16 @@ if __name__ == "__main__":
 	RunTime = True
 	Initialization().InboxGenerator()
 	Inbox_Manager().Create_DB()
+	Trusted_Paths().Build_LedgerDB()
 	while RunTime == True:
 		Dynamic_Public_Ledger().Start_Ledger()
 		Trusted_Paths().Catch_Up()
-		Trusted_Paths().Scan_Paths()
+		#Trusted_Paths().Scan_Paths()
 		Message = Receiver_Client().Check_Inbox()
 		Message = Message.Incoming_Message
 		for i in Message:
 			try:
+				print(i)
 				if i[0] != False:
 					print("Passed!"+ "\n Message From:	 " + str(i[0]) + "\n Message:	 "+ str(i[1]))
 				else:
