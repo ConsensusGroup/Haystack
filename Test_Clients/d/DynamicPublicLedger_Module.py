@@ -24,7 +24,6 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 	def Calculate_Block(self):
 		#Check the current time of the Tangle
 		Current = self.PublicIOTA.LatestTangleTime().TangleTime
-
 		#Calculate the current Block and use as index for current address
 		Blockfloat = float((Current - self.GenesisTime) / float(self.BlockTime))
 		self.Block = math.trunc(Blockfloat)
@@ -75,13 +74,13 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 			Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts))
 			Entries = self.PublicIOTA.Receive(Start = self.Block, Stop = self.Block +1).Message
 			for i in Entries:
-#				try:
-				Address = b64decode(i).split(self.Identifier)[0]
-				if Address == self.PrivateIOTA.Generate_Address(Index = self.Block):
-					self.Present = True
-				Accounts = self.Validate_User(Ledger_Entry = i, Dictionary = Accounts)
-#				except:
-				pass
+				try:
+					Address = b64decode(i).split(self.Identifier)[0]
+					if Address == self.PrivateIOTA.Generate_Address(Index = self.Block):
+						self.Present = True
+					Accounts = self.Validate_User(Ledger_Entry = i, Dictionary = Accounts)
+				except:
+					pass
 			Tools().Write_To_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts), Dictionary = Accounts)
 		return self
 
@@ -171,7 +170,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		while len(Trajectory) != self.MaxBounce:
 			Relayer = random.SystemRandom().choice(Ledger_Accounts)
 			Trajectory.append(Relayer)
-			
+
 		#This condition is there to exclude DUMMY messages
 		if ReceiverAddress != "" and PublicKey != "":
 			SendTo = [ReceiverAddress,PublicKey]
@@ -181,5 +180,4 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		else:
 			Relayer = random.choice(Ledger_Accounts)
 			Trajectory.append(Relayer)
-
 		return Trajectory

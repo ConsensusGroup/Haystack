@@ -76,9 +76,8 @@ if __name__ == "__main__":
 
 
 ## TODO:
-# - Adding a method to monitor at which block the client was last online so they can catch up to latest ledger time
-# - Add the ability to choose a full encryption (Shrapnells) or simply have that in PlainText --> Need to implement this in the Inbox_Manager under Reconstruction_Of_Message
 # - Add the ping function and build "Trusted Paths" (Next major milestone)
 # - Work on storing entries in the public ledger locally and pruge after XXX blocks
 # - Build a message purger i.e. remove incomplete messages after some time
+# - Resolve the glitch where setting MaxBounce = 0 causes an error in the b64 padding.
 # - Figure out the UI at some later stage

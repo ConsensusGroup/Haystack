@@ -107,12 +107,13 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 	def Check_Inbox(self):
 		self.Incoming_Message = []
 		for BundleHash, Message in self.Read_From_Json(directory = self.NotRelayed_Dir).items():
-			Output = self.Message_Decrypter(Cipher = str(Message))
-			self.Postprocessing_Packet(ToSend = Output, Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
-			self.Incoming_Message = self.Reconstruction_Of_Message(True)
-			#except:
-			#	print("Failed Incoming TX")
-			#	self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
+			try:
+				Output = self.Message_Decrypter(Cipher = str(Message))
+				self.Postprocessing_Packet(ToSend = Output, Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
+				self.Incoming_Message = self.Reconstruction_Of_Message(True)
+			except:
+				print("Failed Incoming TX")
+				self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
 		return self
 
 	def Message_Decrypter(self, Cipher):
@@ -174,10 +175,16 @@ if __name__ == "__main__":
 	RunTime = True
 	Initialization().InboxGenerator()
 	Inbox_Manager().Create_DB()
+	Trusted_Paths().Build_LedgerDB()
+	For_Ping = 1
 	while RunTime == True:
+		if "0" == str(float(For_Ping)/float(Configuration().Ping_Rate)).split(".")[1]:
+			Sender_Client().Ping_Function()
+			print("Sending Ping @: "+str(For_Ping))
+		For_Ping = For_Ping +1
 		Dynamic_Public_Ledger().Start_Ledger()
 		Trusted_Paths().Catch_Up()
-		Trusted_Paths().Scan_Paths()
+		#Trusted_Paths().Scan_Paths()
 		Message = Receiver_Client().Check_Inbox()
 		Message = Message.Incoming_Message
 		for i in Message:
