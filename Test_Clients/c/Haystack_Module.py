@@ -111,8 +111,9 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 				Output = self.Message_Decrypter(Cipher = str(Message))
 				self.Postprocessing_Packet(ToSend = Output, Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
 				self.Incoming_Message = self.Reconstruction_Of_Message(True)
+				self.Error = False
 			except:
-				print("Failed Incoming TX")
+				self.Error = True
 				self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
 		return self
 

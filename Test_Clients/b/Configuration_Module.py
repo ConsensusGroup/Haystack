@@ -33,8 +33,13 @@ class Configuration:
 		self.Last_Block = "LastOnline.txt"
 		self.Trajectory_Ping = "Pings.txt"
 		self.Trusted_Nodes = "TrustedNodes.txt"
-		self.Ping_Rate = 20 #After how many iterations of going through checking inbox. i.e. after 6 times check inbox send ping 
+		self.Ping_Rate = 20 #After how many iterations of going through checking inbox. i.e. after 6 times check inbox send ping
 
+		#Contact Module parameters
+		self.Contacts_File = "Contacts.txt"
+		self.Contacts_Folder = "Contacts"
+
+		#Other parameters
 		self.GenesisTime = 1572000000000
 		self.BlockTime = 1000000
 		self.LowerBound = 0.9999 #Percentage of block cycle completion.
