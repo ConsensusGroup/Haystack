@@ -8,6 +8,11 @@ from Contact_Module import Contact_Client
 from User_Modules import Initialization, User_Profile
 from Inbox_Module import Inbox_Manager, Trusted_Paths
 from Haystack_Module import Sender_Client, Receiver_Client
+from Configuration_Module import Configuration
+import config
+import threading
+from time import sleep
+import random
 
 class HayStack():
 	def __init__(self):
@@ -55,7 +60,7 @@ class HayStack():
 		Initialization().InboxGenerator()
 		User_Profile()
 		Inbox_Manager().Create_DB()
-		Contact_Client().Build_Directory()
+		Contact_Client().Build_ContactDB()
 		Trusted_Paths().Build_LedgerDB()
 		#Output = Nothing
 		return self
@@ -79,28 +84,62 @@ class HayStack():
 		#Output = If there are errors in relaying, True (Bool); else False (Bool)
 		return [Incoming_Message, Sending_Error]
 
-	def Sync_To_Lastest_Block(self):
-		Trusted_Paths().Catch_Up()
-		## TODO: Find a way to read within the while loop
 
-	def Return_Trusted_Paths(self):
-		## # TODO: Write a script that reads back all the checked nodes
+##### This section of the API is responsible for running background services
+class Run_HayStack_Client(threading.Thread):
+	def __init__(self, Function):
+		threading.Thread.__init__(self)
+		self.RunTime = True
+		self.Function = Function
+		self.Echo = ""
+
+	def run(self):
+		z = 0
+		if self.Function == "Dynamic_Public_Ledger":
+			while self.RunTime:
+				x = Dynamic_Public_Ledger()
+				x.Start_Ledger()
+				if x.ChangeBlock == True:
+					delay = 10
+				elif x.ChangeBlock == False:
+					delay = 5
+
+				self.Echo = str(x.Calculate_Block().Block)
+				HayStack().Refresh_Contact_List()
+				for i in range(delay):
+					sleep(1)
+					if self.RunTime == False:
+						break
+
+		elif self.Function == "Sync_Messanger":
+			while self.RunTime:
+				x = Trusted_Paths()
+				x.Catch_Up()
+				self.Echo = x.Output
+				HayStack().Inbox()
+				for i in range(10):
+					sleep(1)
+					if self.RunTime == False:
+						break
+
+				x.Scan_Paths()
+
+		elif self.Function == "Ping_Function":
+			while self.RunTime:
+				try:
+					HayStack().Ping_Function()
+				except IndexError:
+					print("Error...")
+				delay = random.randint(1, 240)
+				for i in range(delay):
+					sleep(1)
+					if self.RunTime == False:
+						break
 		return self
 
-	def Run_HayStack_Client(self):
-		# TODO: Write a script that automatically initiates the Haystack protocol. See Haystack non interactive mode section in Haystack_Module
+	def Output(self):
+		return self.Echo
+
+	def Terminate(self):
+		self.RunTime = False
 		return self
-
-
-
-
-
-
-
-
-
-
-if __name__ == "__main__":
-	print(HayStack().Get_Current_Ledger_Addresses().BlockNumber)
-	print(HayStack().Get_Current_Address().Current_Address)
-	print(Haystack().Get_Current_Address().Current_Address)

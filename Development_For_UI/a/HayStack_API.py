@@ -11,6 +11,8 @@ from Haystack_Module import Sender_Client, Receiver_Client
 from Configuration_Module import Configuration
 import config
 import threading
+from time import sleep
+import random
 
 class HayStack():
 	def __init__(self):
@@ -83,20 +85,57 @@ class HayStack():
 		return [Incoming_Message, Sending_Error]
 
 
-
-from time import sleep
-
+##### This section of the API is responsible for running background services
 class Run_HayStack_Client(threading.Thread):
-	def __init__(self):
+	def __init__(self, Function):
 		threading.Thread.__init__(self)
 		self.RunTime = True
+		self.Function = Function
+		self.Echo = ""
 
 	def run(self):
 		z = 0
-		while self.RunTime:
-			z = z +1
-			self.Echo = z
-			sleep(0.5)
+		if self.Function == "Dynamic_Public_Ledger":
+			while self.RunTime:
+				x = Dynamic_Public_Ledger()
+				x.Start_Ledger()
+				if x.ChangeBlock == True:
+					delay = 10
+				elif x.ChangeBlock == False:
+					delay = 5
+
+				self.Echo = str(x.Calculate_Block().Block)
+				HayStack().Refresh_Contact_List()
+				for i in range(delay):
+					sleep(1)
+					if self.RunTime == False:
+						break
+
+		elif self.Function == "Sync_Messanger":
+			while self.RunTime:
+				x = Trusted_Paths()
+				x.Catch_Up()
+				self.Echo = x.Output
+				HayStack().Inbox()
+				for i in range(10):
+					sleep(1)
+					if self.RunTime == False:
+						break
+
+				x.Scan_Paths()
+
+		elif self.Function == "Ping_Function":
+			while self.RunTime:
+				try:
+					HayStack().Ping_Function()
+				except IndexError:
+					print("Error...")
+				delay = random.randint(1, 240)
+				for i in range(delay):
+					sleep(1)
+					if self.RunTime == False:
+						break
+		return self
 
 	def Output(self):
 		return self.Echo
@@ -104,49 +143,3 @@ class Run_HayStack_Client(threading.Thread):
 	def Terminate(self):
 		self.RunTime = False
 		return self
-
-	######################################## Work in progress for later ##########################################
-	# def Sync_To_Lastest_Block(self):
-	# 	for i in Trusted_Paths().Catch_Up():
-	# 		print(i)
-	#
-	# def Return_Trusted_Paths(self):
-	# 	## # TODO: Write a script that reads back all the checked nodes
-	# 	return self
-	#
-	# def Start_Ledger(self):
-	# 	Dynamic_Public_Ledger().Start_Ledger()
-	# 	return self
-	#
-	# def Run_HayStack_Client(self):
-	# 	global RunTime
-	# 	RunTime = True
-	# 	self.Build_All_Directories()
-	# 	For_Ping = 1
-	# 	while RunTime == True:
-	# 		if "0" == str(float(For_Ping)/float(Configuration().Ping_Rate)).split(".")[1]:
-	# 			self.Ping_Function()
-	# 			print("Sending Ping @: "+str(For_Ping))
-	# 		For_Ping = For_Ping +1
-	# 		Dynamic_Public_Ledger().Start_Ledger()
-	# 		Trusted_Paths().Catch_Up()
-	# 		#Trusted_Paths().Scan_Paths()
-	# 		Message = Receiver_Client().Check_Inbox()
-	# 		Message = Message.Incoming_Message
-	# 		print(Message)
-	#
-	# 		for i in Message:
-	# 			try:
-	# 				if i[0] != False:
-	# 					print("Passed!"+ "\n Message From:	 " + str(i[0]) + "\n Message:	 "+ str(i[1]))
-	# 				else:
-	# 					print("No New Message for you.....")
-	# 			except:
-	# 				print("No New Message for you.")
-	# 		sleep(Configuration().RefreshRate)
-	#
-	#
-	#
-	#
-	# 	return self
-	#

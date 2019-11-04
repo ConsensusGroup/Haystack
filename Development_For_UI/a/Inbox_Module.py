@@ -83,9 +83,6 @@ class Inbox_Manager(Initialization, Tools):
             Unique_SymKeys.append(i)
         Unique_SymKeys = set(Unique_SymKeys)
 
-        #Check if there are any messages that could be used for the ping function.
-        Trusted_Paths().Scan_Paths()
-
         Message = []
         for i in Unique_SymKeys:
             Pieces_From_SymKey = []
@@ -118,7 +115,7 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 		self.Ping_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Trajectory_Ping)
 		self.Incoming_Shrapnells = str(self.UserFolder+"/"+self.MessageFolder+"/"+Configuration().ReceivedMessages+"/"+Configuration().ReceivedMessages+".txt")
 		self.TrustedNodes_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Trusted_Nodes)
-		self.Current_Block = Dynamic_Public_Ledger().Calculate_Block().Block +1
+		self.Current_Block = Dynamic_Public_Ledger().Calculate_Block().Block+1
 		self.PrivateIOTA = IOTA_Module(Seed = self.Private_Seed)
 
 	def Build_LedgerDB(self):
@@ -147,31 +144,34 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 			self.Write_To_Json(directory = self.TrustedNodes_Dir, Dictionary = {})
 			self.Write_To_Json(directory = self.Ping_Dir, Dictionary = {})
 
-		self.Last_Block_Online = self.Last_Block_Online -1
-		while self.Current_Block != self.Last_Block_Online:
-			BlockDifference = int(self.Current_Block - self.Last_Block_Online)
-			if BlockDifference >= self.Replay:
-				Upperbound_Block = self.Last_Block_Online + self.Replay
+		self.Last_Block_Online = self.Last_Block_Online-1
+		BlockDifference = int(self.Current_Block - self.Last_Block_Online)
+		if BlockDifference >= self.Replay:
+			Upperbound_Block = self.Last_Block_Online + self.Replay
+			Sync = "Syncing node."
+		else:
+			Upperbound_Block = self.Last_Block_Online + BlockDifference
+			if BlockDifference == 1:
+				Sync = "Node synced."
 			else:
-				Upperbound_Block = self.Last_Block_Online + BlockDifference
+				Sync = "Syncing node."
 
-			for i in Dynamic_Public_Ledger().Check_User_In_Ledger(ScanAll = True, From = self.Last_Block_Online, To = Upperbound_Block).All_Accounts:
+		for i in Dynamic_Public_Ledger().Check_User_In_Ledger(ScanAll = True, From = self.Last_Block_Online, To = Upperbound_Block).All_Accounts:
+			Accounts = self.Add_To_Dictionary(Input_Dictionary = Accounts, Entry_Label = i[0], Entry_Value = i[1])
+
+		self.Write_To_Json(directory = self.Ledger_Accounts_Dir, Dictionary = Accounts)
+		Inbox_Manager().Read_Tangle(IOTA_Instance = self.PrivateIOTA, From = self.Last_Block_Online, To = Upperbound_Block)
+		self.Write_To_Json(directory = self.Last_Block_Dir, Dictionary = self.Add_To_Dictionary(Input_Dictionary = {}, Entry_Label = "Block", Entry_Value = Upperbound_Block))
+		self.Output = str("Scanning from: "+str(self.Last_Block_Online) + " To: "+str(Upperbound_Block)+" Status: "+Sync)
+		self.Last_Block_Online = Upperbound_Block
+
+		if self.Current_Block == self.Last_Block_Online:
+			for i in Dynamic_Public_Ledger().Check_User_In_Ledger().Ledger_Accounts:
 				Accounts = self.Add_To_Dictionary(Input_Dictionary = Accounts, Entry_Label = i[0], Entry_Value = i[1])
+			Inbox_Manager().Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Current_Block)
+		#Here we save the current DB incase there is an abrupt closing of the application
+		self.Write_To_Json(directory = self.Ledger_Accounts_Dir, Dictionary = Accounts)
 
-			self.Write_To_Json(directory = self.Ledger_Accounts_Dir, Dictionary = Accounts)
-			Inbox_Manager().Read_Tangle(IOTA_Instance = self.PrivateIOTA, From = self.Last_Block_Online, To = Upperbound_Block)
-			self.Write_To_Json(directory = self.Last_Block_Dir, Dictionary = self.Add_To_Dictionary(Input_Dictionary = {}, Entry_Label = "Block", Entry_Value = Upperbound_Block))
-			Output = str("Scanning from: "+str(self.Last_Block_Online) + " To: "+str(Upperbound_Block))
-			#yield Output
-			print(Output)
-			self.Last_Block_Online = Upperbound_Block
-
-			if self.Current_Block == self.Last_Block_Online:
-				for i in Dynamic_Public_Ledger().Check_User_In_Ledger().Ledger_Accounts:
-					Accounts = self.Add_To_Dictionary(Input_Dictionary = Accounts, Entry_Label = i[0], Entry_Value = i[1])
-				Inbox_Manager().Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Current_Block)
-			#Here we save the current DB incase there is an abrupt closing of the application
-			self.Write_To_Json(directory = self.Ledger_Accounts_Dir, Dictionary = Accounts)
 		return self
 
 	def Scan_Paths(self):

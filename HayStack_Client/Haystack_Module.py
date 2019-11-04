@@ -188,6 +188,7 @@ if __name__ == "__main__":
 		#Trusted_Paths().Scan_Paths()
 		Message = Receiver_Client().Check_Inbox()
 		Message = Message.Incoming_Message
+
 		for i in Message:
 			try:
 				if i[0] != False:

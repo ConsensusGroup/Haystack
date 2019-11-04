@@ -161,7 +161,9 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 			self.Write_To_Json(directory = self.Ledger_Accounts_Dir, Dictionary = Accounts)
 			Inbox_Manager().Read_Tangle(IOTA_Instance = self.PrivateIOTA, From = self.Last_Block_Online, To = Upperbound_Block)
 			self.Write_To_Json(directory = self.Last_Block_Dir, Dictionary = self.Add_To_Dictionary(Input_Dictionary = {}, Entry_Label = "Block", Entry_Value = Upperbound_Block))
-			print("Scanning from: "+str(self.Last_Block_Online) + " To: "+str(Upperbound_Block))
+			Output = str("Scanning from: "+str(self.Last_Block_Online) + " To: "+str(Upperbound_Block))
+			#yield Output
+			print(Output)
 			self.Last_Block_Online = Upperbound_Block
 
 			if self.Current_Block == self.Last_Block_Online:
