@@ -44,7 +44,7 @@ class Contact_Client(Configuration, Tools):
 					Temp_List.append(i[0])
 			self.Other_Identities = [self.Public_Key_Found, Temp_List]
 
-			if User_Name != "" and len(self.Other_Identities) != 0:
+			if User_Name != "":
 				Contact_List = self.Read_From_Json(directory = self.Contacts_File_Dir)
 				if self.Label_In_Dictionary(Input_Dictionary = Contact_List, Label = User_Name) == False:
 					Contact_List = self.Add_To_Dictionary(Input_Dictionary = Contact_List, Entry_Label = User_Name, Entry_Value = str(self.Other_Identities))
@@ -102,3 +102,14 @@ class Contact_Client(Configuration, Tools):
 			Address = i[0]
 			self.Retrieve_UserName_From_Address(Address_To_Search = Address)
 		return self
+
+	def Saved_Contacts(self):
+		Clients_Contacts = self.Read_From_Json(directory = self.Contacts_File_Dir)
+		Contacts_As_List = self.Dictionary_To_List(Dictionary = Clients_Contacts)
+		Contact_Names = []
+		for i in Contacts_As_List:
+			Contact_Names.append(i[0])
+		return Contact_Names
+
+if __name__ == "__main__":
+	Contact_Client().Saved_Contacts()

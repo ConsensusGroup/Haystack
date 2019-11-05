@@ -17,7 +17,7 @@ class Inbox_Manager(Initialization, Tools):
         self.Received_Dir = str(self.InboxGenerator(Output_Directory = True).ReceivedMessages+"/"+Configuration().ReceivedMessages+".txt")
         self.Relayed_Dir = str(self.InboxGenerator(Output_Directory = True).RelayedMessages+"/"+Configuration().RelayedMessage+".txt")
         self.NotRelayed_Dir = str(self.InboxGenerator(Output_Directory = True).OutstandingRelay+"/"+Configuration().NotRelayedMessage+".txt")
-
+	self.Message_Inbox = self.UserFolder+"/"+self.MessageFolder+"/"+Configuration().ReceivedMessages+"/"+self.Inbox+".txt"
     def Create_DB(self):
         #Here we check if the DB files are already written.
         self.Build_DB(File = self.Received_Dir)
@@ -54,7 +54,6 @@ class Inbox_Manager(Initialization, Tools):
         NotRelayed_Dictionary = self.Read_From_Json(directory = self.NotRelayed_Dir)
         if Next_Address != '0'*81:
             Relayed_Bundle_Hash = str(IOTA_Instance.Send(ReceiverAddress = Next_Address, Message = Cipher))
-            print("Bundle Hash: " + Relayed_Bundle_Hash)
             Relayed_Dictionary = self.Add_To_Dictionary(Input_Dictionary = Relayed_Dictionary, Entry_Label = Hash_Of_Incoming_Tx, Entry_Value = str(Relayed_Bundle_Hash))
             NotRelayed_Dictionary = self.Remove_From_Dictionary(Input_Dictionary = NotRelayed_Dictionary, Label = Hash_Of_Incoming_Tx)
         elif Next_Address == '0'*81:
@@ -70,6 +69,26 @@ class Inbox_Manager(Initialization, Tools):
         if self.Label_In_Dictionary(Input_Dictionary = Client_Dictionary, Label = Message_PlainText) == False:
             self.Add_To_Dictionary(Input_Dictionary = Client_Dictionary, Entry_Label = Message_PlainText, Entry_Value = self.String_To_Base64(Symmetric_Message_Key))
             self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
+        return self
+
+    def Completed_Messages(self, Input= []): #Add the message input later
+        #First create the inbox DB
+        self.Build_DB(File = self.Message_Inbox)
+        Inbox = self.Read_From_Json(directory = self.Message_Inbox)
+        Current_TangleTime = Dynamic_Public_Ledger().PublicIOTA.LatestTangleTime().TangleTime
+        for i in Input:
+            From_Address = i[0]
+            try:
+                int(i[1],16)
+                Ping = True
+            except ValueError:
+                Message = self.String_To_Base64(String = i[1])
+                Ping = False
+
+            if Ping == False:
+                Inbox = self.Add_To_Dictionary(Input_Dictionary = Inbox, Entry_Label = Message, Entry_Value = From_Address)
+
+        self.Write_To_Json(directory = self.Message_Inbox, Dictionary = Inbox)
         return self
 
     def Reconstruction_Of_Message(self, Verify):
@@ -100,6 +119,7 @@ class Inbox_Manager(Initialization, Tools):
                     Client_Dictionary = self.Remove_From_Dictionary(Input_Dictionary = Client_Dictionary, Label = z)
                 self.Write_To_Json(directory = self.Received_Dir, Dictionary = Client_Dictionary)
 
+        self.Completed_Messages(Input = Message)
         if len(Message) == 0:
             return [[False, False, False]]
         else:
@@ -212,3 +232,7 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 
 		self.Write_To_Json(directory = self.TrustedNodes_Dir, Dictionary = Nodes_Dictionary)
 		return self
+
+if __name__ == "__main__":
+	x = Inbox_Manager()
+	x.Completed_Messages()
