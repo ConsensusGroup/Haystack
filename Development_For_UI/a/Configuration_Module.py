@@ -25,6 +25,7 @@ class Configuration:
 		self.ReceivedMessages = "ReceivedMessages"
 		self.RelayedMessage = "RelayedMessages"
 		self.NotRelayedMessage = "NotRelayedMessage"
+		self.Inbox = "Inbox"
 
 		#Trusted Paths variables
 		self.PathFolder = "TrustedPaths"

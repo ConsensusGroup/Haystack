@@ -22,7 +22,8 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 
 	def Send_Message(self, Message, ReceiverAddress, PublicKey, DifferentPaths = "", Encrypted = True, Ping_Function = False):
 		Sent_And_Confirmed = []
-		Message = b64encode(Message)
+        Current_TangleTime = Dynamic_Public_Ledger().PublicIOTA.LatestTangleTime().TangleTime
+		Message = b64encode(Message+self.Identifier+Current_TangleTime)
 		if isinstance(DifferentPaths, int) == True:
 			self.DifferentPaths = DifferentPaths
 
@@ -106,6 +107,7 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 
 	def Check_Inbox(self):
 		self.Incoming_Message = []
+		self.Error = False
 		for BundleHash, Message in self.Read_From_Json(directory = self.NotRelayed_Dir).items():
 			try:
 				Output = self.Message_Decrypter(Cipher = str(Message))

@@ -37,8 +37,17 @@ class HayStack():
 
 	def Find_From_Address(self, Address):
 		Identities = Contact_Client().Link_Address_To_PubKey(Address_To_Search = Address).Other_Identities
-		#Output = [PublicKey(string), known by other addresses(list)]
-		return Identities
+		if Identities[0] != "0"*81:
+			return Identities
+			#Output = [PublicKey(string), known by other addresses(list)]
+		else:
+			return False
+			#Output = False (bool)
+
+
+	def Add_Address(self, Address, Username):
+		Contact_Client().Link_Address_To_PubKey(Address_To_Search = Address, User_Name = Username)
+		return self
 
 	def Delete_From_Contacts(self, Username):
 		Contact_Client().Delete_From_Contacts(User_Name = Username)
@@ -54,6 +63,11 @@ class HayStack():
 		Contact_Client().Update_Contacts()
 		#Output = Nothing
 		return self
+
+	def Return_Contact_List(self):
+		Contact_Names = Contact_Client().Saved_Contacts()
+		#Output = [List of usernames]
+		return Contact_Names
 
 	def Build_All_Directories(self):
 		Initialization().Build_Application()
@@ -94,7 +108,6 @@ class Run_HayStack_Client(threading.Thread):
 		self.Echo = ""
 
 	def run(self):
-		z = 0
 		if self.Function == "Dynamic_Public_Ledger":
 			while self.RunTime:
 				x = Dynamic_Public_Ledger()
