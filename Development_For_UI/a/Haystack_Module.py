@@ -22,8 +22,8 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 
 	def Send_Message(self, Message, ReceiverAddress, PublicKey, DifferentPaths = "", Encrypted = True, Ping_Function = False):
 		Sent_And_Confirmed = []
-        Current_TangleTime = Dynamic_Public_Ledger().PublicIOTA.LatestTangleTime().TangleTime
-		Message = b64encode(Message+self.Identifier+Current_TangleTime)
+		Current_TangleTime = Dynamic_Public_Ledger().PublicIOTA.LatestTangleTime().TangleTime
+		Message = b64encode(Message) #+self.Identifier+str(Current_TangleTime))  <------ Need to fix this!!!!
 		if isinstance(DifferentPaths, int) == True:
 			self.DifferentPaths = DifferentPaths
 
@@ -172,31 +172,3 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 			else:
 				Runtime = False
 				return [Cipher, Next_Address]
-
-#This will simply run the client in non interactive mode.
-if __name__ == "__main__":
-	RunTime = True
-	Initialization().InboxGenerator()
-	Inbox_Manager().Create_DB()
-	Trusted_Paths().Build_LedgerDB()
-	For_Ping = 1
-	while RunTime == True:
-		if "0" == str(float(For_Ping)/float(Configuration().Ping_Rate)).split(".")[1]:
-			Sender_Client().Ping_Function()
-			print("Sending Ping @: "+str(For_Ping))
-		For_Ping = For_Ping +1
-		Dynamic_Public_Ledger().Start_Ledger()
-		Trusted_Paths().Catch_Up()
-		#Trusted_Paths().Scan_Paths()
-		Message = Receiver_Client().Check_Inbox()
-		Message = Message.Incoming_Message
-
-		for i in Message:
-			try:
-				if i[0] != False:
-					print("Passed!"+ "\n Message From:	 " + str(i[0]) + "\n Message:	 "+ str(i[1]))
-				else:
-					print("No New Message for you.....")
-			except:
-				print("No New Message for you.")
-		sleep(Configuration().RefreshRate)

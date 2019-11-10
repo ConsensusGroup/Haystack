@@ -44,7 +44,6 @@ class HayStack():
 			return False
 			#Output = False (bool)
 
-
 	def Add_Address(self, Address, Username):
 		Contact_Client().Link_Address_To_PubKey(Address_To_Search = Address, User_Name = Username)
 		return self
@@ -57,6 +56,16 @@ class HayStack():
 	def Username_From_Address(self, Address):
 		Output = Contact_Client().Retrieve_UserName_From_Address(Address_To_Search = Address)
 		#if Address in contact list; --> Output = [Saved Username (string), PublicKey(string), Has the address been found? (Bool)] otherwise a simple False(bool) will be returned
+		return Output
+
+	def Address_From_Username(self, Username):
+		Output = Contact_Client().Username_To_Address(Username = Username)
+		#Output: if contact present a list is returned [Public Key, Address], else 'None' is returned
+		return Output
+
+	def Last_Seen_Address(self, PublicKey):
+		Output = Contact_Client().Get_Current_Address_From_PublicKey(PublicKey = PublicKey)
+		#Output: String if address included in current ledger, else 'None' is returned
 		return Output
 
 	def Refresh_Contact_List(self):
@@ -98,6 +107,11 @@ class HayStack():
 		#Output = If there are errors in relaying, True (Bool); else False (Bool)
 		return [Incoming_Message, Sending_Error]
 
+	def Stored_Messages(self):
+		Output = Inbox_Manager().Read_Stored_Messages()
+		#Output: If there are messages a list is returned [Message, User] else an empty list is returned []
+		return Output
+
 
 ##### This section of the API is responsible for running background services
 class Run_HayStack_Client(threading.Thread):
@@ -110,15 +124,20 @@ class Run_HayStack_Client(threading.Thread):
 	def run(self):
 		if self.Function == "Dynamic_Public_Ledger":
 			while self.RunTime:
-				x = Dynamic_Public_Ledger()
-				x.Start_Ledger()
-				if x.ChangeBlock == True:
-					delay = 10
-				elif x.ChangeBlock == False:
-					delay = 5
+				try:
+					x = Dynamic_Public_Ledger()
+					x.Start_Ledger()
+					if x.ChangeBlock == True:
+						delay = 10
+					elif x.ChangeBlock == False:
+						delay = 5
 
-				self.Echo = str(x.Calculate_Block().Block)
-				HayStack().Refresh_Contact_List()
+					self.Echo = str(x.Calculate_Block().Block)
+					HayStack().Refresh_Contact_List()
+				except:
+					print("There appears to be a problem with your IRI node.")
+					delay = 120
+
 				for i in range(delay):
 					sleep(1)
 					if self.RunTime == False:
@@ -129,20 +148,24 @@ class Run_HayStack_Client(threading.Thread):
 				x = Trusted_Paths()
 				x.Catch_Up()
 				self.Echo = x.Output
-				HayStack().Inbox()
-				for i in range(10):
-					sleep(1)
-					if self.RunTime == False:
-						break
+				try:
+					HayStack().Inbox()
+					for i in range(10):
+						sleep(1)
+						if self.RunTime == False:
+							break
 
-				x.Scan_Paths()
+					x.Scan_Paths()
+				except KeyError:
+					print("Error with Sync")
 
 		elif self.Function == "Ping_Function":
 			while self.RunTime:
 				try:
 					HayStack().Ping_Function()
+					print("Ping has been sent.")
 				except IndexError:
-					print("Error...")
+					print("Ping Error...")
 				delay = random.randint(1, 240)
 				for i in range(delay):
 					sleep(1)

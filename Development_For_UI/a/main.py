@@ -106,7 +106,7 @@ def Non_Interactive_Client():
 			PingFunction.Terminate()
 			break
 		else:
-			print("Node status: "+Sync_Messanger.Output()+" Block Height: "+DynamicPublicLedger.Output())
+			print("Node status: "+Sync_Messanger.Output()+" Block Height: "+str(DynamicPublicLedger.Output()))
 
 class Interactive_Client():
 	def __init__(self):
@@ -127,13 +127,18 @@ class Interactive_Client():
 		return self
 
 	def Third_Screen(self):
-		#self.Background(Action = "Start")
+		self.Background(Action = "Start")
 		while True:
 			User_Choice = raw_input("Please choose one of the options: \n a) Compose Message \n b) Check Inbox \n c) Add or remove Contacts \n d) Go back \n>>> ")
 			if User_Choice == "a":
 				self.Message_Composer()
 			elif User_Choice == "b":
-				pass
+				Output = HayStack().Stored_Messages()
+				if len(Output) == 0:
+					print("You have no messages")
+				else:
+					for i in Output:
+						print("From: "+i[1]+"--- Message: "+i[0])
 			elif User_Choice == "c":
 				User_Choice= raw_input("Chose one: \na) Add contact \nb) Remove contact\nc) Go Back \n>>>")
 				if User_Choice == "a":
@@ -156,7 +161,7 @@ class Interactive_Client():
 				elif User_Choice == "c":
 					break
 			elif User_Choice == "d":
-				#self.Background(Action = "Stop")
+				self.Background(Action = "Stop")
 				break
 			else:
 				print("Not a valid choice.")
@@ -194,29 +199,47 @@ class Interactive_Client():
 
 			return self
 
-
+	def Address_Book(self):
+		List_of_contacts = HayStack().Return_Contact_List()
+		print("Please enter the recipient. For multiple recipients write ',' between each.")
+		for i in List_of_contacts:
+			print(i+"\n")
+		User_Input = raw_input('>>> ')
+		Users = User_Input.split(',')
+		Recipients = []
+		for i in Users:
+			Output = HayStack().Address_From_Username(Username = str(i))
+			if isinstance(Output, list) == True:
+				Recipients.append(Output)
+		return Recipients
 
 	def Message_Composer(self):
 		while True:
 			User_Choice = raw_input("Please choose one of the options: \n a) Get recipient from address book \n b) From public ledger \n c) Go Back \n>>> ")
 			if User_Choice == "a":
-				pass
+				Recipients = self.Address_Book()
+				if len(Recipients) != 0:
+					print("Enter your message:\n")
+					Message = raw_input(">>> ")
+					for i in Recipients:
+						PublicKey = i[0]
+						Current_Address = HayStack().Last_Seen_Address(PublicKey = PublicKey)
+						if Current_Address != None:
+							Address = Current_Address
+						else:
+							Address = i[1][0]
+
+						Receipt = HayStack().Send_Message(Message = Message, ReceiverAddress = Address, PublicKey = PublicKey, DifferentPaths = Configuration().DifferentPaths, Encrypted = True)
+						print("Message sent. Transaction hash: "+str(Receipt[0][1]))
+					break
+				else:
+					print("Nothing entered. Returning to previous menu.")
+					break
 			elif User_Choice == "b":
 				pass
 			elif User_Choice == "c":
 				break
 		return self
-
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
 	#Check if the user is using this software for the first time

@@ -8,6 +8,7 @@ from Configuration_Module import Configuration
 from DynamicPublicLedger_Module import Dynamic_Public_Ledger
 from User_Modules import User_Profile
 from IOTA_Module import IOTA_Module
+from Contact_Module import Contact_Client
 
 class Inbox_Manager(Initialization, Tools):
     def __init__(self):
@@ -76,10 +77,12 @@ class Inbox_Manager(Initialization, Tools):
         self.Build_DB(File = self.Message_Inbox)
         Inbox = self.Read_From_Json(directory = self.Message_Inbox)
         Current_TangleTime = Dynamic_Public_Ledger().PublicIOTA.LatestTangleTime().TangleTime
+
         for i in Input:
             From_Address = i[0]
             try:
-                int(i[1],16)
+                hex = i[1].split(self.Identifier)
+                int(hex,16)
                 Ping = True
             except ValueError:
                 Message = self.String_To_Base64(String = i[1])
@@ -125,6 +128,23 @@ class Inbox_Manager(Initialization, Tools):
         else:
             return Message
 
+    def Read_Stored_Messages(self):
+        Dictionary = self.Read_From_Json(directory = self.Message_Inbox)
+        Saved_Messages = self.Dictionary_To_List(Dictionary = Dictionary)
+        Data = []
+        for i in Saved_Messages:
+            Message = self.Base64_To_String(Encoded = i[0])
+            From_Address = i[1]
+
+            #Now check if the address is in the address book.
+            Output = Contact_Client().Retrieve_UserName_From_Address(Address_To_Search = From_Address)
+            if Output == False:
+                User = From_Address
+            elif isinstance(Output, list):
+                User = str(Output[0]+" ("+From_Address+")")
+            Data.append([Message, User])
+        return Data
+
 class Trusted_Paths(Tools, Configuration, User_Profile):
 	def __init__(self):
 		Tools.__init__(self)
@@ -135,7 +155,7 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 		self.Ping_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Trajectory_Ping)
 		self.Incoming_Shrapnells = str(self.UserFolder+"/"+self.MessageFolder+"/"+Configuration().ReceivedMessages+"/"+Configuration().ReceivedMessages+".txt")
 		self.TrustedNodes_Dir = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Trusted_Nodes)
-		self.Current_Block = Dynamic_Public_Ledger().Calculate_Block().Block+1
+		self.Current_Block = Dynamic_Public_Ledger().Calculate_Block().Block+2
 		self.PrivateIOTA = IOTA_Module(Seed = self.Private_Seed)
 
 	def Build_LedgerDB(self):
@@ -232,7 +252,3 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 
 		self.Write_To_Json(directory = self.TrustedNodes_Dir, Dictionary = Nodes_Dictionary)
 		return self
-
-if __name__ == "__main__":
-	x = Inbox_Manager()
-	x.Completed_Messages()

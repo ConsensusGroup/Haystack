@@ -43,7 +43,7 @@ class Configuration:
 		self.GenesisTime = 1572000000000
 		self.BlockTime = 1000000
 		self.LowerBound = 0.9999 #Percentage of block cycle completion.
-		self.MaxBounce = 2	#Number of bounces the message will do
+		self.MaxBounce = 3	#Number of bounces the message will do
 		self.Replay = 1	#Number of path blocks to search
 		self.DifferentPaths = 1 #This variable allows for the same message to be sent to different paths (increases reliability)
 		self.RefreshRate = 5 #Number of seconds the client will check for new messages in the inbox.

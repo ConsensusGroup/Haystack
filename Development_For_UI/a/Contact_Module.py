@@ -111,5 +111,19 @@ class Contact_Client(Configuration, Tools):
 			Contact_Names.append(i[0])
 		return Contact_Names
 
-if __name__ == "__main__":
-	Contact_Client().Saved_Contacts()
+	def Username_To_Address(self, Username):
+		Dic = self.Read_From_Json(directory = self.Contacts_File_Dir)
+		if self.Label_In_Dictionary(Input_Dictionary = Dic, Label = Username) == True:
+			Address_PubKey = ast.literal_eval(Dic.get(Username))
+			return Address_PubKey
+		else:
+			return None
+
+	def Get_Current_Address_From_PublicKey(self, PublicKey):
+		List = Dynamic_Public_Ledger().Check_User_In_Ledger(Current_Ledger = True).Ledger_Accounts
+		for i in List:
+			if i[1] == PublicKey:
+				Current_Address = i[0]
+			else:
+				Current_Address = None
+		return Current_Address
