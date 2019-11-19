@@ -6,7 +6,7 @@ import config
 class Configuration:
 	def __init__(self):
 		self.Node = "http://localhost:14265"
-		self.PublicSeed = "PGVYKAUMPHYQXLVKYTFNAHIPQEF99CVLNCXCYKYHN99IGRJZEUF9YNGEHADWXSHQE9CALOFKRFSJKOPWU"
+		self.PublicSeed = "MGVYKAUMPHYQXLVKYTFNAHIPQEF99CVLNCXCYKYHN99IGRJZEUF9YNGEHADWXSHQE9CALOFKRFSJKOPWU"
 		self.Charlib = "0123456789qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM^!$%&/()=?+*~'#-_.:;,<>|@{[] }"
 		self.Identifier = "////"
 		self.MessageIdentifier = ">>>>"
