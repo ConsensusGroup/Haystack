@@ -210,8 +210,6 @@ class Trusted_Paths(Tools, Configuration, User_Profile):
 		self.Last_Block_Online = Upperbound_Block
 
 		if self.Current_Block == self.Last_Block_Online:
-			for i in Dynamic_Public_Ledger().Check_User_In_Ledger(Current_Ledger = True).Ledger_Accounts:
-				Accounts = self.Add_To_Dictionary(Input_Dictionary = Accounts, Entry_Label = i[0], Entry_Value = i[1])
 			Inbox_Manager().Read_Tangle(IOTA_Instance = self.PrivateIOTA, Block = self.Current_Block)
 		#Here we save the current DB incase there is an abrupt closing of the application
 		self.Write_To_Json(directory = self.Ledger_Accounts_Dir, Dictionary = Accounts)

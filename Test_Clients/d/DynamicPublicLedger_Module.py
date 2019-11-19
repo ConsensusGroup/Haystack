@@ -72,7 +72,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		else:
 			self.Present = False
 			Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts))
-			Entries = self.PublicIOTA.Receive(Start = self.Block, Stop = self.Block +1).Message
+			Entries = self.PublicIOTA.Receive(Start = self.Block, Stop = self.Block+1).Message
 			for i in Entries:
 				try:
 					Address = b64decode(i).split(self.Identifier)[0]
