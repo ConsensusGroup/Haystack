@@ -136,6 +136,7 @@ class Interactive_Client():
 			if User_Choice == "a":
 				self.Message_Composer()
 			elif User_Choice == "b":
+				Output = []
 				try:
 					Output = HayStack().Stored_Messages()
 				except IOError:
@@ -243,7 +244,6 @@ class Interactive_Client():
 					break
 			elif User_Choice == "b":
 				Current_Ledger_Pool = HayStack().Get_Current_Ledger_Addresses().Current_Addresses
-				print(Current_Ledger_Pool) # <---- Delete after
 				Current_Client_Address = HayStack().Get_Current_Address().Current_Address
 				if len(Current_Ledger_Pool) >= 2:
 					z = 1
@@ -251,9 +251,9 @@ class Interactive_Client():
 					for i in Current_Ledger_Pool:
 						Address = i[0]
 						if Address == Current_Client_Address:
-							print(z+") "+Address+" <-- You\n")
+							print(str(z)+") "+Address+" <-- You\n")
 						else:
-							print(z+") "+ Address+"\n")
+							print(str(z)+") "+ Address+"\n")
 						z = z+1
 
 					Choice = raw_input(">>> ")

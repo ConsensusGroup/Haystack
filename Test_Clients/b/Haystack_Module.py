@@ -120,7 +120,6 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 				self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
 			if config.RunTime == False:
 				break
-			sleep(1)
 		return self
 
 	def Message_Decrypter(self, Cipher):
