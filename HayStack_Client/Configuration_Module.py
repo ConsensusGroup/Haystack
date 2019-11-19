@@ -6,7 +6,7 @@ import config
 class Configuration:
 	def __init__(self):
 		self.Node = "http://localhost:14265"
-		self.PublicSeed = "QTKBTVTEWBSNBYYFSJTHWZIKOVPHDVNPJAO9BPEOIPFAT9FQNHWDHWSZBNLMLCCT9GLWMYCYWKBIKQART"
+		self.PublicSeed = "9OGFHCFYOBY9TSOWGYRMMYRMUUSYKXXQFDARUIHPEGPZG9E9HN9KF9IQPNHCZYWLGUZLOKGTEYIMDJULK"
 		self.Charlib = "0123456789qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM^!$%&/()=?+*~'#-_.:;,<>|@{[] }"
 		self.Identifier = "////"
 		self.MessageIdentifier = ">>>>"
@@ -25,6 +25,7 @@ class Configuration:
 		self.ReceivedMessages = "ReceivedMessages"
 		self.RelayedMessage = "RelayedMessages"
 		self.NotRelayedMessage = "NotRelayedMessage"
+		self.Inbox = "Inbox"
 
 		#Trusted Paths variables
 		self.PathFolder = "TrustedPaths"
@@ -47,5 +48,5 @@ class Configuration:
 		self.MaxBounce = 2	#Number of bounces the message will do
 		self.Replay = 10	#Number of path blocks to search
 		self.DifferentPaths = 1 #This variable allows for the same message to be sent to different paths (increases reliability)
-		self.RefreshRate = 5 #Number of seconds the client will check for new messages in the inbox.
+		self.RefreshRate = 2 #Number of seconds the client will check for new messages in the inbox.
 		self.Default_Size = 128 #Length of each fragment

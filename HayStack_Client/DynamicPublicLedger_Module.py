@@ -30,6 +30,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		difference = Blockfloat - self.Block
 		if difference >= self.LowerBound:
 			self.ChangeBlock = True
+			Tools().Write_To_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts), Dictionary = {})
 		else:
 			self.ChangeBlock = False
 		return self
@@ -52,6 +53,7 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		return Signed_ToSubmit
 
 	def Check_User_In_Ledger(self, ScanAll = False, From = "", To = "", Current_Ledger = False):
+		Entries = []
 		Tools().Build_DB(File = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts))
 		if self.Calculate_Block().ChangeBlock == True:
 			Tools().Write_To_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts), Dictionary = {})
@@ -69,19 +71,22 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 			Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts))
 			self.Ledger_Accounts = Tools().Dictionary_To_List(Dictionary = Accounts)
 
-		else:
-			self.Present = False
-			Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts))
-			Entries = self.PublicIOTA.Receive(Start = self.Block, Stop = self.Block +1).Message
-			for i in Entries:
-				try:
-					Address = b64decode(i).split(self.Identifier)[0]
-					if Address == self.PrivateIOTA.Generate_Address(Index = self.Block):
-						self.Present = True
-					Accounts = self.Validate_User(Ledger_Entry = i, Dictionary = Accounts)
-				except:
-					pass
+		self.Present = False
+		Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts))
+		if Entries == [] and Current_Ledger != True:
+			Entries = self.PublicIOTA.Receive(Start = self.Block).Message
+		for i in Entries:
+			try:
+				Address = b64decode(i).split(self.Identifier)[0]
+				if Address == self.PrivateIOTA.Generate_Address(Index = self.Block):
+					self.Present = True
+				Accounts = self.Validate_User(Ledger_Entry = i, Dictionary = Accounts)
+			except:
+				pass
+		if ScanAll != True:
 			Tools().Write_To_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts), Dictionary = Accounts)
+		elif ScanAll == True:
+			self.All_Accounts = Tools().Dictionary_To_List(Dictionary = Accounts)
 		return self
 
 	def Start_Ledger(self):

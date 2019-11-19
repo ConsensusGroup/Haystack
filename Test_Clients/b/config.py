@@ -1,2 +1,0 @@
-Password = "Hello"
-RunTime = True
