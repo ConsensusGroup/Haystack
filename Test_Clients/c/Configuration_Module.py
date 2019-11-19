@@ -6,7 +6,7 @@ import config
 class Configuration:
 	def __init__(self):
 		self.Node = "http://localhost:14265"
-		self.PublicSeed = "FGVYKAUMPHYQXLVKYTFNAHIPQEF99CVLNCXCYKYHN99IGRJZEUF9YNGEHADWXSHQE9CALOFKRFSJKOPWU"
+		self.PublicSeed = "QGVYKAUMPHYQXLVKYTFNAHIPQEF99CVLNCXCYKYHN99IGRJZEUF9YNGEHADWXSHQE9CALOFKRFSJKOPWU"
 		self.Charlib = "0123456789qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM^!$%&/()=?+*~'#-_.:;,<>|@{[] }"
 		self.Identifier = "////"
 		self.MessageIdentifier = ">>>>"
@@ -45,8 +45,8 @@ class Configuration:
 		self.GenesisTime = 1572000000000
 		self.BlockTime = 1000000
 		self.LowerBound = 0.9999 #Percentage of block cycle completion.
-		self.MaxBounce = 3	#Number of bounces the message will do
+		self.MaxBounce = 2	#Number of bounces the message will do
 		self.Replay = 10	#Number of path blocks to search
 		self.DifferentPaths = 1 #This variable allows for the same message to be sent to different paths (increases reliability)
-		self.RefreshRate = 5 #Number of seconds the client will check for new messages in the inbox.
+		self.RefreshRate = 2 #Number of seconds the client will check for new messages in the inbox.
 		self.Default_Size = 128 #Length of each fragment

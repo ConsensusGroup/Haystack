@@ -154,7 +154,8 @@ class Run_HayStack_Client(threading.Thread):
 					x.Scan_Paths()
 				except IOError:
 					HayStack().Build_All_Directories()
-					print("Error")
+				except:
+					print("\nLikely BadApi error. Ignore this.\n")
 				try:
 					HayStack().Inbox()
 					for i in range(10):
@@ -169,17 +170,18 @@ class Run_HayStack_Client(threading.Thread):
 
 		elif self.Function == "Ping_Function":
 			while self.RunTime:
-				delay = random.randint(120, 240)
+				delay = 9999 #random.randint(120, 240)
 				for i in range(delay):
 					sleep(1)
 					if self.RunTime == False:
 						print("Shutting down ping function...")
 						break
-				try:
-					HayStack().Ping_Function()
-					print("\nPing has been sent.\n")
-				except IndexError:
-					print("\nPing Error...\n")
+				if self.RunTime == True:
+					try:
+						HayStack().Ping_Function()
+						print("\nPing has been sent.\n")
+					except IndexError:
+						print("\nPing Error...\n")
 			print("Ping function... Offline")
 		return self
 

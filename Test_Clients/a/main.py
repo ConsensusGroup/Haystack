@@ -136,6 +136,7 @@ class Interactive_Client():
 			if User_Choice == "a":
 				self.Message_Composer()
 			elif User_Choice == "b":
+				Output = []
 				try:
 					Output = HayStack().Stored_Messages()
 				except IOError:
@@ -243,7 +244,6 @@ class Interactive_Client():
 					break
 			elif User_Choice == "b":
 				Current_Ledger_Pool = HayStack().Get_Current_Ledger_Addresses().Current_Addresses
-				print(Current_Ledger_Pool) # <---- Delete after
 				Current_Client_Address = HayStack().Get_Current_Address().Current_Address
 				if len(Current_Ledger_Pool) >= 2:
 					z = 1
