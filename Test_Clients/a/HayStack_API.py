@@ -9,6 +9,10 @@ from User_Modules import Initialization, User_Profile
 from Inbox_Module import Inbox_Manager, Trusted_Paths
 from Haystack_Module import Sender_Client, Receiver_Client
 from Configuration_Module import Configuration
+import config
+import threading
+from time import sleep
+import random
 
 class HayStack():
 	def __init__(self):
@@ -33,8 +37,16 @@ class HayStack():
 
 	def Find_From_Address(self, Address):
 		Identities = Contact_Client().Link_Address_To_PubKey(Address_To_Search = Address).Other_Identities
-		#Output = [PublicKey(string), known by other addresses(list)]
-		return Identities
+		if Identities[0] != "0"*81:
+			return Identities
+			#Output = [PublicKey(string), known by other addresses(list)]
+		else:
+			return False
+			#Output = False (bool)
+
+	def Add_Address(self, Address, Username):
+		Contact_Client().Link_Address_To_PubKey(Address_To_Search = Address, User_Name = Username)
+		return self
 
 	def Delete_From_Contacts(self, Username):
 		Contact_Client().Delete_From_Contacts(User_Name = Username)
@@ -46,17 +58,32 @@ class HayStack():
 		#if Address in contact list; --> Output = [Saved Username (string), PublicKey(string), Has the address been found? (Bool)] otherwise a simple False(bool) will be returned
 		return Output
 
+	def Address_From_Username(self, Username):
+		Output = Contact_Client().Username_To_Address(Username = Username)
+		#Output: if contact present a list is returned [Public Key, Address], else 'None' is returned
+		return Output
+
+	def Last_Seen_Address(self, PublicKey):
+		Output = Contact_Client().Get_Current_Address_From_PublicKey(PublicKey = PublicKey)
+		#Output: String if address included in current ledger, else 'None' is returned
+		return Output
+
 	def Refresh_Contact_List(self):
 		Contact_Client().Update_Contacts()
 		#Output = Nothing
 		return self
+
+	def Return_Contact_List(self):
+		Contact_Names = Contact_Client().Saved_Contacts()
+		#Output = [List of usernames]
+		return Contact_Names
 
 	def Build_All_Directories(self):
 		Initialization().Build_Application()
 		Initialization().InboxGenerator()
 		User_Profile()
 		Inbox_Manager().Create_DB()
-		Contact_Client().Build_Directory()
+		Contact_Client().Build_ContactDB()
 		Trusted_Paths().Build_LedgerDB()
 		#Output = Nothing
 		return self
@@ -80,51 +107,84 @@ class HayStack():
 		#Output = If there are errors in relaying, True (Bool); else False (Bool)
 		return [Incoming_Message, Sending_Error]
 
+	def Stored_Messages(self):
+		Output = Inbox_Manager().Read_Stored_Messages()
+		#Output: If there are messages a list is returned [Message, User] else an empty list is returned []
+		return Output
 
 
+##### This section of the API is responsible for running background services
+class Run_HayStack_Client(threading.Thread):
+	def __init__(self, Function):
+		threading.Thread.__init__(self)
+		self.RunTime = True
+		self.Function = Function
+		self.Echo = ""
 
-	######################################## Work in progress for later ##########################################
-	# def Sync_To_Lastest_Block(self):
-	# 	for i in Trusted_Paths().Catch_Up():
-	# 		print(i)
-	#
-	# def Return_Trusted_Paths(self):
-	# 	## # TODO: Write a script that reads back all the checked nodes
-	# 	return self
-	#
-	# def Start_Ledger(self):
-	# 	Dynamic_Public_Ledger().Start_Ledger()
-	# 	return self
-	#
-	# def Run_HayStack_Client(self):
-	# 	global RunTime
-	# 	RunTime = True
-	# 	self.Build_All_Directories()
-	# 	For_Ping = 1
-	# 	while RunTime == True:
-	# 		if "0" == str(float(For_Ping)/float(Configuration().Ping_Rate)).split(".")[1]:
-	# 			self.Ping_Function()
-	# 			print("Sending Ping @: "+str(For_Ping))
-	# 		For_Ping = For_Ping +1
-	# 		Dynamic_Public_Ledger().Start_Ledger()
-	# 		Trusted_Paths().Catch_Up()
-	# 		#Trusted_Paths().Scan_Paths()
-	# 		Message = Receiver_Client().Check_Inbox()
-	# 		Message = Message.Incoming_Message
-	# 		print(Message)
-	#
-	# 		for i in Message:
-	# 			try:
-	# 				if i[0] != False:
-	# 					print("Passed!"+ "\n Message From:	 " + str(i[0]) + "\n Message:	 "+ str(i[1]))
-	# 				else:
-	# 					print("No New Message for you.....")
-	# 			except:
-	# 				print("No New Message for you.")
-	# 		sleep(Configuration().RefreshRate)
-	#
-	#
-	#
-	#
-	# 	return self
-	# 
+	def run(self):
+		if self.Function == "Dynamic_Public_Ledger":
+			while self.RunTime:
+				try:
+					x = Dynamic_Public_Ledger()
+					x.Start_Ledger()
+					if x.ChangeBlock == True:
+						delay = 10
+					elif x.ChangeBlock == False:
+						delay = 5
+
+					self.Echo = str(x.Calculate_Block().Block)
+					HayStack().Refresh_Contact_List()
+				except:
+					print("\nThere appears to be a problem with your IRI node.\n")
+					delay = 120
+
+				for i in range(delay):
+					sleep(1)
+					if self.RunTime == False:
+						print("Shutting down Dynamic Public Ledger...\n")
+						break
+			print("Dynamic Public Ledger... Offline\n")
+
+		elif self.Function == "Sync_Messanger":
+			while self.RunTime:
+				x = Trusted_Paths()
+				try:
+					x.Catch_Up()
+					self.Echo = x.Output
+					x.Scan_Paths()
+				except IOError:
+					HayStack().Build_All_Directories()
+				try:
+					HayStack().Inbox()
+					for i in range(10):
+						sleep(1)
+						if self.RunTime == False:
+							config.RunTime = False
+							print("Shutting down Messanger client...\n")
+							break
+				except KeyError:
+					print("Error with Sync")
+			print("Messanger client... Offline\n")
+
+		elif self.Function == "Ping_Function":
+			while self.RunTime:
+				delay = random.randint(120, 240)
+				for i in range(delay):
+					sleep(1)
+					if self.RunTime == False:
+						print("Shutting down ping function...")
+						break
+				try:
+					HayStack().Ping_Function()
+					print("\nPing has been sent.\n")
+				except IndexError:
+					print("\nPing Error...\n")
+			print("Ping function... Offline")
+		return self
+
+	def Output(self):
+		return self.Echo
+
+	def Terminate(self):
+		self.RunTime = False
+		return self

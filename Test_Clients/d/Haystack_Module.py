@@ -11,6 +11,7 @@ from DynamicPublicLedger_Module import *
 from Inbox_Module import Inbox_Manager, Trusted_Paths
 from time import sleep
 from Tools_Module import Tools
+import config
 
 class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 
@@ -22,7 +23,8 @@ class Sender_Client(Encryption, Key_Generation, Configuration, User_Profile):
 
 	def Send_Message(self, Message, ReceiverAddress, PublicKey, DifferentPaths = "", Encrypted = True, Ping_Function = False):
 		Sent_And_Confirmed = []
-		Message = b64encode(Message)
+		Current_TangleTime = Dynamic_Public_Ledger().PublicIOTA.LatestTangleTime().TangleTime
+		Message = b64encode(Message) #+self.Identifier+str(Current_TangleTime))  <------ Need to fix this!!!!
 		if isinstance(DifferentPaths, int) == True:
 			self.DifferentPaths = DifferentPaths
 
@@ -106,6 +108,7 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 
 	def Check_Inbox(self):
 		self.Incoming_Message = []
+		self.Error = False
 		for BundleHash, Message in self.Read_From_Json(directory = self.NotRelayed_Dir).items():
 			try:
 				Output = self.Message_Decrypter(Cipher = str(Message))
@@ -115,6 +118,9 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 			except:
 				self.Error = True
 				self.Postprocessing_Packet(ToSend = ['INVALID', '0'*81], Hash_Of_Incoming_Tx = str(BundleHash), IOTA_Instance = self.PrivateIOTA)
+			if config.RunTime == False:
+				break
+			sleep(1)
 		return self
 
 	def Message_Decrypter(self, Cipher):
@@ -170,31 +176,3 @@ class Receiver_Client(Decryption, Encryption, Key_Generation, Configuration, Use
 			else:
 				Runtime = False
 				return [Cipher, Next_Address]
-
-#This will simply run the client in non interactive mode.
-if __name__ == "__main__":
-	RunTime = True
-	Initialization().InboxGenerator()
-	Inbox_Manager().Create_DB()
-	Trusted_Paths().Build_LedgerDB()
-	For_Ping = 1
-	while RunTime == True:
-		if "0" == str(float(For_Ping)/float(Configuration().Ping_Rate)).split(".")[1]:
-			Sender_Client().Ping_Function()
-			print("Sending Ping @: "+str(For_Ping))
-		For_Ping = For_Ping +1
-		Dynamic_Public_Ledger().Start_Ledger()
-		Trusted_Paths().Catch_Up()
-		#Trusted_Paths().Scan_Paths()
-		Message = Receiver_Client().Check_Inbox()
-		Message = Message.Incoming_Message
-
-		for i in Message:
-			try:
-				if i[0] != False:
-					print("Passed!"+ "\n Message From:	 " + str(i[0]) + "\n Message:	 "+ str(i[1]))
-				else:
-					print("No New Message for you.....")
-			except:
-				print("No New Message for you.")
-		sleep(Configuration().RefreshRate)

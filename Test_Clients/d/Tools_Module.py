@@ -1,7 +1,6 @@
 ####################################################################################
 ######### This module has some useful tools used for the Haystack protocol #########
 ####################################################################################
-
 from Configuration_Module import Configuration
 import os
 import json
