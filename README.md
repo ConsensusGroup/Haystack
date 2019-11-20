@@ -28,7 +28,7 @@ Some useful tips in case there are some errors
 * Make sure you dont run this on a Raspberry Pi or some other low spec machine since this application does cost quite a bit of CPU power. The protocol worked relatively fine on a 13 inch MacBook Pro (2013) so any recent computer will do.
 
 ## Future Plans
-With the project being featured in the IOTA competition "The Perfect Brainstrom" is quite an accomplishment and most certainly motivating. Therefore to make the project aims to include the following features in future releases;
+Being featured in the IOTA competition "The Perfect Brainstrom" is quite an accomplishment and most certainly motivating for the project. Therefore the project aims to include the following features in future releases;
 * Node incentivisation: This can be achived via multisignature IOTA addresses that allow a node operator to earn some IOTA by running it in passive mode.
 * Private key and Seed retrival mechanism: This is feature would allow a user to reconstruct the Private Key and Seed by pulling from the Tangle if the device accidentally dies.
 * User Interface: UI development is quite tough and currently Kivy is being discussed as a viable option.
@@ -37,7 +37,7 @@ With the project being featured in the IOTA competition "The Perfect Brainstrom"
 * Mobile release: To allow for the non technical people to get complete privacy, a mobile version of the protocol should be developed so that no central entity is responsible for key issueance.
 
 ## Donations and Contributions
-If you life this project and what it stands for do consider donating to the project:
+If you like this project and what it stands for do consider donating to the project:
 
 IOTA: **NXFDNQHYMKKVGWXNHBBLXENHPJKDSGZUOVIMBUYPNTLDO9GDLFWZTBSTJUYV9IWKFIFJMWSKDQURPHMUDECFYBDIAA**
 
@@ -64,15 +64,6 @@ In order to enable users to share keys and broadcast addresses on the network, t
 
 ## **__Encryption Scheme:__**
 A critical feature of the Haystack protocol is the ability to employ a multilayered encryption scheme while enforcing a constant bundle size throughout the network. This ensures a high level of cryptographic security while maintaining invariance to message size, but requires the encryption scheme to be format-preserving. Asymmetric schemes do not, in general, conserve information in this way. In order to circumvent this issue, the Haystack protocol uses a hybrid cryptosystem, in which a pseudorandom secret encryption key is generated and associated with each relayer in a given trajectory. The message content is then symmetrically encrypted with each secret key in reverse order of the message trajectory in an iterative fashion. These secret keys are then asymetrically encrypted with the public key of the corresponding relayer, along with the next relay address, and included in the packet as metadata. When a relayer successfully decrypts a secret key with his own private key, this allows him to decrypt one layer of encryption from the message ciphertext and uncover a relay address without revealing any information about the overall trajectory of the message. Finally, at each relay, the final packet including the metadata is stream-encrypted with the public key of the next relayer in order to maximise information security and ensure that the packet, including its metadata, is completely distinct at each bounce.
-
-
-
-
-
-
-
-
-
 
 Q: Who is Consensus?
 A: Consensus is a group of physicists with an interest in anonymity, cybersecurity and freedom of information. We provide advice and in-depth analysis for businesses looking to employ new technologies or better understand technological markets. We're also developing several protocols using IOTA tangle to address such problems as secure anonymous communication and supply chain authentication.
