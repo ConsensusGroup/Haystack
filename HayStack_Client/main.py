@@ -70,7 +70,10 @@ def First_Usage():
 				print("")
 				print("Passwords do not match!")
 				print("")
-		HayStack().Build_All_Directories()
+		try:
+			HayStack().Build_All_Directories()
+		except:
+			print("No IRI instance running on device.")
 	else:
 		while True:
 			#Turn this on later

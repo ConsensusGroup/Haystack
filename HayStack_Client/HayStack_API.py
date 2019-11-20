@@ -136,6 +136,7 @@ class Run_HayStack_Client(threading.Thread):
 					HayStack().Refresh_Contact_List()
 				except IOError:
 					HayStack().Build_All_Directories()
+					delay = 30
 
 				for i in range(delay):
 					sleep(1)
