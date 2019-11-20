@@ -1,7 +1,6 @@
 ####################################################################################
 ######### This module has some useful tools used for the Haystack protocol #########
 ####################################################################################
-
 from Configuration_Module import Configuration
 import os
 import json
@@ -80,7 +79,7 @@ class Tools(Configuration):
 	def Dictionary_To_List(self, Dictionary):
 		Output_List = []
 		for label, value in Dictionary.items():
-			Output_List.append([label, value])
+			Output_List.append([str(label), str(value)])
 		return Output_List
 
 	def NonAsciiEncode(self, string):

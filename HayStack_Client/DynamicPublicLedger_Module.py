@@ -24,28 +24,26 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 	def Calculate_Block(self):
 		#Check the current time of the Tangle
 		Current = self.PublicIOTA.LatestTangleTime().TangleTime
-
 		#Calculate the current Block and use as index for current address
 		Blockfloat = float((Current - self.GenesisTime) / float(self.BlockTime))
 		self.Block = math.trunc(Blockfloat)
 		difference = Blockfloat - self.Block
 		if difference >= self.LowerBound:
 			self.ChangeBlock = True
+			Tools().Write_To_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts), Dictionary = {})
 		else:
 			self.ChangeBlock = False
 		return self
 
-	def Validate_User(self, Ledger_Entry, ScanAll = False):
+	def Validate_User(self, Ledger_Entry, Dictionary):
 		Submited = b64decode(Ledger_Entry).split(self.Identifier)
 		ToVerify = str(Submited[0]+self.Identifier+Submited[1])
 		Signature = Submited[2]
 		PublicKey = Submited[1]
-		if Decryption().SignatureVerification(ToVerify = ToVerify, PublicKey = PublicKey, Signature = Signature).Verified == True and [Submited[0],PublicKey] not in self.Ledger_Accounts and ScanAll == False:
+		if Decryption().SignatureVerification(ToVerify = ToVerify, PublicKey = PublicKey, Signature = Signature).Verified == True and [Submited[0],PublicKey] not in self.Ledger_Accounts:
 			self.Ledger_Accounts.append([Submited[0],PublicKey])
-		elif Decryption().SignatureVerification(ToVerify = ToVerify, PublicKey = PublicKey, Signature = Signature).Verified == True and ScanAll == True:
-			self.All_Accounts.append([Submited[0],PublicKey])
-		else:
-			pass
+			Dictionary = Tools().Add_To_Dictionary(Input_Dictionary = Dictionary, Entry_Label = Submited[0], Entry_Value = PublicKey)
+		return Dictionary
 
 	def Submit_User(self):
 		self.Calculate_Block()
@@ -54,9 +52,13 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		Signed_ToSubmit = b64encode(str(ToSubmit+self.Identifier+Encryption().MessageSignature(ToSign = ToSubmit).Signature))
 		return Signed_ToSubmit
 
-	def Check_User_In_Ledger(self, ScanAll = False, From = "", To = ""):
-		self.Present = False
-		self.Calculate_Block()
+	def Check_User_In_Ledger(self, ScanAll = False, From = "", To = "", Current_Ledger = False):
+		Entries = []
+		Tools().Build_DB(File = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts))
+		if self.Calculate_Block().ChangeBlock == True:
+			Tools().Write_To_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts), Dictionary = {})
+			Current_Ledger = False
+
 		if ScanAll == True:
 			if From != "" and To != "":
 				Entries = self.PublicIOTA.Receive(Start = int(From), Stop = int(To)).Message
@@ -64,17 +66,27 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 				Entries = []
 				All_Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Ledger_Accounts_File))
 				self.All_Accounts = Tools().Dictionary_To_List(Dictionary = All_Accounts)
-		else:
-			Entries = self.PublicIOTA.Receive(Start = self.Block, Stop = self.Block +1).Message
+
+		elif Current_Ledger == True:
+			Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts))
+			self.Ledger_Accounts = Tools().Dictionary_To_List(Dictionary = Accounts)
+
+		self.Present = False
+		Accounts = Tools().Read_From_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts))
+		if Entries == [] and Current_Ledger != True:
+			Entries = self.PublicIOTA.Receive(Start = self.Block).Message
 		for i in Entries:
 			try:
 				Address = b64decode(i).split(self.Identifier)[0]
-				if ScanAll == False:
-					if Address == self.PrivateIOTA.Generate_Address(Index = self.Block):
-						self.Present = True
-				self.Validate_User(Ledger_Entry = i, ScanAll = ScanAll)
+				if Address == self.PrivateIOTA.Generate_Address(Index = self.Block):
+					self.Present = True
+				Accounts = self.Validate_User(Ledger_Entry = i, Dictionary = Accounts)
 			except:
 				pass
+		if ScanAll != True:
+			Tools().Write_To_Json(directory = str(self.UserFolder+"/"+self.PathFolder+"/"+self.Current_Ledger_Accounts), Dictionary = Accounts)
+		elif ScanAll == True:
+			self.All_Accounts = Tools().Dictionary_To_List(Dictionary = Accounts)
 		return self
 
 	def Start_Ledger(self):
@@ -155,31 +167,22 @@ class Dynamic_Public_Ledger(Configuration, User_Profile):
 		except:
 			return False
 
-	def Path_Finder(self, ReceiverAddress= "", PublicKey = "", PingFunction = False, index = 0):
+	def Path_Finder(self, ReceiverAddress= "", PublicKey = ""):
 		self.Calculate_Block().Block
-		if index == 0:
-			self.Check_User_In_Ledger()
+		Ledger_Accounts = self.Check_User_In_Ledger(Current_Ledger = True).Ledger_Accounts
+
 		Trajectory = []
 		while len(Trajectory) != self.MaxBounce:
-			Relayer = random.choice(self.Ledger_Accounts)
-			if Relayer[0] != ReceiverAddress:
-				Trajectory.append(Relayer)
+			Relayer = random.SystemRandom().choice(Ledger_Accounts)
+			Trajectory.append(Relayer)
 
-		if PingFunction == True:
-			ReceiverAddress = self.PrivateIOTA.Generate_Address(Index = self.Block)
-			PublicKey = self.PublicKey
-			if len(Trajectory) == 0:
-				Relayer = self.Ledger_Accounts[random.randrange(0, len(self.Ledger_Accounts))]
-				Trajectory.append(Relayer)
-			Ran_Index = len(Trajectory)
-
-		elif len(Trajectory) >= 0 and PingFunction == False:
-			Ran_Index = int(round(random.uniform(0, len(Trajectory))))
-		else:
-			pass
-
-		if ReceiverAddress != "" and PublicKey != "" and len(Trajectory) >= 0:
+		#This condition is there to exclude DUMMY messages
+		if ReceiverAddress != "" and PublicKey != "":
 			SendTo = [ReceiverAddress,PublicKey]
+			Ran_Index = int(round(random.uniform(0, len(Trajectory))))
 			Trajectory.insert(Ran_Index, SendTo)
-		if len(Trajectory) > 0:
-			return Trajectory
+
+		else:
+			Relayer = random.choice(Ledger_Accounts)
+			Trajectory.append(Relayer)
+		return Trajectory
