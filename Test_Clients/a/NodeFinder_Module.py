@@ -44,7 +44,7 @@ class Node_Finder(Configuration):
 
             try:
                 start = time.time()
-                Output = IOTA_Instance.Receive()
+                Output = IOTA_Instance.Receive(Start = 1)
                 end = time.time()
                 delta_Receive = end-start
             except:
@@ -57,7 +57,22 @@ class Node_Finder(Configuration):
             Tools().Write_To_Json(directory = self.NodeFile_Dir, Dictionary = Node_Dictionary)
 
     def Return_Fastest_Node(self):
-        pass
+        Node_Dictionary = Tools().Read_From_Json(directory = self.NodeFile_Dir)
+        Send_initial = 999
+        Receive_initial = 999
+        Fastest_Combination = {}
+        for Node, Stats in Node_Dictionary.items():
+            Send = Stats["Send"]
+            if Send_initial > Send:
+                Send_initial = Send
+                Fastest_Combination["Send"] = Node
+
+            Receive = Stats["Receive"]
+            if Receive_initial > Receive:
+                Receive_initial = Receive
+                Fastest_Combination["Receive"] = Node
+
+        return Fastest_Combination
 
 if __name__ == "__main__":
-    Node_Finder().Test_Nodes()
+    Node_Finder().Return_Fastest_Node()
