@@ -18,7 +18,7 @@ At the current time the project has been tested to work on MacOS and Ubuntu (19.
 * Run either **Installer_Scipt_Linux.sh** (Ubuntu) or **Installer_Scipt_OSX.sh** (MacOS)
 * Download the IRI client from the IOTA GitHub repository and run it.
 * Navigate to the *HayStack_Client* folder directory
-* Open a terminal and type in *python main.py* this will now run the HayStack application
+* Open a terminal and type in *python main.py* this will now run the HayStack application (**NOTE: Run this with python2.7!**)
 
 Assuming no error has occurred the client it ready to go.
 

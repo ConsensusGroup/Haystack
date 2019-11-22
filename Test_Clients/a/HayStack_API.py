@@ -9,6 +9,7 @@ from User_Modules import Initialization, User_Profile
 from Inbox_Module import Inbox_Manager, Trusted_Paths
 from Haystack_Module import Sender_Client, Receiver_Client
 from Configuration_Module import Configuration
+from NodeFinder_Module import Node_Finder
 import config
 import threading
 from time import sleep
@@ -111,6 +112,10 @@ class HayStack():
 		Output = Inbox_Manager().Read_Stored_Messages()
 		#Output: If there are messages a list is returned [Message, User] else an empty list is returned []
 		return Output
+
+	def Testing_Nodes(self):
+		pass
+
 
 
 ##### This section of the API is responsible for running background services

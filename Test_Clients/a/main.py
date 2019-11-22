@@ -10,6 +10,8 @@ from User_Modules import User_Profile
 import config
 import getpass
 import os
+from time import sleep
+import sys
 
 def Welcome_Screen():
 	print("                              ####################### Welcome to the IOTA HayStack Protocol!!! ###########################")
@@ -73,7 +75,15 @@ def First_Usage():
 		try:
 			HayStack().Build_All_Directories()
 		except:
-			print("No IRI instance running on device.")
+			if "requests.exceptions.ConnectionError" in str(sys.exc_info()[0]):
+				print("No IRI instance running on device.")
+				sleep(2)
+				print("An alternative node will be used from a list.. please wait...")
+			else:
+				print("Nope")
+
+
+
 	else:
 		while True:
 			#Turn this on later
