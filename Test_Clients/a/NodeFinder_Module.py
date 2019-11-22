@@ -22,10 +22,12 @@ class Node_Finder(Configuration):
 
         Tools().Write_To_Json(directory = self.NodeFile_Dir, Dictionary = Node_Dictionary)
 
+        return self
+
     def Test_Nodes(self):
+        self.Build_Directory()
         Node_Dictionary = Tools().Read_From_Json(directory = self.NodeFile_Dir)
         for Node, Value in Node_Dictionary.items():
-
             config.Node = Node
             IOTA_Instance = IOTA_Module(Seed = self.PublicSeed)
             Burner_Address = IOTA_Instance.Generate_Address()
@@ -33,7 +35,7 @@ class Node_Finder(Configuration):
             Temp_Dictionary = {}
             try:
                 start = time.time()
-                Hash = IOTA_Instance.Send(ReceiverAddress = Burner_Address, Message = "Test")
+                Hash = IOTA_Instance.Send(ReceiverAddress = Burner_Address, Message = "Test", Test_Node = True)
                 end = time.time()
                 delta_Send = end - start
             except:
@@ -41,38 +43,27 @@ class Node_Finder(Configuration):
 
             Temp_Dictionary["Send"] = delta_Send
 
+            if config.RunTime == False:
+                break
 
             try:
                 start = time.time()
-                Output = IOTA_Instance.Receive(Start = 1)
+                Output = IOTA_Instance.Receive(Start = 1, Test_Node = True)
                 end = time.time()
                 delta_Receive = end-start
             except:
-                delta_Receive = "Error"
-
+            	delta_Receive = "Error"
             Temp_Dictionary["Receive"] = delta_Receive
 
             Node_Dictionary[Node] = Temp_Dictionary
-
             Tools().Write_To_Json(directory = self.NodeFile_Dir, Dictionary = Node_Dictionary)
 
-    def Return_Fastest_Node(self):
-        Node_Dictionary = Tools().Read_From_Json(directory = self.NodeFile_Dir)
-        Send_initial = 999
-        Receive_initial = 999
-        Fastest_Combination = {}
-        for Node, Stats in Node_Dictionary.items():
-            Send = Stats["Send"]
-            if Send_initial > Send:
-                Send_initial = Send
-                Fastest_Combination["Send"] = Node
+            if config.RunTime == False:
+                break
+            print(Node)
 
-            Receive = Stats["Receive"]
-            if Receive_initial > Receive:
-                Receive_initial = Receive
-                Fastest_Combination["Receive"] = Node
+        return Temp_Dictionary
 
-        return Fastest_Combination
 
 if __name__ == "__main__":
-    Node_Finder().Return_Fastest_Node()
+    Node_Finder().Test_Nodes()

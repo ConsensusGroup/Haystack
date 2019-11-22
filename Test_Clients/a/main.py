@@ -78,12 +78,14 @@ def First_Usage():
 			if "requests.exceptions.ConnectionError" in str(sys.exc_info()[0]):
 				print("No IRI instance running on device.")
 				sleep(2)
-				print("An alternative node will be used from a list.. please wait...")
+				print("An alternative node will be used from a list.. please wait 30 seconds...")
+				Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
+				Node_Finder.start()
+				for i in range(30):
+					sleep(1)
+				Node_Finder.Terminate()
 			else:
-				print("Nope")
-
-
-
+				print(sys.exc_info()[0])
 	else:
 		while True:
 			#Turn this on later
@@ -105,18 +107,22 @@ def Second_Screen():
 			return None
 
 def Non_Interactive_Client():
+	Node_Finder = Run_HayStack_Client(Function = "Node_Finder")
+	Node_Finder = Node_Finder.start()
 	Sync_Messanger = Run_HayStack_Client(Function = "Sync_Messanger")
 	Sync_Messanger.start()
 	DynamicPublicLedger = Run_HayStack_Client(Function = "Dynamic_Public_Ledger")
 	DynamicPublicLedger.start()
 	PingFunction = Run_HayStack_Client(Function = "Ping_Function")
 	PingFunction.start()
+
 	while True:
 		User_Input = raw_input("Press 'b' to go back or press 'Enter' for a status >>> ")
 		if User_Input == "b":
 			Sync_Messanger.Terminate()
 			DynamicPublicLedger.Terminate()
 			PingFunction.Terminate()
+			Node_Finder.Terminate()
 			config.RunTime = False
 			break
 		else:
@@ -128,18 +134,20 @@ class Interactive_Client():
 		self.Sync_Messanger = Run_HayStack_Client(Function = "Sync_Messanger")
 		self.DynamicPublicLedger = Run_HayStack_Client(Function = "Dynamic_Public_Ledger")
 		self.PingFunction = Run_HayStack_Client(Function = "Ping_Function")
-
+		self.Node_Finder = Run_HayStack_Client(Function = "Node_Finder")
 	def Background(self, Action):
 		if Action == "Start":
 			self.Sync_Messanger.start()
 			self.DynamicPublicLedger.start()
 			self.PingFunction.start()
+			self.Node_Finder.start()
 			config.RunTime = True
 		elif Action == "Stop":
 			config.RunTime = False
 			self.Sync_Messanger.Terminate()
 			self.DynamicPublicLedger.Terminate()
 			self.PingFunction.Terminate()
+			self.Node_Finder.Terminate()
 		return self
 
 	def Third_Screen(self):
@@ -312,6 +320,7 @@ if __name__ == "__main__":
 	while True:
 		Outcome = Second_Screen()
 		if  Outcome == None:
+			config.RunTime = False
 			exit()
 		elif Outcome == False:
 			Non_Interactive_Client()

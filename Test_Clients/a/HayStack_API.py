@@ -14,6 +14,7 @@ import config
 import threading
 from time import sleep
 import random
+import sys
 
 class HayStack():
 	def __init__(self):
@@ -113,11 +114,6 @@ class HayStack():
 		#Output: If there are messages a list is returned [Message, User] else an empty list is returned []
 		return Output
 
-	def Testing_Nodes(self):
-		pass
-
-
-
 ##### This section of the API is responsible for running background services
 class Run_HayStack_Client(threading.Thread):
 	def __init__(self, Function):
@@ -128,7 +124,14 @@ class Run_HayStack_Client(threading.Thread):
 
 	def run(self):
 		if self.Function == "Dynamic_Public_Ledger":
+			delay = 30
+			print("Please wait whilst HayStack searches for nodes.")
 			while self.RunTime:
+				for i in range(delay):
+					sleep(1)
+					if self.RunTime == False:
+						print("Shutting down Dynamic Public Ledger...\n")
+						break
 				try:
 					x = Dynamic_Public_Ledger()
 					x.Start_Ledger()
@@ -140,38 +143,47 @@ class Run_HayStack_Client(threading.Thread):
 					self.Echo = str(x.Calculate_Block().Block)
 					HayStack().Refresh_Contact_List()
 				except IOError:
-					HayStack().Build_All_Directories()
-					delay = 30
+					try:
+						HayStack().Build_All_Directories()
+						delay = 30
+					except:
+						print("Connection Error. You are not online")
+						delay = 30
+
+			print("Dynamic Public Ledger... Offline\n")
+
+		elif self.Function == "Sync_Messanger":
+			delay = 30
+			while self.RunTime:
 
 				for i in range(delay):
 					sleep(1)
 					if self.RunTime == False:
-						print("Shutting down Dynamic Public Ledger...\n")
+						config.RunTime = False
+						print("Shutting down Messanger client...\n")
 						break
-			print("Dynamic Public Ledger... Offline\n")
-
-		elif self.Function == "Sync_Messanger":
-			while self.RunTime:
-				x = Trusted_Paths()
 				try:
+					x = Trusted_Paths()
 					x.Catch_Up()
 					self.Echo = x.Output
 					x.Scan_Paths()
 				except IOError:
-					HayStack().Build_All_Directories()
-					print("Error")
+					try:
+						HayStack().Build_All_Directories()
+					except:
+						if "ConnectionError: HTTPConnectionPool" in str(sys.exc_info()[0]):
+							print("Connection Error. You are not online")
 				except:
-					print("\nLikely BadApi error. Ignore this.\n")
+					pass
 				try:
 					HayStack().Inbox()
-					for i in range(10):
-						sleep(1)
-						if self.RunTime == False:
-							config.RunTime = False
-							print("Shutting down Messanger client...\n")
-							break
 				except KeyError:
 					print("Error with Sync")
+				except:
+					if "ConnectionError: HTTPConnectionPool" in str(sys.exc_info()[0]):
+						print("Connection Error. You are not online")
+
+				delay = 10
 			print("Messanger client... Offline\n")
 
 		elif self.Function == "Ping_Function":
@@ -189,6 +201,17 @@ class Run_HayStack_Client(threading.Thread):
 					except IndexError:
 						print("\nPing Error...\n")
 			print("Ping function... Offline")
+
+		elif self.Function == "Node_Testing":
+			while self.RunTime == True:
+				Node_Finder().Test_Nodes()
+				for i in range(1800):
+					if self.RunTime == False:
+						print("Shutting down node finder...")
+						break
+					else:
+						sleep(1)
+			print("Node finder... Offline...")
 		return self
 
 	def Output(self):
@@ -196,4 +219,5 @@ class Run_HayStack_Client(threading.Thread):
 
 	def Terminate(self):
 		self.RunTime = False
+		config.RunTime = self.RunTime
 		return self
