@@ -39,7 +39,9 @@ Being featured in the IOTA competition "The Perfect Brainstrom" is quite an acco
 ## Donations and Contributions
 If you like this project and what it stands for do consider donating to the project:
 
-IOTA: **NXFDNQHYMKKVGWXNHBBLXENHPJKDSGZUOVIMBUYPNTLDO9GDLFWZTBSTJUYV9IWKFIFJMWSKDQURPHMUDECFYBDIAA**
+IOTA: **NXFDNQHYMKKVGWXNHBBLXENHPJKDSGZUOVIMBUYPNTLDO9GDLFWZTBSTJUYV9IWKFIFJMWSKDQURPHMUDECFYBDIAA**  
+BTC: **bc1qxn43qemy0jwuhch3vktyhkxmzumtsafx8nl5te**  
+ETH: **0xBd6ECEA2C8E9EeB2fFe5B2a07d8D3C900c1F48C8**  
 
 For any developers that want to help out with the project feel free to contact us directly and we can fill you in on some other details.
 
