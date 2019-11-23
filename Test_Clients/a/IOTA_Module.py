@@ -13,6 +13,7 @@ from iota import *
 from random import SystemRandom
 from Configuration_Module import Configuration
 from Tools_Module import Tools
+import config
 
 ######## Base IOTA classes ########
 def Seed_Generator():
@@ -48,13 +49,25 @@ def Return_Fastest_Node():
     return Fastest_Combination
 
 class IOTA_Module(Configuration):
-	def __init__(self, Seed):
+	def __init__(self, Seed, IOTA_Instance = ""):
 		Configuration.__init__(self)
-		if self.Node == "http://localhost:14265":
-			self.IOTA_Api = Iota(RoutingWrapper(str(self.Node)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed)
+
+		try:
+			Optimal_Node = Return_Fastest_Node()["Send"]
+			if Optimal_Node == 999.0:
+				Optimal_Node = Return_Fastest_Node()["Receive"]
+			config.Node = Optimal_Node
+		except:
+			config.Node = "http://localhost:14265"
+
+		if config.Node == "http://localhost:14265":
+			self.IOTA_Api = Iota(RoutingWrapper(str(config.Node)).add_route('attachToTangle', 'http://localhost:14265'), seed = Seed)
 		else:
-			self.IOTA_Api = Iota(self.Node, seed = Seed)
-			self.Seed_Copy = Seed
+			self.IOTA_Api = Iota(config.Node, seed = Seed)
+
+		if IOTA_Instance != "":
+			self.IOTA_Api = IOTA_Instance
+		self.Seed_Copy = Seed
 
 	def Generate_Address(self, Index = 0):
 		generate = self.IOTA_Api.get_new_addresses(index = int(Index))

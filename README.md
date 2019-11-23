@@ -9,7 +9,7 @@ Before cloning this repo it is important to note this is still an alpha version 
 * PyCrypto (For the cryptography used in the project)
 * PyFFX (Symmetric encryption package)
 
-It is highly recommended to run a local IRI node since the loading of the DLP and inbox will be a lot quicker. In the future we will try to write code that will find the fastest nodes from a list of openly available nodes (such as iota.dance) and therefore minimize the need to run a node.
+It is highly recommended to run a local IRI node since the loading of the DLP and inbox will be a lot quicker. ~~In the future we will try to write code that will find the fastest nodes from a list of openly available nodes (such as iota.dance) and therefore minimize the need to run a node~~(Recent update).
 
 ## Installing
 At the current time the project has been tested to work on MacOS and Ubuntu (19.10 and below), but no Windows Version has yet been tested. The project in the future might be rewritten in C++ (depends on library availability). To get started follow the instructions as below;
@@ -24,15 +24,15 @@ Assuming no error has occurred the client it ready to go.
 
 ## Troubleshooting
 Some useful tips in case there are some errors
-* If the client is throwing IRI related issues make sure your node is synced to the IOTA network by downloading a copy of the Tangle (they do periodic snaphots so size shouldnt be too much of an issue).
-* Make sure you dont run this on a Raspberry Pi or some other low spec machine since this application does cost quite a bit of CPU power. The protocol worked relatively fine on a 13 inch MacBook Pro (2013) so any recent computer will do.
+* ~ If the client is throwing IRI related issues make sure your node is synced to the IOTA network by downloading a copy of the Tangle (they do periodic snaphots so size shouldn't be too much of an issue).~~ (Recent Update uses external nodes if IRI isn't synced or present)
+* Make sure you don't run this on a Raspberry Pi or some other low spec machine since this application does cost quite a bit of CPU power. The protocol worked relatively fine on a 13 inch MacBook Pro (2013) so any recent computer will do.
 
 ## Future Plans
 Being featured in the IOTA competition "The Perfect Brainstrom" is quite an accomplishment and most certainly motivating for the project. Therefore the project aims to include the following features in future releases;
-* Node incentivisation: This can be achived via multisignature IOTA addresses that allow a node operator to earn some IOTA by running it in passive mode.
-* Private key and Seed retrival mechanism: This is feature would allow a user to reconstruct the Private Key and Seed by pulling from the Tangle if the device accidentally dies.
+* Node incentivisation: This can be achieved via multi signature IOTA addresses that allow a node operator to earn some IOTA by running it in passive mode.
+* Private key and Seed retrival mechanism: This feature would allow a user to reconstruct the Private Key and Seed by pulling from the Tangle if the device accidentally dies.
 * User Interface: UI development is quite tough and currently Kivy is being discussed as a viable option.
-* Node finder: A script that finds the fastest public node available to the client if no local IRI instance is found.
+* ~~Node finder: A script that finds the fastest public node available to the client if no local IRI instance is found.~~
 * C++ rewrite: Once the application is out of proof of concept phase a complete rewrite of the protocol is being discussed in C++.
 * Mobile release: To allow for the non technical people to get complete privacy, a mobile version of the protocol should be developed so that no central entity is responsible for key issueance.
 
@@ -43,7 +43,10 @@ IOTA: **NXFDNQHYMKKVGWXNHBBLXENHPJKDSGZUOVIMBUYPNTLDO9GDLFWZTBSTJUYV9IWKFIFJMWSK
 BTC: **bc1qxn43qemy0jwuhch3vktyhkxmzumtsafx8nl5te**  
 ETH: **0xBd6ECEA2C8E9EeB2fFe5B2a07d8D3C900c1F48C8**  
 
-For any developers that want to help out with the project feel free to contact us directly and we can fill you in on some other details.
+For any developers that want to help out with the project feel free to contact us directly on discord (woywoy123#91841).
+
+## Error Reporting
+If there are any run time issues that you encounter whilst running the app please raise an issue on GitHub with a log of the errors that you encountered. Any bugs that are reported are greatly appreciated. 
 
 
 ## **__Introduction to HayStack:__**

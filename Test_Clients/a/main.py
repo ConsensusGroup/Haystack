@@ -107,8 +107,8 @@ def Second_Screen():
 			return None
 
 def Non_Interactive_Client():
-	Node_Finder = Run_HayStack_Client(Function = "Node_Finder")
-	Node_Finder = Node_Finder.start()
+	Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
+	Node_Finder.start()
 	Sync_Messanger = Run_HayStack_Client(Function = "Sync_Messanger")
 	Sync_Messanger.start()
 	DynamicPublicLedger = Run_HayStack_Client(Function = "Dynamic_Public_Ledger")
@@ -134,7 +134,8 @@ class Interactive_Client():
 		self.Sync_Messanger = Run_HayStack_Client(Function = "Sync_Messanger")
 		self.DynamicPublicLedger = Run_HayStack_Client(Function = "Dynamic_Public_Ledger")
 		self.PingFunction = Run_HayStack_Client(Function = "Ping_Function")
-		self.Node_Finder = Run_HayStack_Client(Function = "Node_Finder")
+		self.Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
+
 	def Background(self, Action):
 		if Action == "Start":
 			self.Sync_Messanger.start()

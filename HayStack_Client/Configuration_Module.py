@@ -5,7 +5,7 @@ import config
 
 class Configuration:
 	def __init__(self):
-		self.Node = "http://localhost:14265"
+		self.Node = config.Node
 		self.PublicSeed = "9OGFHCFYOBY9TSOWGYRMMYRMUUSYKXXQFDARUIHPEGPZG9E9HN9KF9IQPNHCZYWLGUZLOKGTEYIMDJULK"
 		self.Charlib = "0123456789qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM^!$%&/()=?+*~'#-_.:;,<>|@{[] }"
 		self.Identifier = "////"
@@ -36,6 +36,10 @@ class Configuration:
 		self.Trajectory_Ping = "Pings.txt"
 		self.Trusted_Nodes = "TrustedNodes.txt"
 		self.Ping_Rate = 20 #After how many iterations of going through checking inbox. i.e. after 6 times check inbox send ping #Being removed in the UI release
+
+		#Node Finder variables
+		self.NodeFolder = "Nodes"
+		self.NodeFile = "Nodes.txt"
 
 		#Contact Module parameters
 		self.Contacts_File = "Contacts.txt"
