@@ -5,7 +5,7 @@
 yes | apt-get install python-dev
 
 #Install pip
-apt install python-pip
+yes | apt install python-pip
 
 #Install pyOpenSSL
 pip install pyOpenSSL
