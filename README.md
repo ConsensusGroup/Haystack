@@ -3,20 +3,19 @@
 
 ## Getting Started
 
-Before cloning this repo it is important to note this is still an alpha version of the finished product and over time the application will be rewritten to include many more usecases as outlined in the Whitepaper. Here are some prerequisites for getting the client to run (these will be installed when running the installer scripts);
+Before cloning this repo it is important to note this is still an alpha version of the finished product and over time the application will be rewritten to include many more use cases as outlined in the Whitepaper. Here are some prerequisites for getting the client to run (these will be installed when running the installer scripts);
 * Install PyOTA (A python package that interacts with the Tangle)
-* Java (OpenJDK-8-jre) (Used for the IOTA Reference Implementation (IRI))
 * PyCrypto (For the cryptography used in the project)
 * PyFFX (Symmetric encryption package)
+* pyOpenSSL
 
-It is highly recommended to run a local IRI node since the loading of the DLP and inbox will be a lot quicker. ~~In the future we will try to write code that will find the fastest nodes from a list of openly available nodes (such as iota.dance) and therefore minimize the need to run a node~~(Recent update).
+It is highly recommended to run a local IRI (IOTA Reference Implementation) node since the loading of the DLP and inbox will be a lot quicker. ~~In the future we will try to write code that will find the fastest nodes from a list of openly available nodes (such as iota.dance) and therefore minimize the need to run a node~~(Recent update).
 
 ## Installing
 At the current time the project has been tested to work on MacOS and Ubuntu (19.10 and below), but no Windows Version has yet been tested. The project in the future might be rewritten in C++ (depends on library availability). To get started follow the instructions as below;
-* Clone this repo
-* Navigate to where the repo is cloned
-* Run either **Installer_Scipt_Linux.sh** (Ubuntu) or **Installer_Scipt_OSX.sh** (MacOS)
-* Download the IRI client from the IOTA GitHub repository and run it.
+* Clone this repo (git clone https://github.com/ConsensusGroup/Haystack.git)
+* Navigate to Haystack
+* Run **Installer_Script_Linux_OSX.sh**
 * Navigate to the *HayStack_Client* folder directory
 * Open a terminal and type in *python main.py* this will now run the HayStack application (**NOTE: Run this with python2.7!**)
 
@@ -25,16 +24,18 @@ Assuming no error has occurred the client it ready to go.
 ## Troubleshooting
 Some useful tips in case there are some errors
 * ~~If the client is throwing IRI related issues make sure your node is synced to the IOTA network by downloading a copy of the Tangle (they do periodic snaphots so size shouldn't be too much of an issue).~~ (Recent Update uses external nodes if IRI isn't synced or present)
-* Make sure you don't run this on a Raspberry Pi or some other low spec machine since this application does cost quite a bit of CPU power. The protocol worked relatively fine on a 13 inch MacBook Pro (2013) so any recent computer will do.
+* If you run into permission issues whilst running the installer script try running it in sudo mode.
 
 ## Future Plans
 Being featured in the IOTA competition "The Perfect Brainstrom" is quite an accomplishment and most certainly motivating for the project. Therefore the project aims to include the following features in future releases;
 * Node incentivisation: This can be achieved via multi signature IOTA addresses that allow a node operator to earn some IOTA by running it in passive mode.
-* Private key and Seed retrival mechanism: This feature would allow a user to reconstruct the Private Key and Seed by pulling from the Tangle if the device accidentally dies.
+* Private key and Seed retrieval mechanism: This is a backup feature of the private key and seed.
 * User Interface: UI development is quite tough and currently Kivy is being discussed as a viable option.
-* ~~Node finder: A script that finds the fastest public node available to the client if no local IRI instance is found.~~
 * C++ rewrite: Once the application is out of proof of concept phase a complete rewrite of the protocol is being discussed in C++.
-* Mobile release: To allow for the non technical people to get complete privacy, a mobile version of the protocol should be developed so that no central entity is responsible for key issueance.
+* Mobile release: To allow for the non technical people to get complete privacy, a mobile version of the protocol should be developed so that no central entity is responsible for key issuance.
+
+Completed Objectives
+* ~~Node finder: A script that finds the fastest public node available to the client if no local IRI instance is found.~~
 
 ## Donations and Contributions
 If you like this project and what it stands for do consider donating to the project:
@@ -47,7 +48,6 @@ For any developers that want to help out with the project feel free to contact u
 
 ## Error Reporting
 If there are any run time issues that you encounter whilst running the app please raise an issue on GitHub with a log of the errors that you encountered. Any bugs that are reported are greatly appreciated.
-
 
 ## **__Introduction to HayStack:__**
 To obfuscate the addresses of senders and receivers in a conversation, the Haystack protocol implements a multilayered encryption and relay scheme. Each relayer in the message trajectory uses their private key to decrypt a layer of encryption and reveal the next relay address. This scheme enforces the requirement that the message ciphertext be distinct between each relay, and ensures that the destination address cannot be decisively determined by any relayer. In addition, by using a hybrid cryptosystem which normalises and preserves the ciphertext length, the packet size is made invariant to the content.
