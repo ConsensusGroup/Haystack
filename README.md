@@ -24,7 +24,7 @@ Assuming no error has occurred the client it ready to go.
 
 ## Troubleshooting
 Some useful tips in case there are some errors
-* ~ If the client is throwing IRI related issues make sure your node is synced to the IOTA network by downloading a copy of the Tangle (they do periodic snaphots so size shouldn't be too much of an issue).~~ (Recent Update uses external nodes if IRI isn't synced or present)
+* ~~If the client is throwing IRI related issues make sure your node is synced to the IOTA network by downloading a copy of the Tangle (they do periodic snaphots so size shouldn't be too much of an issue).~~ (Recent Update uses external nodes if IRI isn't synced or present)
 * Make sure you don't run this on a Raspberry Pi or some other low spec machine since this application does cost quite a bit of CPU power. The protocol worked relatively fine on a 13 inch MacBook Pro (2013) so any recent computer will do.
 
 ## Future Plans
@@ -46,7 +46,7 @@ ETH: **0xBd6ECEA2C8E9EeB2fFe5B2a07d8D3C900c1F48C8**
 For any developers that want to help out with the project feel free to contact us directly on discord (woywoy123#91841).
 
 ## Error Reporting
-If there are any run time issues that you encounter whilst running the app please raise an issue on GitHub with a log of the errors that you encountered. Any bugs that are reported are greatly appreciated. 
+If there are any run time issues that you encounter whilst running the app please raise an issue on GitHub with a log of the errors that you encountered. Any bugs that are reported are greatly appreciated.
 
 
 ## **__Introduction to HayStack:__**
