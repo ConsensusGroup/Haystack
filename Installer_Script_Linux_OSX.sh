@@ -20,8 +20,9 @@ then
   pip install --upgrade pip
 elif [[ "$Platform" == "Mac" ]];
 then
-  easy_install pip
-  pip install --upgrade pip
+  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  brew install python2
+  pip install --upgrade pip setuptools
 fi
 
 #Install pyOpenSSL
