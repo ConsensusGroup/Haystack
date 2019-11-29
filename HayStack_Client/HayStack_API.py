@@ -80,7 +80,7 @@ class HayStack():
 		#Output = [List of usernames]
 		return Contact_Names
 
-	def Build_All_Directories(self):
+	def Build_All_Directories(self, Restore = False):
 		Initialization().Build_Application()
 		Initialization().InboxGenerator()
 		User_Profile()
@@ -149,6 +149,9 @@ class Run_HayStack_Client(threading.Thread):
 					except:
 						print("Connection Error. You are not online")
 						delay = 30
+				except:
+					if "BadApiResponse: 400 response from node:" in str(sys.exc_info()[0]):
+						print("Your IOTA node is not in sync.")
 
 			print("Dynamic Public Ledger... Offline\n")
 
@@ -200,6 +203,9 @@ class Run_HayStack_Client(threading.Thread):
 						print("\nPing has been sent.\n")
 					except IndexError:
 						print("\nPing Error...\n")
+					except:
+						pass
+
 			print("Ping function... Offline")
 
 		elif self.Function == "Node_Testing":

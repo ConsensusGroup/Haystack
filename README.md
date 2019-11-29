@@ -29,13 +29,14 @@ Some useful tips in case there are some errors
 ## Future Plans
 Being featured in the IOTA competition "The Perfect Brainstrom" is quite an accomplishment and most certainly motivating for the project. Therefore the project aims to include the following features in future releases;
 * Node incentivisation: This can be achieved via multi signature IOTA addresses that allow a node operator to earn some IOTA by running it in passive mode.
-* Private key and Seed retrieval mechanism: This is a backup feature of the private key and seed.
+* Implementation of an autonomous updating system.
 * User Interface: UI development is quite tough and currently Kivy is being discussed as a viable option.
 * C++ rewrite: Once the application is out of proof of concept phase a complete rewrite of the protocol is being discussed in C++.
 * Mobile release: To allow for the non technical people to get complete privacy, a mobile version of the protocol should be developed so that no central entity is responsible for key issuance.
 
 Completed Objectives
 * ~~Node finder: A script that finds the fastest public node available to the client if no local IRI instance is found.~~
+* ~~Private key and Seed retrieval mechanism: This is a backup feature of the private key and seed.~~
 
 ## Donations and Contributions
 If you like this project and what it stands for do consider donating to the project:

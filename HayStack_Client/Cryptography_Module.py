@@ -25,7 +25,9 @@ class Key_Generation(Configuration):
 		self.PublicKey = pair.publickey().exportKey(format = 'PEM')
 		return self
 
-	def PrivateKey_Import(self):
+	def PrivateKey_Import(self, Password = ""):
+		if Password != "":
+			self.Password = Password
 		PrivateCipher = Tools().ReadLine(directory = str(self.UserFolder+"/"+self.KeysFolder+"/"+self.PrivateKey))
 		Keys = RSA.importKey(PrivateCipher, passphrase = self.Password)
 		self.PublicKey = Keys.publickey().exportKey(format = 'PEM')

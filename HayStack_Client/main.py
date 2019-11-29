@@ -5,6 +5,7 @@ from Tools_Module import Tools
 from Configuration_Module import Configuration
 from HayStack_API import HayStack, Run_HayStack_Client
 from User_Modules import User_Profile
+from BackupRestore_Module import Restore, Backup
 
 #Other imports
 import config
@@ -61,34 +62,64 @@ def Welcome_Screen():
 	                                                                                    ####                                                                       """)
 def First_Usage():
 	if Tools().Check_File(File = str(Configuration().UserFolder+"/"+Configuration().KeysFolder+"/"+Configuration().PrivateKey)) == False:
+
+		print("Searching for working IOTA nodes.. please wait 30 seconds...")
+		Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
+		Node_Finder.start()
+		for i in range(30):
+			sleep(1)
+		Node_Finder.Terminate()
+
+		sleep(10)
 		#First time this program was executed
+		print("Please enter a password for HayStack.")
 		while True:
 			Password = getpass.getpass(prompt = "Enter a password: ")
 			Password2 = getpass.getpass(prompt = "Enter the passsword again: ")
-			if Password == Password2:
+			if Password == Password2 != "":
 				config.Password = Password
 				break
 			else:
 				print("")
 				print("Passwords do not match!")
 				print("")
-		try:
-			HayStack().Build_All_Directories()
-		except:
-			if "requests.exceptions.ConnectionError" in str(sys.exc_info()[0]):
-				print("No IRI instance running on device.")
-				sleep(2)
-				print("An alternative node will be used from a list.. please wait 30 seconds...")
-				Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
-				Node_Finder.start()
-				for i in range(30):
-					sleep(1)
-				Node_Finder.Terminate()
+
+		while True:
+			print("Would you like to restore from backup?(y/n)")
+			Choice = raw_input(">>> ")
+			if Choice == "y":
+				Recovery = True
+				print("You have chosen to recover your keys. Please enter your two passwords in the correct order.")
+				print("Type in password 1")
+				SuperSecretKey1 = raw_input(">>> ")
+				print("Type in password 2")
+				SuperSecretKey2 = raw_input(">>> ")
+
+				print("Password 1: "+SuperSecretKey1+" Password 2: "+SuperSecretKey2)
+				answer = raw_input("Are these correct? (y/n) ")
+				if answer == "y":
+					break
+				else:
+					pass
+
+			elif Choice == "n":
+				Recovery = False
+				break
 			else:
-				print(sys.exc_info()[0])
+				print("Not a valid choice...")
+
+		if Recovery == True:
+			outcome = Restore(SuperSecretKey1, SuperSecretKey2).Restore_FileDirectory()
+			if outcome == False:
+				print("Failed to restore keys.")
+				HayStack().Build_All_Directories()
+			else:
+				print("Found your house keys!")
+		else:
+			HayStack().Build_All_Directories()
+
 	else:
 		while True:
-			#Turn this on later
 			Password = getpass.getpass(prompt = "Enter the HayStack password: ", stream = None)
 			config.Password = Password
 			try:
@@ -154,7 +185,7 @@ class Interactive_Client():
 	def Third_Screen(self):
 		self.Background(Action = "Start")
 		while True:
-			User_Choice = raw_input("Please choose one of the options: \n a) Compose Message \n b) Check Inbox \n c) Add or remove Contacts \n d) Go back \n>>> ")
+			User_Choice = raw_input("Please choose one of the options: \n a) Compose Message \n b) Check Inbox \n c) Add or remove Contacts \n d) Go back \n *) Backup Menu \n>>> ")
 			if User_Choice == "a":
 				self.Message_Composer()
 				pass
@@ -179,20 +210,34 @@ class Interactive_Client():
 					while Contact_Loop == True:
 						for i in HayStack().Return_Contact_List():
 							print(i+"\n")
-							Remove = raw_input(">>>")
-							if Remove == "b":
-								Contact_Loop = False
-							elif Remove in HayStack().Return_Contact_List():
-								HayStack().Delete_From_Contacts(Username = Remove)
-								Contact_Loop = False
-							else:
-								print("User Name was not found.\n")
+						Remove = raw_input(">>>")
+						if Remove == "b":
+							Contact_Loop = False
+						elif Remove in HayStack().Return_Contact_List():
+							HayStack().Delete_From_Contacts(Username = Remove)
+							Contact_Loop = False
+						else:
+							print("User Name was not found.\n")
 
 				elif User_Choice == "c":
 					pass
 			elif User_Choice == "d":
 				self.Background(Action = "Stop")
 				break
+			elif User_Choice == "*":
+				while True:
+					print("Warning this is the backup menu! Here you have the ability to store your private key and password on the tangle.\nThere is a risk of compromise if the passwords chosen are not strong enough.")
+					print("The passwords will be shown in clear text when you enter them in.")
+					print("To leave this menu just leave the passwords blank.")
+					SuperSecretKey1 = raw_input("Password 1:>>> ")
+					SuperSecretKey2 = raw_input("Password 2:>>> ")
+					if SuperSecretKey1 == SuperSecretKey2 == "":
+						break
+					elif SuperSecretKey1 != SuperSecretKey2:
+						Backup(SuperSecretKey1 = SuperSecretKey1, SuperSecretKey2 = SuperSecretKey2).PublicBackUp()
+						break
+					elif SuperSecretKey1 == SuperSecretKey2:
+						print("Try a stronger combination. The passwords have to be different")
 			else:
 				print("Not a valid choice.")
 		return self
@@ -269,6 +314,9 @@ class Interactive_Client():
 						Receipt = HayStack().Send_Message(Message = Message, ReceiverAddress = Address, PublicKey = PublicKey, DifferentPaths = DifferentPaths, Encrypted = True)
 						print("Message sent. Transaction hash: "+str(Receipt[0][1]))
 					break
+				if len(Recipients) == 0:
+					print("You dont have any contacts. Returning to previous menu.")
+					break
 				else:
 					print("Nothing entered. Returning to previous menu.")
 					break
@@ -293,7 +341,7 @@ class Interactive_Client():
 							for i in Current_Ledger_Pool:
 								if Choice == i[0]:
 									Public_Key_of_Choice = i[1]
-									print(Public_Key_of_Choice) # <---- Delete after
+									print(Public_Key_of_Choice)
 							if Public_Key_of_Choice != "":
 								print("Enter your message to: "+Choice+"\n")
 								Message = raw_input(">>> ")
@@ -311,6 +359,8 @@ class Interactive_Client():
 							break
 					except ValueError:
 						print("Error with input. Make sure you type in either the above address in or simply choose the number.")
+				else:
+					print("There are currently no users online. Your address will appear shortly")
 			elif User_Choice == "c":
 				break
 		return self
