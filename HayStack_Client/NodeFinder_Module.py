@@ -21,8 +21,7 @@ class Node_Finder(Configuration):
         for i in Node_List:
             Node_Dictionary = Tools().Add_To_Dictionary(Input_Dictionary = Node_Dictionary, Entry_Label = i, Entry_Value = "")
 
-        if Tools().Check_File(File = self.NodeFile_Dir) == False:
-            Tools().Write_To_Json(directory = self.NodeFile_Dir, Dictionary = Node_Dictionary)
+        Tools().Write_To_Json(directory = self.NodeFile_Dir, Dictionary = Node_Dictionary)
 
         return self
 
