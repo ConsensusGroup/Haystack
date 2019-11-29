@@ -85,7 +85,7 @@ def First_Usage():
 				print("")
 
 		while True:
-			print("Would you like to restore from backup?(y/n)")
+			print("Would you like to restore from backup? (y/n)")
 			Choice = raw_input(">>> ")
 			if Choice == "y":
 				Recovery = True
@@ -116,7 +116,21 @@ def First_Usage():
 			else:
 				print("Found your house keys!")
 		else:
-			HayStack().Build_All_Directories()
+			Started = False
+			while True:
+				try:
+					HayStack().Build_All_Directories()
+					Node_Finder.Terminate()
+				except:
+					print("Your connection is unstable. Performing a full scan of the nodes available")
+					if Started == False:
+						Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
+						Node_Finder.start()
+						Started = True
+					for i in range(180):
+						sleep(1)
+
+
 
 	else:
 		while True:
