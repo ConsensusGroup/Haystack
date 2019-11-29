@@ -9,7 +9,7 @@ Before cloning this repo it is important to note this is still an alpha version 
 * PyFFX (Symmetric encryption package)
 * pyOpenSSL
 
-It is highly recommended to run a local IRI (IOTA Reference Implementation) node since the loading of the DLP and inbox will be a lot quicker. ~~In the future we will try to write code that will find the fastest nodes from a list of openly available nodes (such as iota.dance) and therefore minimize the need to run a node~~(Recent update).
+It is highly recommended to run a local IRI (IOTA Reference Implementation) node since the loading of the DLP and inbox will be a lot quicker.
 
 ## Installing
 At the current time the project has been tested to work on MacOS and Ubuntu (19.10 and below), but no Windows Version has yet been tested. The project in the future might be rewritten in C++ (depends on library availability). To get started follow the instructions as below;
@@ -23,7 +23,7 @@ Assuming no error has occurred the client it ready to go.
 
 ## Troubleshooting
 Some useful tips in case there are some errors
-* ~~If the client is throwing IRI related issues make sure your node is synced to the IOTA network by downloading a copy of the Tangle (they do periodic snaphots so size shouldn't be too much of an issue).~~ (Recent Update uses external nodes if IRI isn't synced or present)
+* For MacOSX try using python2 after running the installer.
 * If you run into permission issues whilst running the installer script try running it in sudo mode.
 
 ## Future Plans
