@@ -13,11 +13,13 @@ fi
 if [[ "$Platform" == "Linux" ]];
 then
   #We need to make sure that python is up to date and installed.
-  yes | apt-get install python-dev
+  apt update
+  yes | apt-get install python2.7
 
   #Install pip
   yes | apt install python-pip
   pip install --upgrade pip
+  
 elif [[ "$Platform" == "Mac" ]];
 then
   /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
