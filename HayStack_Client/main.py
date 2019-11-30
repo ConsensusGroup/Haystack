@@ -6,7 +6,7 @@ from Configuration_Module import Configuration
 from HayStack_API import HayStack, Run_HayStack_Client
 from User_Modules import User_Profile
 from BackupRestore_Module import Restore, Backup
-
+from NodeFinder_Module import Node_Finder
 #Other imports
 import config
 import getpass
@@ -64,49 +64,67 @@ def First_Usage():
 	if Tools().Check_File(File = str(Configuration().UserFolder+"/"+Configuration().KeysFolder+"/"+Configuration().PrivateKey)) == False:
 
 		print("Searching for working IOTA nodes.. please wait 30 seconds...")
-		Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
-		Node_Finder.start()
-		for i in range(30):
-			sleep(1)
-		Node_Finder.Terminate()
+		try:
+			for i in range(30):
+				sleep(1)
 
-		sleep(10)
-		#First time this program was executed
-		print("Please enter a password for HayStack.")
-		while True:
-			Password = getpass.getpass(prompt = "Enter a password: ")
-			Password2 = getpass.getpass(prompt = "Enter the passsword again: ")
-			if Password == Password2 != "":
-				config.Password = Password
-				break
-			else:
-				print("")
-				print("Passwords do not match!")
-				print("")
-
-		while True:
-			print("Would you like to restore from backup? (y/n)")
-			Choice = raw_input(">>> ")
-			if Choice == "y":
-				Recovery = True
-				print("You have chosen to recover your keys. Please enter your two passwords in the correct order.")
-				print("Type in password 1")
-				SuperSecretKey1 = raw_input(">>> ")
-				print("Type in password 2")
-				SuperSecretKey2 = raw_input(">>> ")
-
-				print("Password 1: "+SuperSecretKey1+" Password 2: "+SuperSecretKey2)
-				answer = raw_input("Are these correct? (y/n) ")
-				if answer == "y":
+			#First time this program was executed
+			print("Please enter a password for HayStack.")
+			while True:
+				Password = getpass.getpass(prompt = "Enter a password: ")
+				Password2 = getpass.getpass(prompt = "Enter the passsword again: ")
+				if Password == Password2 != "":
+					config.Password = Password
 					break
 				else:
-					pass
+					print("")
+					print("Passwords do not match!")
+					print("")
+		except KeyboardInterrupt:
+			Node_Finder.Terminate()
+			exit()
 
-			elif Choice == "n":
-				Recovery = False
-				break
-			else:
-				print("Not a valid choice...")
+		try:
+			while True:
+				print("Would you like to restore from backup? (y/n)")
+				Choice = raw_input(">>> ")
+				if Choice == "y":
+					print("Checking connectivity. Please wait.")
+					for i in range(60):
+						sleep(1)
+						Dictionary = HayStack().Fastest_Node()
+						try:
+							x = Dictionary["Receive"]
+							y = Dictionary["Send"]
+							if x != "Error" and y != "Error":
+								break
+						except:
+							pass
+
+					Recovery = True
+					print("You have chosen to recover your keys. Please enter your two passwords in the correct order.")
+					print("Type in password 1")
+					SuperSecretKey1 = raw_input(">>> ")
+					print("Type in password 2")
+					SuperSecretKey2 = raw_input(">>> ")
+
+					print("Password 1: "+SuperSecretKey1+" Password 2: "+SuperSecretKey2)
+					answer = raw_input("Are these correct? (y/n/b) ")
+					if answer == "y":
+						break
+					elif answer == "b":
+						break
+					elif answer == "n":
+						pass
+
+				elif Choice == "n":
+					Recovery = False
+					break
+				else:
+					print("Not a valid choice...")
+		except KeyboardInterrupt:
+			Node_Finder.Terminate()
+			exit()
 
 		if Recovery == True:
 			outcome = Restore(SuperSecretKey1, SuperSecretKey2).Restore_FileDirectory()
@@ -116,22 +134,20 @@ def First_Usage():
 			else:
 				print("Found your house keys!")
 		else:
-			Started = False
-			while True:
+			for i in range(30):
 				try:
 					HayStack().Build_All_Directories()
+					break
+				except KeyboardInterrupt:
 					Node_Finder.Terminate()
+					exit()
 				except:
-					print("Your connection is unstable. Performing a full scan of the nodes available")
-					if Started == False:
-						Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
-						Node_Finder.start()
-						Started = True
-					for i in range(180):
-						sleep(1)
-
-
-
+					print("Your connection is unstable. All nodes are now being tested.")
+					Dictionary = HayStack().Fastest_Node()
+					x = Dictionary("Receive")
+					y = Dictionary("Send")
+					if x != "Error" and y != "Error":
+						print("Nodes found!")
 	else:
 		while True:
 			Password = getpass.getpass(prompt = "Enter the HayStack password: ", stream = None)
@@ -150,10 +166,9 @@ def Second_Screen():
 			return False
 		elif User_Choice == "c":
 			return None
+			break
 
-def Non_Interactive_Client():
-	Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
-	Node_Finder.start()
+def Non_Interactive_Client(Check_Sync = False):
 	Sync_Messanger = Run_HayStack_Client(Function = "Sync_Messanger")
 	Sync_Messanger.start()
 	DynamicPublicLedger = Run_HayStack_Client(Function = "Dynamic_Public_Ledger")
@@ -167,7 +182,6 @@ def Non_Interactive_Client():
 			Sync_Messanger.Terminate()
 			DynamicPublicLedger.Terminate()
 			PingFunction.Terminate()
-			Node_Finder.Terminate()
 			config.RunTime = False
 			break
 		else:
@@ -176,28 +190,22 @@ def Non_Interactive_Client():
 class Interactive_Client():
 	def __init__(self):
 		#This initiates the client
-		self.Sync_Messanger = Run_HayStack_Client(Function = "Sync_Messanger")
 		self.DynamicPublicLedger = Run_HayStack_Client(Function = "Dynamic_Public_Ledger")
 		self.PingFunction = Run_HayStack_Client(Function = "Ping_Function")
 		self.Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
 
 	def Background(self, Action):
 		if Action == "Start":
-			self.Sync_Messanger.start()
 			self.DynamicPublicLedger.start()
 			self.PingFunction.start()
-			self.Node_Finder.start()
 			config.RunTime = True
 		elif Action == "Stop":
 			config.RunTime = False
-			self.Sync_Messanger.Terminate()
 			self.DynamicPublicLedger.Terminate()
 			self.PingFunction.Terminate()
-			self.Node_Finder.Terminate()
 		return self
 
 	def Third_Screen(self):
-		self.Background(Action = "Start")
 		while True:
 			User_Choice = raw_input("Please choose one of the options: \n a) Compose Message \n b) Check Inbox \n c) Add or remove Contacts \n d) Go back \n *) Backup Menu \n>>> ")
 			if User_Choice == "a":
@@ -224,6 +232,9 @@ class Interactive_Client():
 					while Contact_Loop == True:
 						for i in HayStack().Return_Contact_List():
 							print(i+"\n")
+						if len(HayStack().Return_Contact_List()) == 0:
+							print("No contacts")
+							Contact_Loop = False
 						Remove = raw_input(">>>")
 						if Remove == "b":
 							Contact_Loop = False
@@ -236,7 +247,6 @@ class Interactive_Client():
 				elif User_Choice == "c":
 					pass
 			elif User_Choice == "d":
-				self.Background(Action = "Stop")
 				break
 			elif User_Choice == "*":
 				while True:
@@ -335,8 +345,12 @@ class Interactive_Client():
 					print("Nothing entered. Returning to previous menu.")
 					break
 			elif User_Choice == "b":
-				Current_Ledger_Pool = HayStack().Get_Current_Ledger_Addresses().Current_Addresses
-				Current_Client_Address = HayStack().Get_Current_Address().Current_Address
+				try:
+					Current_Ledger_Pool = HayStack().Get_Current_Ledger_Addresses().Current_Addresses
+					Current_Client_Address = HayStack().Get_Current_Address().Current_Address
+				except:
+					print("Please wait for Haystack to refresh the list.")
+					Current_Ledger_Pool = []
 				if len(Current_Ledger_Pool) >= 1:
 					z = 1
 					print("Choose one of the addresses below:\n")
@@ -380,14 +394,52 @@ class Interactive_Client():
 		return self
 
 if __name__ == "__main__":
-	#Check if the user is using this software for the first time
+	Node_Finder().Build_Directory()
+	Node_Finder = Run_HayStack_Client(Function = "Node_Testing")
+	Node_Finder.start()
 	First_Usage()
 	while True:
 		Outcome = Second_Screen()
 		if  Outcome == None:
 			config.RunTime = False
-			exit()
+			Node_Finder.Terminate()
+			break
 		elif Outcome == False:
 			Non_Interactive_Client()
+			Node_Finder.Terminate()
 		elif Outcome == True:
-			Interactive_Client().Third_Screen()
+			try:
+				Sync_Messanger = Run_HayStack_Client(Function = "Sync_Messanger")
+				Sync_Messanger.start()
+				while True:
+					try:
+						Block = HayStack().Get_Current_Ledger_Addresses().Block
+						Last_Block = HayStack().Last_Online_Block()
+					except:
+						Block = 0
+						Last_Block = 1
+					if Block == Last_Block:
+						x = Interactive_Client()
+						try:
+							x.Background(Action = "Start")
+							x.Third_Screen()
+							x.Background(Action = "Stop")
+							Sync_Messanger.Terminate()
+							break
+						except KeyboardInterrupt:
+							x.Background(Action = "Stop")
+							Node_Finder.Terminate()
+							Sync_Messanger.Terminate()
+							break
+					else:
+						try:
+							print("Please wait for the node to be synced. ---> " + Sync_Messanger.Output())
+							sleep(15)
+						except KeyboardInterrupt:
+							Node_Finder.Terminate()
+							Sync_Messanger.Terminate()
+							break
+
+			except KeyboardInterrupt:
+				Node_Finder.Terminate()
+				break

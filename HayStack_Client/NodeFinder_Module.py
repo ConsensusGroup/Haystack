@@ -26,9 +26,17 @@ class Node_Finder(Configuration):
         return self
 
     def Test_Nodes(self):
-        self.Build_Directory()
-        Node_Dictionary = Tools().Read_From_Json(directory = self.NodeFile_Dir)
+        try:
+            Node_Dictionary = Tools().Read_From_Json(directory = self.NodeFile_Dir)
+        except:
+            self.Build_Directory()
+            Node_Dictionary = Tools().Read_From_Json(directory = self.NodeFile_Dir)
+
         for Node, Value in Node_Dictionary.items():
+
+            if config.RunTime == False:
+                break
+        
             config.Node = Node
             IOTA = Iota(Node, self.PublicSeed)
             IOTA_Instance = IOTA_Module(Seed = self.PublicSeed, IOTA_Instance = IOTA)
@@ -59,11 +67,8 @@ class Node_Finder(Configuration):
 
             Node_Dictionary[Node] = Temp_Dictionary
             Tools().Write_To_Json(directory = self.NodeFile_Dir, Dictionary = Node_Dictionary)
+
             if config.RunTime == False:
                 break
 
         return self
-
-
-if __name__ == "__main__":
-    Node_Finder().Test_Nodes()

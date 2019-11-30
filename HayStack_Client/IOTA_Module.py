@@ -100,7 +100,6 @@ class IOTA_Module(Configuration):
 		send = self.IOTA_Api.send_trytes(trytes = coded, depth = 4)
 		return hashed
 
-
 	def Receive(self, Start = 0, Stop = "", JSON = False, Test_Node = False):
 
 		#Return the fastest sender node from the DB if localhost is not present.

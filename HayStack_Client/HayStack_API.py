@@ -4,6 +4,7 @@
 
 
 from DynamicPublicLedger_Module import Dynamic_Public_Ledger
+from IOTA_Module import Return_Fastest_Node
 from Contact_Module import Contact_Client
 from User_Modules import Initialization, User_Profile
 from Inbox_Module import Inbox_Manager, Trusted_Paths
@@ -114,6 +115,16 @@ class HayStack():
 		#Output: If there are messages a list is returned [Message, User] else an empty list is returned []
 		return Output
 
+	def Fastest_Node(self):
+		Output = Return_Fastest_Node()
+		#Output: Dictionary with "Send" and "Receive" string.
+		return Output
+
+	def Last_Online_Block(self):
+		Output =  Trusted_Paths().Build_LedgerDB().Last_Block_Online
+		#Output: Integer
+		return Output
+
 ##### This section of the API is responsible for running background services
 class Run_HayStack_Client(threading.Thread):
 	def __init__(self, Function):
@@ -211,7 +222,7 @@ class Run_HayStack_Client(threading.Thread):
 		elif self.Function == "Node_Testing":
 			while self.RunTime == True:
 				Node_Finder().Test_Nodes()
-				for i in range(1800):
+				for i in range(30):
 					if self.RunTime == False:
 						print("Shutting down node finder...")
 						break
@@ -225,5 +236,5 @@ class Run_HayStack_Client(threading.Thread):
 
 	def Terminate(self):
 		self.RunTime = False
-		config.RunTime = self.RunTime
+		config.RunTime = False
 		return self
