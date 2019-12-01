@@ -28,7 +28,7 @@ class Backup:
         Private_Seed = User_Profile().Private_Seed
         BackUpAddress = IOTA_Module(Seed = Public_Seed).Generate_Address(Index = 2)
         Submit = IOTA_Module(Seed = Private_Seed).Send(ReceiverAddress = BackUpAddress, Message = self.Decompose())
-        print("Receipt: "+Submit)
+        print("Receipt: "+str(Submit))
 
 class Restore:
     def __init__(self, SuperSecretKey1, SuperSecretKey2):

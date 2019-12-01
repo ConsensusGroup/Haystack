@@ -412,7 +412,7 @@ if __name__ == "__main__":
 				Sync_Messanger.start()
 				while True:
 					try:
-						Block = HayStack().Get_Current_Ledger_Addresses().Block
+						Block = HayStack().Get_Current_Ledger_Addresses().BlockNumber
 						Last_Block = HayStack().Last_Online_Block()
 					except:
 						Block = 0
