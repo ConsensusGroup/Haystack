@@ -402,7 +402,6 @@ if __name__ == "__main__":
 		Outcome = Second_Screen()
 		if  Outcome == None:
 			config.RunTime = False
-			Node_Finder.Terminate()
 			break
 		elif Outcome == False:
 			Non_Interactive_Client()
@@ -428,18 +427,21 @@ if __name__ == "__main__":
 							break
 						except KeyboardInterrupt:
 							x.Background(Action = "Stop")
-							Node_Finder.Terminate()
 							Sync_Messanger.Terminate()
 							break
 					else:
 						try:
-							print("Please wait for the node to be synced. ---> " + Sync_Messanger.Output())
+							if Sync_Messanger.Output() == "":
+								print("Please wait. The node is being started. You can quit via pressing ctrl + c.")
+							else:
+								print("Node is being synced. ---> " + Sync_Messanger.Output()) +" Current block: " + Block)
 							sleep(15)
 						except KeyboardInterrupt:
-							Node_Finder.Terminate()
 							Sync_Messanger.Terminate()
 							break
 
 			except KeyboardInterrupt:
 				Node_Finder.Terminate()
 				break
+
+	Node_Finder.Terminate()

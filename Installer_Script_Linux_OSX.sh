@@ -13,27 +13,45 @@ fi
 if [[ "$Platform" == "Linux" ]];
 then
 
-  Present_PIP="${command -v pip}"
-  Version_PIP="${pip --version}"
-  echo "$Present_PIP"
-  echo "$Version_PIP"
-  #We need to make sure that python is up to date and installed.
-  apt update
-  yes | apt-get install python2.7
+  if [[ $(command -v pip) == "" ]];
+  then
+    echo "Installing pip and python2.7"
+    # We need to make sure that python is up to date and installed.
+    apt update
+    yes | apt-get install python2.7
 
-  #Install pip
-  yes | apt install python-pip
-  pip2 install --upgrade pip
+    #Install pip
+    yes | apt install python-pip
+    pip2 install --upgrade pip
+    pip="False"
 
-  #Install pyOpenSSL
-  pip2 install pyOpenSSL
+  elif [[ $(command -v pip) == "/usr/local/bin/pip" ]];
+  then
+    if [[ $(pip --version) == *"pip (python 2.7)"* ]];
+    then
+      pip="True"
+    fi
+  fi
 
-  #Installing PyOTA for the HayStack Protocol
-  pip2 install pyota[ccurl]
 
-  #Installing Cryptography dependencies
-  pip2 install pycrypto
-  pip2 install pyffx
+  if [[ $pip == "True" ]];
+  then
+    pip install pyOpenSSL
+    pip install pyota[ccurl]
+    pip install pycrypto
+    pip install pyffx
+  elif [[ $pip == "False" ]];
+  then
+    #Install pyOpenSSL
+    pip2 install pyOpenSSL
+
+    #Installing PyOTA for the HayStack Protocol
+    pip2 install pyota[ccurl]
+
+    #Installing Cryptography dependencies
+    pip2 install pycrypto
+    pip2 install pyffx
+  fi
 
 elif [[ "$Platform" == "Mac" ]];
 then
