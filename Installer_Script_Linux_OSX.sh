@@ -21,8 +21,11 @@ then
     yes | apt-get install python2.7
 
     #Install pip
-    yes | apt install python-pip
-    pip2 install --upgrade pip
+    for i in 1 2;
+    do
+      yes | apt install python-pip
+      pip2 install --upgrade pip
+    done
     pip="False"
 
   elif [[ $(command -v pip) == "/usr/local/bin/pip" ]];
