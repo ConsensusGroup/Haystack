@@ -434,7 +434,7 @@ if __name__ == "__main__":
 							if Sync_Messanger.Output() == "":
 								print("Please wait. The node is being started. You can quit via pressing ctrl + c.")
 							else:
-								print("Node is being synced. ---> " + Sync_Messanger.Output()) +" Current block: " + Block)
+								print("Node is being synced. ---> " + Sync_Messanger.Output()) +" Current block: " + str(Block))
 							sleep(15)
 						except KeyboardInterrupt:
 							Sync_Messanger.Terminate()

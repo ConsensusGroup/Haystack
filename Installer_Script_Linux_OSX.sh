@@ -23,8 +23,8 @@ then
     #Install pip
     for i in 1 2;
     do
-      yes | apt install python-pip
-      pip2 install --upgrade pip
+      (yes | apt install python-pip) || echo "Hello"
+      (pip2 install --upgrade pip) || echo "Hello2"
     done
     pip="False"
 
