@@ -47,7 +47,13 @@ class HayStack:
 
     def JSON_Manipulation(self, File_Directory, **kwargs):
         Output = Tools().JSON_Manipulation(File_Directory, **kwargs)
-        print(Output)
+        #Optional Input: Dictionary
+        #Output: Write to file -> True, Error(FileNotFoundError) -> False, Read from file = Dictionary
+        return Output
+
+    def UserProfile_Keys(self, Password):
+        Output = UserProfile().Get_Keys(Password)
+        #Output: Output.PrivateKey (bytes), Output.PrivateSeed [Decrypted = bytes, Failed Decryption = False], Output.PublicKey
         return Output
 
 if __name__ == "__main__":
@@ -55,7 +61,8 @@ if __name__ == "__main__":
     c = Configuration()
 
     #Change this to test module
-    Function = "JSON_Manipulation"
+    Function = "UserProfile_Keys"
+    #Function = "Delete_File"
 
     if Function == "Seed_Generator":
         print(x.Seed_Generator())
@@ -72,4 +79,6 @@ if __name__ == "__main__":
 #    if Function == "Import_PrivateKey": # Need to test wrong password case to catch exception
 #        x.Import_PrivateKey(PrivateKey = Key, Password = "")
     if Function == "JSON_Manipulation":
-        x.JSON_Manipulation(File_Directory = c.User_Folder+"/"+c.Keys_Folder+"/"+c.PrivateKey_File)
+        x.JSON_Manipulation(File_Directory = c.User_Folder+"/"+c.Keys_Folder+"/"+c.PrivateKey_File, Dictionary = {})
+    if Function == "UserProfile_Keys":
+        print(x.UserProfile_Keys(Password = config.Password).PrivateSeed)

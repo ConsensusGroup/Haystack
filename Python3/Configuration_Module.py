@@ -9,8 +9,7 @@ class Configuration:
         # User Profile:
         self.User_Folder = "UserData/"
         self.Keys_Folder = "Keys/"
-        self.PrivateSeed_File = "PrivateSeed.txt"
-        self.PrivateKey_File = "PrivateKey.pem"
+        self.PrivateKey_File = "Keys_Seed.txt"
         self.Password = config.Password
 
         # Inbox:

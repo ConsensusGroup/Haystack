@@ -1,5 +1,17 @@
 import os
 import json
+from base64 import b64encode, b64decode
+
+class Encoding:
+    def __init__(self):
+        pass
+
+    def To_Base64(self, Input):
+        return b64encode(Input)
+
+    def From_Base64(self, Input):
+        return b64decode(Input)
+
 
 class Tools:
     def __init__(self):
@@ -43,8 +55,22 @@ class Tools:
     def JSON_Manipulation(self, File_Directory, Setting = "r", **kwargs):
         try:
             if "Dictionary" in kwargs:
-                file = open(File_Directory, "w")
-                file.write(json.dumps(kwargs["Dictionary"]))
+                if self.File_Manipulation(Directory = "/".join(File_Directory.split("/")[:len(File_Directory.split("/"))-1])) == False:
+                    self.File_Manipulation(Directory = "/".join(File_Directory.split("/")[:len(File_Directory.split("/"))-1]), Setting = "b")
+                if Setting == "r":
+                    Setting = "w"
+                file = open(File_Directory, Setting)
+                try:
+                    file.write(json.dumps(kwargs["Dictionary"]))
+                except TypeError:
+                    self.File_Manipulation(Directory = File_Directory, Setting = "d")
+                    file = open(File_Directory, Setting)
+                    Dictionary = {}
+                    for label, value in kwargs["Dictionary"].items():
+                        if isinstance(value, bytes) == True:
+                            value = str(Encoding().To_Base64(Input = value), "utf-8")
+                        Dictionary[label] = value
+                    file.write(json.dumps(Dictionary))
                 return True
             else:
                 return json.load(open(File_Directory, Setting))
