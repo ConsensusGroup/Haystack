@@ -8,7 +8,11 @@ def Initialization():
     u = UserProfile()
     for i in [u.Trusted, u.Traj, u.Keys, u.Received, u.Relayed, u.NotRelayed, u.Inbox, u.LedgerAccounts, u.CurrentLedger, u.Trust, u.LastBlock,  u.Node, u.Contact]:
         if Tools().File_Manipulation(Directory = i) == False:
-            print(Tools().JSON_Manipulation(File_Directory = i, Dictionary = {}))
+            Tools().JSON_Manipulation(File_Directory = i, Dictionary = {})
+
+        # This segment clears the node results when starting the application. This forces the application to retest the IOTA nodes. 
+        if i == u.Node:
+            Tools().JSON_Manipulation(File_Directory = i, Dictionary = {})
 
     if Tools().JSON_Manipulation(File_Directory = u.Keys) == {}:
         PrivDic = {}

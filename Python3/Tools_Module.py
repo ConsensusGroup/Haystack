@@ -1,6 +1,8 @@
 import os
 import json
 from base64 import b64encode, b64decode
+from Configuration_Module import Configuration
+import math
 
 class Encoding:
     def __init__(self):
@@ -76,3 +78,10 @@ class Tools:
                 return json.load(open(File_Directory, Setting))
         except FileNotFoundError:
             return False
+
+    def Epoch_To_Block(self, Epoch_Time):
+        c = Configuration()
+        BlockFloat = float(Epoch_Time - c.Genesis_Time)/float(c.Block_Duration*1000)
+        Block_Remainder = BlockFloat - math.trunc(BlockFloat)
+        CurrentBlock = math.trunc(BlockFloat)
+        return [CurrentBlock, Block_Remainder]

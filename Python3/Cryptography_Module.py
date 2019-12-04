@@ -4,8 +4,8 @@ from Configuration_Module import Configuration
 #PyCrypto library
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
-
-
+from Crypto.Hash import SHA256
+from Crypto.Signature import PKCS1_v1_5
 
 class Key_Generation:
     def __init__(self):
@@ -29,6 +29,13 @@ class Encryption:
         cipher = PKCS1_OAEP.new(RSA.importKey(PublicKey))
         return cipher.encrypt(PlainText.encode())
 
+    def Sign_Message(self, ToSign, PrivateKey, Password):
+        digest = SHA256.new()
+        digest.update(ToSign)
+        Signer = PKCS1_v1_5.new(RSA.importKey(PrivateKey, Password))
+        Signature = Signer.sign(digest)
+        return Signature
+
 class Decryption:
     def __init__(self):
         pass
@@ -40,3 +47,10 @@ class Decryption:
         except ValueError:
             DecryptedText = False
         return DecryptedText
+
+    def Signature_Verification(self, ToVerify, PublicKey, Signature):
+        digest = SHA256.new()
+        digest.update(ToVerify)
+        Verifier = PKCS1_v1_5.new(RSA.importKey(PublicKey))
+        Verified = Verifier.verify(digest, Signature)
+        return Verified

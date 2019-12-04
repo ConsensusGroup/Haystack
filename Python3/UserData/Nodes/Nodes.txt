@@ -1,0 +1,1 @@
+{"http://localhost:14265": {"Send_No_PoW": 2.7138242721557617, "Send_PoW": 0.9476237297058105, "Read": 0.3621509075164795}, "https://mama.iota.family:14267": {"Send_No_PoW": "Error", "Send_PoW": "Error", "Read": 1.5128192901611328}, "http://node05.iotatoken.nl:16265": {"Send_No_PoW": 10.799581050872803, "Send_PoW": 8.43317723274231, "Read": 1.0003612041473389}}
