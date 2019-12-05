@@ -74,9 +74,18 @@ def Return_Optimal_Node():
     Temp_Send = []
     Temp_Read = []
     for node, measurements in Node_Dictionary.items():
-        PoW = measurements["Send_PoW"]
-        No_PoW = measurements["Send_No_PoW"]
-        Read = measurements["Read"]
+        try:
+            PoW = measurements["Send_PoW"]
+        except KeyError:
+            Pow = "Error"
+        try:
+            No_PoW = measurements["Send_No_PoW"]
+        except KeyError:
+            No_PoW = "Error"
+        try:
+            Read = measurements["Read"]
+        except KeyError:
+            Read = "Error"
 
         #Checking Dead Nodes
         if PoW == "Error":

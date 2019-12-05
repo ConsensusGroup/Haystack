@@ -71,6 +71,9 @@ class IOTA:
             elif "certificate verify failed" in str(sys.exc_info()[1]):
                 print("Node does not have a valid SSL certificate, finding an alternative node...") #< ----------------------------------------------------
 
+            elif "[Errno 61] Connection refused" in str(sys.exc_info()[1]):
+                print("Connection error, finding an alternative node...") #< ----------------------------------------------------
+
             else:
                 print("Unexpected exception caught in receive") #< ----------------------------------------------------
                 print(sys.exc_info()[1]) #< ----------------------------------------------------
@@ -79,7 +82,6 @@ class IOTA:
             Complete_Collection = {}
             for bundles in Data_From_Node["bundles"]:
                     for JSON in bundles.as_json_compatible():
-                        print(JSON)
                         temp = {}
                         temp["ReceiverAddress"] = str(JSON.get("address"))
                         temp["Tokens"] = JSON.get("value")
@@ -101,7 +103,6 @@ class IOTA:
     def TangleTime(self):
         Node_Data = self.IOTA_Api.get_node_info()
         self.Current_Time = Node_Data["time"]
-        print(self.Current_Time)
         Output = Tools().Epoch_To_Block(Epoch_Time = float(self.Current_Time))
         self.Block_Remainder = Output[1]
         self.CurrentBlock = Output[0]

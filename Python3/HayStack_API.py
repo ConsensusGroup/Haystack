@@ -147,4 +147,3 @@ if __name__ == "__main__":
         Seed = c.PublicSeed
         Node = c.Preloaded_Nodes[0]
         print(x.IOTA_Receive(Seed = Seed, Node = Node, Start = 6, Stop = 7))
-        print(Tools().Epoch_To_Block(Epoch_Time = 1575537985))

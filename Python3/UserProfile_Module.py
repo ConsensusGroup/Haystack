@@ -10,7 +10,7 @@ def Initialization():
         if Tools().File_Manipulation(Directory = i) == False:
             Tools().JSON_Manipulation(File_Directory = i, Dictionary = {})
 
-        # This segment clears the node results when starting the application. This forces the application to retest the IOTA nodes. 
+        # This segment clears the node results when starting the application. This forces the application to retest the IOTA nodes.
         if i == u.Node:
             Tools().JSON_Manipulation(File_Directory = i, Dictionary = {})
 

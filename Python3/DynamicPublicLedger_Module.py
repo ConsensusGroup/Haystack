@@ -6,10 +6,6 @@ from UserProfile_Module import UserProfile
 from NodeFinder_Module import Return_Optimal_Node
 import config
 
-
-from time import sleep
-
-
 class DynamicPublicLedger:
     def __init__(self):
         Node = Return_Optimal_Node()
@@ -69,11 +65,14 @@ class DynamicPublicLedger:
                 Address_PublicKey = Encoding().From_Base64(Input = Decoded[0]).split(c.Identifier)
                 User_Address = Address_PublicKey[0]
                 User_PublicKey = Encoding().From_Base64(Address_PublicKey[1])
-                print(Submission_Block, Current_Block, Block_Remainder)
-                if Decryption().Signature_Verification(ToVerify = Decoded[0], PublicKey = User_PublicKey, Signature = Decoded[1]) == True:# and Submission_Block == Current_Block:
+                if Decryption().Signature_Verification(ToVerify = Decoded[0], PublicKey = User_PublicKey, Signature = Decoded[1]) == True and Submission_Block >= Current_Block-1:
                     Current_Ledger[str(Address_PublicKey[1], "utf-8")] = str(User_Address, "utf-8")
-                    Temp[str(User_Address, "utf-8")] = Submission_Block
-                    Ledger_Accounts[str(Address_PublicKey[1], "utf-8")].update(Temp)
+                    Temp[User_Address.decode("utf-8")] = Submission_Block
+                    try:
+                        Ledger_Accounts[Address_PublicKey[1].decode("utf-8")].update(Temp)
+                    except KeyError:
+                        Ledger_Accounts[Address_PublicKey[1].decode("utf-8")] = {}
+                        Ledger_Accounts[Address_PublicKey[1].decode("utf-8")].update(Temp)
 
             Tools().JSON_Manipulation(File_Directory = u.CurrentLedger, Dictionary = Current_Ledger)
             Tools().JSON_Manipulation(File_Directory = u.LedgerAccounts, Dictionary = Ledger_Accounts)
@@ -82,27 +81,3 @@ class DynamicPublicLedger:
                 return User_Submission()
             else:
                 return False
-
-
-    def Start_Ledger(self):
-        for i in range(100000):
-            sleep(1)
-            print(self.Check_Current_Ledger())
-            print(i)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-if __name__ == "__main__":
-    DynamicPublicLedger().Start_Ledger()
