@@ -79,10 +79,11 @@ class IOTA:
             Complete_Collection = {}
             for bundles in Data_From_Node["bundles"]:
                     for JSON in bundles.as_json_compatible():
+                        print(JSON)
                         temp = {}
                         temp["ReceiverAddress"] = str(JSON.get("address"))
                         temp["Tokens"] = JSON.get("value")
-                        temp["Timestamp"] = JSON.get("timestamp")
+                        temp["Timestamp"] = JSON.get("attachment_timestamp")
                         temp["Message"] = bundles.get_messages()[0]
                         try:
                             temp["Message_Tag"] = TryteString(str(JSON.get("tag"))).decode()
@@ -100,7 +101,8 @@ class IOTA:
     def TangleTime(self):
         Node_Data = self.IOTA_Api.get_node_info()
         self.Current_Time = Node_Data["time"]
-        Output = Tools().Epoch_To_Block(Epoch_Time = self.Current_Time)
+        print(self.Current_Time)
+        Output = Tools().Epoch_To_Block(Epoch_Time = float(self.Current_Time))
         self.Block_Remainder = Output[1]
         self.CurrentBlock = Output[0]
         return self

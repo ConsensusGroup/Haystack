@@ -6,6 +6,10 @@ from UserProfile_Module import UserProfile
 from NodeFinder_Module import Return_Optimal_Node
 import config
 
+
+from time import sleep
+
+
 class DynamicPublicLedger:
     def __init__(self):
         Node = Return_Optimal_Node()
@@ -27,7 +31,6 @@ class DynamicPublicLedger:
             Submit = False
             for i, dic in Dictionary.items():
                 Tx = IOTA(Seed = Seed, Node = dic["Node"], PoW = dic["PoW"]).Send(Receiver_Address = Address, Message = Message)
-                print(Tx)
                 if type(Tx) != bool:
                     Submit = True
                     break
@@ -55,18 +58,19 @@ class DynamicPublicLedger:
         if Entries == {}:
             Tools().JSON_Manipulation(File_Directory = u.CurrentLedger, Dictionary = {})
             return User_Submission()
-        else:
+        elif Entries != False:
             Current_Ledger = Tools().JSON_Manipulation(File_Directory = u.CurrentLedger)
             Ledger_Accounts = Tools().JSON_Manipulation(File_Directory = u.LedgerAccounts)
+            Temp = {}
             for Bundle, Dic in Entries.items():
-                Temp = {}
                 User_Entry = Dic["Message"]
-                Submission_Block = Tools().Epoch_To_Block(Epoch_Time = Dic["Timestamp"]*1000)[0]
+                Submission_Block = Tools().Epoch_To_Block(Epoch_Time = Dic["Timestamp"])[0]
                 Decoded = Encoding().From_Base64(Input = User_Entry).split(c.Identifier)
                 Address_PublicKey = Encoding().From_Base64(Input = Decoded[0]).split(c.Identifier)
                 User_Address = Address_PublicKey[0]
                 User_PublicKey = Encoding().From_Base64(Address_PublicKey[1])
-                if Decryption().Signature_Verification(ToVerify = Decoded[0], PublicKey = User_PublicKey, Signature = Decoded[1]) == True and Submission_Block == Current_Block:
+                print(Submission_Block, Current_Block, Block_Remainder)
+                if Decryption().Signature_Verification(ToVerify = Decoded[0], PublicKey = User_PublicKey, Signature = Decoded[1]) == True:# and Submission_Block == Current_Block:
                     Current_Ledger[str(Address_PublicKey[1], "utf-8")] = str(User_Address, "utf-8")
                     Temp[str(User_Address, "utf-8")] = Submission_Block
                     Ledger_Accounts[str(Address_PublicKey[1], "utf-8")].update(Temp)
@@ -79,9 +83,12 @@ class DynamicPublicLedger:
             else:
                 return False
 
+
     def Start_Ledger(self):
         for i in range(100000):
+            sleep(1)
             print(self.Check_Current_Ledger())
+            print(i)
 
 
 

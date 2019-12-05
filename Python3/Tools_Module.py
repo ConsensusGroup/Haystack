@@ -81,7 +81,7 @@ class Tools:
 
     def Epoch_To_Block(self, Epoch_Time):
         c = Configuration()
-        BlockFloat = float(Epoch_Time - c.Genesis_Time)/float(c.Block_Duration*1000)
+        BlockFloat = float(Epoch_Time - c.Genesis_Time)/float(c.Block_Duration)
         Block_Remainder = BlockFloat - math.trunc(BlockFloat)
         CurrentBlock = math.trunc(BlockFloat)
         return [CurrentBlock, Block_Remainder]

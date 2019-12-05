@@ -70,7 +70,7 @@ class HayStack:
 
     def IOTA_Receive(self, Seed, Node, Start, Stop):
         Output = IOTA(Seed = Seed, Node = Node).Receive(Start = Start, Stop = Stop)
-        #Output: Dictionary {"BundleHash":{"ReceiverAddress", "Tokens", "Timestamp", "Index", "Message", "Message_Tag"}}, else False [Bool]
+        #Output: Dictionary {"BundleHash":{"ReceiverAddress", "Tokens", "Timestamp (ms)", "Index", "Message", "Message_Tag"}}, else False [Bool]
         return Output
 
     def Test_IOTA_Nodes(self):
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     c = Configuration()
 
     #Change this to test module
-    Function = "Test_IOTA_Nodes"
+    Function = "IOTA_Receive"
 
     if Function == "Fastest_Node":
         print(x.Fastest_Node())
@@ -137,12 +137,14 @@ if __name__ == "__main__":
 
     if Function == "IOTA_Send":
         Seed = c.PublicSeed
-        Node = c.Preloaded_Nodes[1]
-        Test_Message = "Test"
-        Address = x.IOTA_Generate_Address(Seed = Seed, Node = Node)
-        print(x.IOTA_Send(Seed = Seed, Node = Node, PoW = True, Receiver_Address = Address, Message = Test_Message).TX_Hash)
+        Node = c.Preloaded_Nodes[2]
+        Test_Message = "Test12134"
+        Address = x.IOTA_Generate_Address(Seed = Seed, Node = Node, Index = 7)
+        print(x.IOTA_Send(Seed = Seed, Node = Node, PoW = True, Receiver_Address = Address, Message = Test_Message))
+        print(x.Tangle_Block(Seed = c.PublicSeed, Node = Node))
 
     if Function == "IOTA_Receive":
         Seed = c.PublicSeed
         Node = c.Preloaded_Nodes[0]
-        print(x.IOTA_Receive(Seed = Seed, Node = Node, Start = 1, Stop = 2))
+        print(x.IOTA_Receive(Seed = Seed, Node = Node, Start = 6, Stop = 7))
+        print(Tools().Epoch_To_Block(Epoch_Time = 1575537985))

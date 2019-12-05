@@ -4,8 +4,8 @@ class Configuration:
     def __init__(self):
         self.PublicSeed = "LSJEPRQURCKBCF9QAACAEIMED9YWECAFSHSWJOOPGRYPHHFOXCLYMOJJNIMDBXWBGWBQBNPFYZIZBYZQF"
         self.Charlib = "0123456789qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM^!$%&/()=?+*~'#-_.:;,<>|@{[] }"
-        self.Genesis_Time = 1575457718533 #Epoch time in seconds
-        self.Block_Duration = 30 #600 #block is valid for 10 minutes
+        self.Genesis_Time = 1575457718000 #Epoch time in seconds
+        self.Block_Duration = 60000 #block is valid for 10 minutes
         self.Identifier = b'///'
 
         # Directories used for the application
