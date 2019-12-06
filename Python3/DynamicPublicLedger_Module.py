@@ -3,8 +3,9 @@ from Configuration_Module import Configuration
 from Tools_Module import Tools, Encoding
 from Cryptography_Module import Encryption, Decryption
 from UserProfile_Module import UserProfile
-from NodeFinder_Module import Return_Optimal_Node
+from NodeFinder_Module import Return_Optimal_Node, Verify_Node, Force_Alternate_Node
 import config
+import sys
 
 class DynamicPublicLedger:
     def __init__(self):
@@ -13,24 +14,6 @@ class DynamicPublicLedger:
         self.Receive_Node = Node[1]
 
     def Check_Current_Ledger(self):
-        def Verify_Node(Dictionary, Seed):
-            for i, dic in Dictionary.items():
-                try:
-                    Tested_Node = IOTA(Seed = Seed, Node = dic["Node"], PoW = dic["PoW"])
-                    Tangle_Data = Tested_Node.TangleTime()
-                    break
-                except:
-                    pass
-            return Tested_Node, Tangle_Data
-
-        def Force_Submission(Dictionary, Seed, Address, Message):
-            Submit = False
-            for i, dic in Dictionary.items():
-                Tx = IOTA(Seed = Seed, Node = dic["Node"], PoW = dic["PoW"]).Send(Receiver_Address = Address, Message = Message)
-                if type(Tx) != bool:
-                    Submit = True
-                    break
-            return Submit
 
         def User_Submission():
             IOTA_Send_Private = Verify_Node(Dictionary = self.Send_Node, Seed = Keys.PrivateSeed)[0]
@@ -38,7 +21,7 @@ class DynamicPublicLedger:
             Signature = Encryption().Sign_Message(ToSign = String_To_Sign, PrivateKey = Keys.PrivateKey, Password = config.Password)
             Ready_To_Submit = Encoding().To_Base64(String_To_Sign+c.Identifier+Signature)
             DPL_Address = IOTA_Receive[0].Generate_Address(Index = Current_Block)
-            Verify = Force_Submission(Dictionary = self.Send_Node, Seed = Keys.PrivateSeed, Address = DPL_Address, Message = str(Ready_To_Submit, "utf-8"))
+            Verify = Force_Alternate_Node(Dictionary = self.Send_Node, Seed = Keys.PrivateSeed, Address = DPL_Address, Message = str(Ready_To_Submit, "utf-8"))
             return Verify
 
         c = Configuration()
@@ -48,32 +31,32 @@ class DynamicPublicLedger:
         IOTA_Receive = Verify_Node(Dictionary = self.Receive_Node, Seed = c.PublicSeed)
         Current_Block = IOTA_Receive[1].CurrentBlock
         Current_Time = IOTA_Receive[1].Current_Time
-        Block_Remainder = IOTA_Receive[1].Block_Remainder
-
-        Entries = IOTA_Receive[0].Receive(Start = Current_Block, Stop = Current_Block+1)
+        print(IOTA_Receive[1].Block_Remainder)
+        Entries = Force_Alternate_Node(Dictionary = self.Receive_Node, Seed = c.PublicSeed, Start_Block = Current_Block, End_Block = Current_Block+1)
         if Entries == {}:
-            Tools().JSON_Manipulation(File_Directory = u.CurrentLedger, Dictionary = {})
             return User_Submission()
         elif Entries != False:
-            Current_Ledger = Tools().JSON_Manipulation(File_Directory = u.CurrentLedger)
+            Current_Ledger = {}
             Ledger_Accounts = Tools().JSON_Manipulation(File_Directory = u.LedgerAccounts)
-            Temp = {}
             for Bundle, Dic in Entries.items():
-                User_Entry = Dic["Message"]
-                Submission_Block = Tools().Epoch_To_Block(Epoch_Time = Dic["Timestamp"])[0]
-                Decoded = Encoding().From_Base64(Input = User_Entry).split(c.Identifier)
-                Address_PublicKey = Encoding().From_Base64(Input = Decoded[0]).split(c.Identifier)
-                User_Address = Address_PublicKey[0]
-                User_PublicKey = Encoding().From_Base64(Address_PublicKey[1])
-                if Decryption().Signature_Verification(ToVerify = Decoded[0], PublicKey = User_PublicKey, Signature = Decoded[1]) == True and Submission_Block >= Current_Block-1:
-                    Current_Ledger[str(Address_PublicKey[1], "utf-8")] = str(User_Address, "utf-8")
-                    Temp[User_Address.decode("utf-8")] = Submission_Block
-                    try:
-                        Ledger_Accounts[Address_PublicKey[1].decode("utf-8")].update(Temp)
-                    except KeyError:
-                        Ledger_Accounts[Address_PublicKey[1].decode("utf-8")] = {}
-                        Ledger_Accounts[Address_PublicKey[1].decode("utf-8")].update(Temp)
-
+                Temp = {}
+                try:
+                    User_Entry = Dic["Message"]
+                    Submission_Block = Tools().Epoch_To_Block(Epoch_Time = Dic["Timestamp"])[0]
+                    Decoded = Encoding().From_Base64(Input = User_Entry).split(c.Identifier)
+                    Address_PublicKey = Encoding().From_Base64(Input = Decoded[0]).split(c.Identifier)
+                    User_Address = Address_PublicKey[0]
+                    User_PublicKey = Encoding().From_Base64(Address_PublicKey[1])
+                    if Decryption().Signature_Verification(ToVerify = Decoded[0], PublicKey = User_PublicKey, Signature = Decoded[1]) == True:# and Submission_Block >= Current_Block-c.Offset:
+                        Current_Ledger[str(Address_PublicKey[1], "utf-8")] = str(User_Address, "utf-8")
+                        Temp[User_Address.decode("utf-8")] = Current_Block
+                        try:
+                            Ledger_Accounts[Address_PublicKey[1].decode("utf-8")].update(Temp)
+                        except KeyError:
+                            Ledger_Accounts[Address_PublicKey[1].decode("utf-8")] = {}
+                            Ledger_Accounts[Address_PublicKey[1].decode("utf-8")].update(Temp)
+                except:
+                    print(sys.exc_info()[1])
             Tools().JSON_Manipulation(File_Directory = u.CurrentLedger, Dictionary = Current_Ledger)
             Tools().JSON_Manipulation(File_Directory = u.LedgerAccounts, Dictionary = Ledger_Accounts)
             Client_Address = str(Verify_Node(Dictionary = self.Send_Node, Seed = Keys.PrivateSeed)[0].Generate_Address(Index = Current_Block),"utf-8")

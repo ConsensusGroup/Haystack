@@ -40,14 +40,6 @@ def Test_Node(node):
     Output = Collection(temp = Output[1], Node_Dictionary = Output[0], node = node, PoW = False, Action = "Send_PoW", Read_Write = "w")
     Output = Collection(temp = Output[1], Node_Dictionary = Output[0], node = node, PoW = False, Action = "Read", Read_Write = "r")
 
-
-# This code block is created to terminate the background thread using config.RunTime later on!
-def Test_Nodes():
-    con = Configuration()
-    for node in con.Preloaded_Nodes:
-        Test_Node(node = node)
-
-
 def Return_Optimal_Node():
     def Return_Rank(Ranked, Plain):
         Ranking = {}
@@ -121,3 +113,32 @@ def Return_Optimal_Node():
     Ranked_Receiving = Return_Rank(Temp_Read, Node_Read)
 
     return [Ranked_Sending, Ranked_Receiving]
+
+def Verify_Node(Dictionary, Seed):
+    for i, dic in Dictionary.items():
+        try:
+            Tested_Node = IOTA(Seed = Seed, Node = dic["Node"], PoW = dic["PoW"])
+            Tangle_Data = Tested_Node.TangleTime()
+            break
+        except:
+            pass
+        if config.RunTime == False:
+            break
+    return Tested_Node, Tangle_Data
+
+def Force_Alternate_Node(Dictionary, Seed, Address = "", Message = "", Start_Block = "", End_Block = ""):
+    Tx = False
+    for i, dic in Dictionary.items():
+        if Start_Block != End_Block != "":
+            Tx = IOTA(Seed = Seed, Node = dic["Node"]).Receive(Start = Start_Block, Stop = End_Block)
+        elif Address != Message != "":
+            Tx = IOTA(Seed = Seed, Node = dic["Node"], PoW = dic["PoW"]).Send(Receiver_Address = Address, Message = Message)
+        if type(Tx) != bool or config.RunTime == False:
+            break
+    return Tx
+
+# This code block is created to terminate the background thread using config.RunTime later on!
+def Test_Nodes():
+    con = Configuration()
+    for node in con.Preloaded_Nodes:
+        Test_Node(node = node)
