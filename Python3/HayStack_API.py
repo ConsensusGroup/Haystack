@@ -6,7 +6,9 @@ from Tools_Module import *
 from UserProfile_Module import *
 from Cryptography_Module import *
 from NodeFinder_Module import *
+from DynamicPublicLedger_Module import *
 import config
+from time import sleep
 
 class HayStack:
     def __init__(self):
@@ -88,12 +90,33 @@ class HayStack:
         #Output: Output.Current_Time (time in ms)[int], Output.Block_Remainder (fraction of block left)[float], Output.CurrentBlock (Current block)[int]
         return self
 
+
+#Code to later delete!!!!
+    def Start_Dynamic_Ledger(self):
+        #First initialize the directories
+        self.Initialization()
+        #self.Test_IOTA_Nodes()
+
+        for i in range(1000000):
+            Submission = DynamicPublicLedger().Check_Current_Ledger()
+            if Submission == True:
+                delay = 5
+            elif Submission == False:
+                delay = 60
+            else:
+                delay = 120
+            print(Submission)
+            sleep(5)
+
 if __name__ == "__main__":
     x = HayStack()
     c = Configuration()
 
     #Change this to test module
-    Function = "IOTA_Receive"
+    Function = "Start_Dynamic_Ledger"
+
+    if Function == "Start_Dynamic_Ledger":
+        x.Start_Dynamic_Ledger()
 
     if Function == "Fastest_Node":
         print(x.Fastest_Node())

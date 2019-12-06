@@ -2,10 +2,11 @@ import config
 
 class Configuration:
     def __init__(self):
-        self.PublicSeed = "LSJEPRQURCKBCF9QAACAEIMED9YWECAFSHSWJOOPGRYPHHFOXCLYMOJJNIMDBXWBGWBQBNPFYZIZBYZQF"
+        self.PublicSeed = "GIXJDKJVIRMDPAEBNPDRQJDVQYWQDFARUIFIJEAHPHXJMIR99NLSERZYWHBS9GAOWQGLYOVMBAOGIPCJK"
         self.Charlib = "0123456789qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM^!$%&/()=?+*~'#-_.:;,<>|@{[] }"
-        self.Genesis_Time = 1575457718000 #Epoch time in seconds
-        self.Block_Duration = 60000 #block is valid for 10 minutes
+        self.Genesis_Time = 1575457818000 #Epoch time in seconds
+        self.Block_Duration = 600000 #block is valid for 10 minutes
+        self.Offset = 8 #This value adds the lower bound of the addresses included. There is a discrepency between tangle time and tx attachment time.
         self.Identifier = b'///'
 
         # Directories used for the application
