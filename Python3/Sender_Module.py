@@ -1,7 +1,8 @@
 from Tools_Module import *
 from UserProfile_Module import UserProfile
+from Cryptography_Module import *
+from IOTA_Module import IOTA
 import random
-
 import config
 
 class Sending_Message:
@@ -20,7 +21,12 @@ class Sending_Message:
         All_Ledger_Dic = Tools().JSON_Manipulation(File_Directory = self.User.LedgerAccounts)
 
         if Receiver_Address != "" and Public_Key != "":
-            Output_List.append([Receiver_Address, Public_Key])
+            Output = Dictionary_Manipulation().Search_Dictionary(Dictionary = All_Ledger_Dic, Search_Term = Receiver_Address, Action = "Sort")
+            if Output != False:
+                Output_List.append([Output[0][0][0], Output[1]])
+            else:
+                Output_List = False
+            Bounces = Bounces -1
         elif Receiver_Address != "":
             if Receiver_Address in Ledger_Dic:
                 Output = Dictionary_Manipulation().Search_Dictionary(Dictionary = Ledger_Dic, Search_Term = Receiver_Address, Action = "Return_Key")
@@ -31,6 +37,7 @@ class Sending_Message:
                     Output_List.append([Output[0][0][0], Output[1]])
                 else:
                     Output_List = False
+            Bounces = Bounces -1
 
         elif Public_Key != "":
             if Public_Key in Ledger_Dic:
@@ -42,9 +49,7 @@ class Sending_Message:
                 Output_List.append([Output, Public_Key])
             else:
                 Output_List = False
-
-        else:
-            Bounces = Bounces +1
+            Bounces = Bounces -1
 
         try:
             for i in range(Bounces):
@@ -58,21 +63,54 @@ class Sending_Message:
 
     def Onionizing(self, Bounces, Message, Receiver_Address = "", Public_Key = ""):
         if Receiver_Address == Public_Key == "":
-            print("Ping")
+            print("Ping") #<----- Figure out the ping function
         else:
             Trajectory_List = self.Trajectory(Bounces = Bounces, Receiver_Address = Receiver_Address, Public_Key = Public_Key)
+            All_Ledger_Dic = Tools().JSON_Manipulation(File_Directory = self.User.LedgerAccounts)
+            Receiver_Address = Dictionary_Manipulation().Search_Dictionary(Dictionary = All_Ledger_Dic, Search_Term = Receiver_Address, Action = "Sort")[0][0][0].encode()
 
-        #Continue here with writing the layering encryption part....
+        Destination = list(Trajectory_List)
+        for i in Trajectory_List:
+            Address = i[0]
+            PublicKey = i[1]
+            Destination.remove([Address, PublicKey])
+            if Address == Receiver_Address.decode():
+                print(Address)
+                break
+            else:
+                print(Address)
+
+        print("#####")
+        Receiver = Trajectory_List[0][0]
+        if len(Destination) > 0:
+            Destination.append([b"0"*81, Destination[len(Destination)-1][1]])
+            Destination.reverse()
+            for i in Destination:
+                print(i)
+            Layering_Encryption().Cipher_Generator(Bounces = Bounces, Destination = Destination)
+        else:
+            print(344)
+        print(Receiver)
+
+        print("#####################")
 
 
 
 
 
+
+
+
+
+
+
+        #print(len(x))
+        #x = Encryption().Symmetric_Encryption(PlainText = x, SecretKey = 'lol')
 
 
 
 if __name__ == "__main__":
     Public_Key = UserProfile().Get_Keys(Password = config.Password).PublicKey
     PublicKey = Encoding().To_Base64(Input = Public_Key)
-    Address = "ZAZGHWIVDMXYHQ9QUQCNXLSANS9FKIAFZJUPLWXPHKKQPPJWWKR9OCDAQJALIXYE1LMIDMMEFRWCOBYMC"
-    Ledger_Dic = Sending_Message(Password = config.Password).Onionizing(Message = "lol")
+    Address = "DGFVVBVCMIHDWWTAMBAWULQJYG9DWAPOAMDJUVMKEZFFQZACJISGTHMNDVULKPAIYAUNFVLDSG9QEUQNY"
+    Ledger_Dic = Sending_Message(Password = config.Password).Onionizing(Message = "l"*214, Receiver_Address = Address, Public_Key = PublicKey, Bounces = 4)

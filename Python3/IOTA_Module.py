@@ -22,7 +22,8 @@ class IOTA:
         self.IOTA_Api = Iota(Node, seed = Seed, local_pow = PoW)
 
     def Send(self, Receiver_Address, Message):
-
+        if isinstance(Message, bytes):
+            Message = Message.decode()
         Trytes_Convertion = TryteString.from_string(Message)
         TX = ProposedTransaction(address = Address(Receiver_Address), message = Trytes_Convertion, value = 0)
         bundle = ProposedBundle()

@@ -11,7 +11,11 @@ def Initialization():
             Tools().JSON_Manipulation(File_Directory = i, Dictionary = {})
 
         # This segment clears the node results when starting the application. This forces the application to retest the IOTA nodes.
-        if i == u.Node:
+        #if i == u.Node:
+        #    Tools().JSON_Manipulation(File_Directory = i, Dictionary = {})
+
+        #Debugging.... delete after
+        if i == u.CurrentLedger or i == u.LedgerAccounts:
             Tools().JSON_Manipulation(File_Directory = i, Dictionary = {})
 
     if Tools().JSON_Manipulation(File_Directory = u.Keys) == {}:
