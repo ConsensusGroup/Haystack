@@ -8,6 +8,7 @@ class Configuration:
         self.Block_Duration = 600000 #block is valid for 10 minutes
         self.Offset = 8 #This value adds the lower bound of the addresses included. There is a discrepency between tangle time and tx attachment time.
         self.Identifier = b'///'
+        self.SymKey_Length = 26
 
         # Directories used for the application
         # User Profile:
