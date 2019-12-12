@@ -35,7 +35,7 @@ class IOTA:
         bundle_as_trytes = bundle.as_tryte_strings()
         TX_Success = False
         try:
-            TX_Confirmation = self.IOTA_Api.send_trytes(trytes = bundle_as_trytes, depth = 4)
+            TX_Confirmation = self.IOTA_Api.send_trytes(trytes = bundle_as_trytes, depth = 1)
             TX_Success = TX_Hash
         except:
             if "iota.adapter.BadApiResponse" in str(sys.exc_info()[1]):
@@ -115,8 +115,8 @@ class IOTA:
             Results[str(Tx_as_Json.get("hash_"))] = Temp
         return Results
 
-    def Import_Bundle(self, Hash):
-        Output = self.IOTA_Api.get_bundles(Hash).get("bundles")[0]
+    def Get_Balance(self, Address):
+        Output = self.IOTA_Api.get_balances(addresses = [Address]).get("balances")[0]
         return Output
 
     def TangleTime(self):
@@ -141,8 +141,13 @@ class Multisignature:
             if Check_Sum == True:
                 Multisignature_Address = Multisignature_Address.with_valid_checksum()
         else:
-            Multisig_Address = False
+            Multisignature_Address = False
         return Multisignature_Address
+
+    def Import_Bundle_Object(self, Hash):
+        Elements = self.IOTA_Api.find_transaction_objects(bundles = [Hash]).get("transactions")
+        Bundle_Object = Bundle(Elements)
+        return Bundle_Object
 
     def Generate_Multisignature_Bundle(self, Receiver, Multisignature_Address, Value, As_Bundle_Object = True, Change_Address = None, Message = False, Tag_Entry = False):
         if len(Multisignature_Address) != 81:
