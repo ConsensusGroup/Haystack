@@ -96,3 +96,4 @@ class Layering_Encryption:
 
             Symmetric = Encryption().Symmetric_Encryption(PlainText = Layer, SecretKey = Sym_Key)
             x = len(Symmetric)
+        print(x)

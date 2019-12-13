@@ -32,9 +32,7 @@ class Configuration:
         #Trusted Paths:
         self.Path_Folder = "TrustedPaths/"
         self.LedgerAccounts_File = "LedgerAccounts.txt"
-        self.CurrentLedgerAccounts_File = "Current_LedgerAccounts.txt"
         self.TrustedPaths_File = "Trajectoies.txt"
-        self.LastBlock_File = "LastOnline.txt"
         self.TrajectoryPing_File = "Pings.txt"
         self.TrustedNodes_File = "TrustedNodes.txt"
 

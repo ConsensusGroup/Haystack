@@ -14,27 +14,6 @@ class Encoding:
     def From_Base64(self, Input):
         return b64decode(Input)
 
-class Dictionary_Manipulation:
-    def __init__(self):
-        pass
-
-    def Search_Dictionary(self, Dictionary, Search_Term, Action):
-        Output = False
-        for key in Dictionary.keys():
-            i = Dictionary[key]
-            if Search_Term in i:
-                if "Sort" in Action:
-                    Output = [sorted(i.items(), key = lambda x:x[1], reverse = True), key]
-                if "Return_Value" in Action:
-                    Output = [i[Search_Term], key, Search_Term]
-                if "Return_Key" in Action:
-                    Output = [key, i]
-                if "Bool" in Action:
-                    Output = True
-            if Search_Term in key:
-                Output = [i, Search_Term]
-        return Output
-
 class Tools:
     def __init__(self):
         pass

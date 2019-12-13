@@ -1,4 +1,4 @@
-from IOTA_Module import IOTA
+from IOTA_Module import IOTA, Multisignature
 from Tools_Module import Tools
 from Configuration_Module import Configuration
 from UserProfile_Module import UserProfile
@@ -118,13 +118,14 @@ def Verify_Node(Dictionary, Seed):
     for i, dic in Dictionary.items():
         try:
             Tested_Node = IOTA(Seed = Seed, Node = dic["Node"], PoW = dic["PoW"])
+            Tested_Multi = Multisignature(Seed = Seed, Node = dic["Node"], PoW = dic["PoW"])
             Tangle_Data = Tested_Node.TangleTime()
             break
         except:
             pass
         if config.RunTime == False:
             break
-    return Tested_Node, Tangle_Data
+    return Tested_Node, Tangle_Data, Tested_Multi
 
 def Force_Alternate_Node(Dictionary, Seed, Address = "", Message = "", Start_Block = "", End_Block = ""):
     Tx = False

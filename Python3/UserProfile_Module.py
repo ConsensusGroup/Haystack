@@ -6,7 +6,7 @@ import config
 
 def Initialization():
     u = UserProfile()
-    for i in [u.Trusted, u.Traj, u.Keys, u.Received, u.Relayed, u.NotRelayed, u.Inbox, u.LedgerAccounts, u.CurrentLedger, u.Trust, u.LastBlock,  u.Node, u.Contact]:
+    for i in [u.Trusted, u.Traj, u.Keys, u.Received, u.Relayed, u.NotRelayed, u.Inbox, u.LedgerAccounts, u.Trust,  u.Node, u.Contact]:
         if Tools().File_Manipulation(Directory = i) == False:
             Tools().JSON_Manipulation(File_Directory = i, Dictionary = {})
 
@@ -15,7 +15,7 @@ def Initialization():
         #    Tools().JSON_Manipulation(File_Directory = i, Dictionary = {})
 
         #Debugging.... delete after
-        if i == u.CurrentLedger or i == u.LedgerAccounts:
+        if i == u.LedgerAccounts:
             Tools().JSON_Manipulation(File_Directory = i, Dictionary = {})
 
     if Tools().JSON_Manipulation(File_Directory = u.Keys) == {}:
@@ -57,9 +57,7 @@ class UserProfile():
         self.NotRelayed = NotRelayed + con.NotRelayed_File
         self.Inbox = Inbox + con.Inbox_File
         self.LedgerAccounts = Path + con.LedgerAccounts_File
-        self.CurrentLedger = Path + con.CurrentLedgerAccounts_File
         self.Trust = Path + con.TrustedPaths_File
-        self.LastBlock = Path + con.LastBlock_File
         self.Traj = Path + con.TrajectoryPing_File
         self.Trusted = Path + con.TrustedNodes_File
         self.Node = Node + con.Node_File
